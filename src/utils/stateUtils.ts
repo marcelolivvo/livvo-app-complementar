@@ -170,3 +170,25 @@ export function isSameState(stateA?: string | null, stateB?: string | null): boo
   if (!normA || !normB) return false;
   return normA === normB;
 }
+
+/**
+ * Cleans a city string by removing any state / UF suffix
+ * e.g., "São Paulo/SP", "São Paulo - SP", "São Paulo (SP)", "Curitiba, PR" -> "São Paulo", "Curitiba"
+ * Returns only the pure city name.
+ */
+export function cleanCityOnly(rawCity?: string | null): string {
+  if (!rawCity) return '';
+  let city = rawCity.trim();
+  if (!city) return '';
+
+  // Remove (UF), e.g., "São Paulo (SP)" or "Curitiba(PR)"
+  city = city.replace(/\s*\([A-Za-z]{2}\)\s*$/i, '');
+
+  // Remove /UF, - UF, , UF, e.g., "São Paulo/SP", "São Paulo - SP", "São Paulo, SP"
+  city = city.replace(/[\s/,-]+[A-Za-z]{2}\s*$/i, '');
+
+  // Remove trailing slashes, dashes, commas
+  city = city.replace(/[\s/,-]+$/, '');
+
+  return city.trim();
+}

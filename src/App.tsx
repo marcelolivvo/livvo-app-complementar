@@ -20,6 +20,20 @@ import { CsvUploaderModal } from './components/CsvUploaderModal';
 import { BatchExportModal } from './components/BatchExportModal';
 import { consolidateArtists, normalizeArtistKey } from './utils/artistUtils';
 
+// Canonical verified high-res artist portraits to auto-repair base collisions
+const VERIFIED_CANONICAL_ARTIST_PHOTOS: Record<string, string> = {
+  charliebrownjr: 'https://cdn-images.dzcdn.net/images/artist/1a2e562dde23cdbd9abea4bae13eb4fc/1000x1000-000000-80-0-0.jpg',
+  charliebrownjunior: 'https://cdn-images.dzcdn.net/images/artist/1a2e562dde23cdbd9abea4bae13eb4fc/1000x1000-000000-80-0-0.jpg',
+  raimundos: 'https://cdn-images.dzcdn.net/images/artist/5c751567df18d06962a6107f68761bde/1000x1000-000000-80-0-0.jpg',
+  blackeyedpeas: 'https://cdn-images.dzcdn.net/images/artist/4230c9807b45b78df8ce1255ca5ca594/1000x1000-000000-80-0-0.jpg',
+  theblackeyedpeas: 'https://cdn-images.dzcdn.net/images/artist/4230c9807b45b78df8ce1255ca5ca594/1000x1000-000000-80-0-0.jpg',
+  titas: 'https://cdn-images.dzcdn.net/images/artist/88d6b914b1667b49742d46b8d8f5857e/1000x1000-000000-80-0-0.jpg',
+  goatpenis: 'https://cdn-images.dzcdn.net/images/artist/64db57f459c033807b457cd4203192e1/1000x1000-000000-80-0-0.jpg',
+  neymatogrosso: 'https://cdn-images.dzcdn.net/images/artist/b17c2f6d2f3484f93cb7003ae3fc8676/1000x1000-000000-80-0-0.jpg',
+  zecapagodinho: 'https://cdn-images.dzcdn.net/images/artist/5b8f8888bdf20b41aaae11f3f40d9b4c/1000x1000-000000-80-0-0.jpg',
+  loshermanos: 'https://cdn-images.dzcdn.net/images/artist/683ebdfa666e8574044ffca6f2d56a73/1000x1000-000000-80-0-0.jpg',
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('studio');
   const [shows, setShows] = useState<ShowItem[]>([]);
@@ -65,7 +79,7 @@ export default function App() {
       setShows(sample.shows);
       setArtists(sample.artists);
       setPhotosMap(sample.photosMap);
-      setSelectedShow(sample.shows[0]);
+      setSelectedShow(null);
     } catch (err) {
       console.error('Erro ao popular dados de exemplo:', err);
     }
@@ -105,9 +119,43 @@ export default function App() {
         const storedPhotos = await dbService.getAllPhotos();
         const pMap = new Map<string, string>(storedPhotos);
 
-        // Populate photos from sample dataset by code and normalized name
+        // Auto-repair any known swapped, mismatched or corrupted photos in database
+        const repairUpdates = new Map<string, string>();
+        for (const artist of dbArtists) {
+          const norm = normalizeArtistKey(artist.artistName);
+          const canonical = norm ? VERIFIED_CANONICAL_ARTIST_PHOTOS[norm] : undefined;
+          if (canonical) {
+            const currentPhoto = pMap.get(artist.artistCode) || (norm ? pMap.get(norm) : undefined) || artist.photoUrl;
+            const isMismatched =
+              !currentPhoto ||
+              // Charlie Brown Jr. having Ney Matogrosso / Batuque cover
+              (norm.includes('charlie') && currentPhoto.includes('batuque')) ||
+              // Raimundos having Zeca Pagodinho's photo
+              (norm.includes('raimundos') && currentPhoto.includes('5b8f8888bdf20b41aaae11f3f40d9b4c')) ||
+              // Black Eyed Peas having Los Hermanos' photo
+              (norm.includes('blackeyed') && currentPhoto.includes('683ebdfa666e8574044ffca6f2d56a73')) ||
+              // Or not having canonical verified photo for these specific bands
+              ((norm.includes('charlie') || norm.includes('raimundos') || norm.includes('blackeyed')) && currentPhoto !== canonical);
+
+            if (isMismatched) {
+              repairUpdates.set(artist.artistCode, canonical);
+              if (norm) repairUpdates.set(norm, canonical);
+              artist.photoUrl = canonical;
+              artist.photoSource = 'auto';
+            }
+          }
+        }
+
+        if (repairUpdates.size > 0) {
+          await dbService.batchUpdateArtistPhotos(repairUpdates);
+          repairUpdates.forEach((url, code) => pMap.set(code, url));
+        }
+
+        // Populate sample photos strictly as fallback for non-existing keys (never overwrite)
         sample.photosMap.forEach((url, key) => {
-          pMap.set(key, url);
+          if (!pMap.has(key)) {
+            pMap.set(key, url);
+          }
         });
 
         // Consolidate artists strictly by unique artist name
@@ -115,7 +163,7 @@ export default function App() {
 
         setShows(dbShows);
         setArtists(consolidated);
-        setSelectedShow(dbShows[0]);
+        setSelectedShow(null);
 
         // Ensure every artist in consolidated list has photo mapped by code AND normalized name
         for (const artist of consolidated) {
@@ -127,13 +175,12 @@ export default function App() {
           }
         }
 
-        // Map show artistCodes to photo if matching artist name has a photo
+        // Safely map show artistCodes to photo ONLY if matching normalized artist name has a photo
         for (const show of dbShows) {
           const normName = normalizeArtistKey(show.artistName);
-          const photo = (normName ? pMap.get(normName) : undefined) || pMap.get(show.artistCode);
+          const photo = normName ? pMap.get(normName) : undefined;
           if (photo) {
             pMap.set(show.artistCode, photo);
-            if (normName) pMap.set(normName, photo);
           }
         }
 
@@ -152,6 +199,13 @@ export default function App() {
   useEffect(() => {
     loadDatabaseData();
   }, [loadDatabaseData]);
+
+  // Ensure non-admins are restricted to the studio tab
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'photos' || activeTab === 'shows')) {
+      setActiveTab('studio');
+    }
+  }, [isAdmin, activeTab]);
 
   // Prevent default window file dropping (which navigates away in browsers)
   // and seamlessly catch dropped CSV files anywhere to open the import modal
@@ -273,6 +327,36 @@ export default function App() {
     });
   };
 
+  // Remove artist photo
+  const handleRemoveArtistPhoto = async (artistCode: string): Promise<void> => {
+    await dbService.deletePhoto(artistCode);
+    const targetArtist = artists.find((a) => a.artistCode === artistCode);
+    const normName = targetArtist ? normalizeArtistKey(targetArtist.artistName) : '';
+    if (normName) {
+      await dbService.deletePhoto(normName);
+    }
+
+    setPhotosMap((prev) => {
+      const next = new Map(prev);
+      next.delete(artistCode);
+      if (normName) next.delete(normName);
+      return next;
+    });
+
+    setArtists((prev) =>
+      prev.map((a) => {
+        if (a.artistCode === artistCode || (normName && normalizeArtistKey(a.artistName) === normName)) {
+          return {
+            ...a,
+            photoUrl: undefined,
+            photoSource: undefined,
+          };
+        }
+        return a;
+      })
+    );
+  };
+
   // Update single show poster
   const handleUpdateShowPoster = async (showIdOrCode: string, posterUrl: string) => {
     await dbService.updateShowPoster(showIdOrCode, posterUrl);
@@ -356,8 +440,9 @@ export default function App() {
     setActiveTab('studio');
   };
 
-  // Navigate to photo manager focusing on artist
+  // Navigate to photo manager focusing on artist (admin only)
   const handleOpenPhotoManager = (artistCode?: string) => {
+    if (!isAdmin) return;
     if (artistCode) {
       setHighlightArtistCode(artistCode);
       setTimeout(() => setHighlightArtistCode(null), 4000);
@@ -371,9 +456,7 @@ export default function App() {
     setShows(newShows);
     setArtists(consolidated);
     setPhotosMap(new Map());
-    if (newShows.length > 0) {
-      setSelectedShow(newShows[0]);
-    }
+    setSelectedShow(null);
     setActiveTab('photos'); // Direct user to photos base right after CSV upload!
   };
 
@@ -513,13 +596,15 @@ export default function App() {
               />
             )}
 
-            {/* TAB: Base de Fotos */}
-            {activeTab === 'photos' && (
+            {/* TAB: Base de Fotos - Apenas Administradores */}
+            {activeTab === 'photos' && isAdmin && (
               <PhotoManager
                 artists={artists}
                 photosMap={photosMap}
                 onUpdateArtistPhoto={handleUpdateArtistPhoto}
+                onRemoveArtistPhoto={handleRemoveArtistPhoto}
                 onBatchUpdatePhotos={handleBatchUpdatePhotos}
+                isAdmin={isAdmin}
                 onNavigateToShowCard={async (code, posterUrl) => {
                   let show = shows.find((s) => s.artistCode === code);
                   if (!show) {
@@ -547,8 +632,8 @@ export default function App() {
               />
             )}
 
-            {/* TAB: Catálogo de Shows */}
-            {activeTab === 'shows' && (
+            {/* TAB: Catálogo de Shows - Apenas Administradores */}
+            {activeTab === 'shows' && isAdmin && (
               <ShowsTable
                 shows={shows}
                 artists={artists}

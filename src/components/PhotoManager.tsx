@@ -10,6 +10,7 @@ import {
   Sparkles,
   ArrowRight,
   RefreshCw,
+  Trash2,
 } from 'lucide-react';
 import { ArtistItem, ImageMatchResult } from '../types';
 import {
@@ -25,18 +26,22 @@ interface PhotoManagerProps {
   artists: ArtistItem[];
   photosMap: Map<string, string>;
   onUpdateArtistPhoto: (artistCode: string, photoUrl: string, source: 'upload' | 'url' | 'sample' | 'auto') => Promise<void>;
+  onRemoveArtistPhoto?: (artistCode: string) => Promise<void>;
   onBatchUpdatePhotos: (matchedMap: Map<string, string>) => Promise<number>;
   onNavigateToShowCard: (artistCode: string, posterUrl?: string) => void;
   highlightArtistCode?: string | null;
+  isAdmin?: boolean;
 }
 
 export const PhotoManager: React.FC<PhotoManagerProps> = ({
   artists,
   photosMap,
   onUpdateArtistPhoto,
+  onRemoveArtistPhoto,
   onBatchUpdatePhotos,
   onNavigateToShowCard,
   highlightArtistCode,
+  isAdmin = false,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'with-photo' | 'without-photo'>('all');
@@ -155,18 +160,20 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
     }
   };
 
-  // Batch Auto Fetch from Deezer / Web for all artists without photo
+  // Batch Auto Fetch from Deezer / Web for artists
   const handleBatchAutoFetchPhotos = async () => {
-    const missing = uniqueArtists.filter((a) => !photosMap.has(a.artistCode) && !a.photoUrl);
-    if (missing.length === 0) return;
+    // Target artists without photos first; if none, allow refreshing all artists
+    const missing = uniqueArtists.filter((a) => !photosMap.has(a.artistCode) || !a.photoUrl);
+    const toProcess = missing.length > 0 ? missing : uniqueArtists;
+    if (toProcess.length === 0) return;
 
     setIsBatchAutoFetching(true);
-    setBatchAutoProgress({ current: 0, total: missing.length, found: 0 });
+    setBatchAutoProgress({ current: 0, total: toProcess.length, found: 0 });
 
     const matchedMap = new Map<string, string>();
 
-    for (let i = 0; i < missing.length; i++) {
-      const art = missing[i];
+    for (let i = 0; i < toProcess.length; i++) {
+      const art = toProcess[i];
       try {
         const result = await autoFetchArtistPhoto(art.artistName);
         if (result && result.photoUrl) {
@@ -177,7 +184,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
       }
       setBatchAutoProgress({
         current: i + 1,
-        total: missing.length,
+        total: toProcess.length,
         found: matchedMap.size,
       });
       // Small pause to prevent rate limiting
@@ -289,9 +296,9 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
             <button
               id="batch-auto-fetch-btn"
               onClick={handleBatchAutoFetchPhotos}
-              disabled={isBatchAutoFetching || isProcessing || artistsWithoutPhoto === 0}
+              disabled={isBatchAutoFetching || isProcessing}
               className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-extrabold text-sm bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] shadow-lg shadow-[#FFD60A]/20 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
-              title="Busca fotos oficiais de todos os artistas sem foto via API pública do Deezer"
+              title="Busca e atualiza fotos oficiais de artistas via API do Deezer"
             >
               {isBatchAutoFetching ? (
                 <RefreshCw className="w-4 h-4 animate-spin text-[#100C1F]" />
@@ -300,8 +307,8 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
               )}
               <span>
                 {isBatchAutoFetching
-                  ? `Buscando (${batchAutoProgress?.current}/${batchAutoProgress?.total})...`
-                  : 'Buscar Fotos Automáticas (Deezer)'}
+                  ? `Atualizando (${batchAutoProgress?.current}/${batchAutoProgress?.total})...`
+                  : 'Atualizar Fotos'}
               </span>
             </button>
 
@@ -310,43 +317,48 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
               onClick={() => fileInputRef.current?.click()}
               disabled={isProcessing || isBatchAutoFetching}
               className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-extrabold text-sm bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] shadow-lg shadow-[#2FB8BA]/20 active:scale-95 transition-all disabled:opacity-50"
+              title="Importar fotos do seu computador"
             >
               {isProcessing ? (
                 <RefreshCw className="w-4 h-4 animate-spin text-[#100C1F]" />
               ) : (
                 <Upload className="w-4 h-4" />
               )}
-              <span>Importar Fotos</span>
+              <span>Use Suas Fotos</span>
             </button>
 
+            {isAdmin && (
+              <button
+                id="batch-upload-zip-btn"
+                onClick={() => zipInputRef.current?.click()}
+                disabled={isProcessing || isBatchAutoFetching}
+                className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] active:scale-95 transition-all disabled:opacity-50"
+                title="Importar arquivo ZIP com fotos (Apenas Administradores)"
+              >
+                <FolderArchive className="w-4 h-4 text-[#2FB8BA]" />
+                <span>Importar ZIP</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Association Guide Tooltip & Automation Button - Admin Only */}
+        {isAdmin && (
+          <div className="mt-4 pt-4 border-t border-[#282141] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#B3AE9F]">
+            <div className="flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-[#FFD60A] shrink-0 mt-0.5" />
+              <span>
+                <strong>Associação Automática:</strong> Nomeie os arquivos pelo código do artista (ex: <code className="text-[#4FDCDE] font-mono bg-[#1E1833] px-1.5 py-0.5 rounded">ART-001.jpg</code>) ou inclua coluna de link no CSV.
+              </span>
+            </div>
             <button
-              id="batch-upload-zip-btn"
-              onClick={() => zipInputRef.current?.click()}
-              disabled={isProcessing || isBatchAutoFetching}
-              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-bold text-sm bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] active:scale-95 transition-all disabled:opacity-50"
-              title="Importar arquivo ZIP com fotos nomeadas com o código ou nome do artista"
+              onClick={() => setShowAutomationModal(true)}
+              className="text-xs font-bold text-[#2FB8BA] hover:text-[#22E3E6] underline shrink-0 cursor-pointer"
             >
-              <FolderArchive className="w-4 h-4 text-[#2FB8BA]" />
-              <span>Importar ZIP</span>
+              Como automatizar a base de fotos?
             </button>
           </div>
-        </div>
-
-        {/* Association Guide Tooltip & Automation Button */}
-        <div className="mt-4 pt-4 border-t border-[#282141] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-[#B3AE9F]">
-          <div className="flex items-start gap-2">
-            <Sparkles className="w-4 h-4 text-[#FFD60A] shrink-0 mt-0.5" />
-            <span>
-              <strong>Associação Automática:</strong> Nomeie os arquivos pelo código do artista (ex: <code className="text-[#4FDCDE] font-mono bg-[#1E1833] px-1.5 py-0.5 rounded">ART-001.jpg</code>) ou inclua coluna de link no CSV.
-            </span>
-          </div>
-          <button
-            onClick={() => setShowAutomationModal(true)}
-            className="text-xs font-bold text-[#2FB8BA] hover:text-[#22E3E6] underline shrink-0 cursor-pointer"
-          >
-            Como automatizar a base de fotos?
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Filter and Search Bar */}
@@ -467,12 +479,24 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
                   {/* Action Buttons */}
                   <div className="flex items-center gap-1.5 pt-2 border-t border-[#282141]">
                     <button
-                      onClick={() => setSearchModalArtist(artist)}
-                      className="px-2 py-1.5 rounded-xl bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] text-[11px] font-extrabold flex items-center gap-1 transition-all shadow cursor-pointer"
-                      title="Buscar mídias online no Deezer e Apple Music (Pôsteres e Fotos)"
+                      onClick={() => handleSingleAutoFetchPhoto(artist)}
+                      disabled={singleAutoFetchingCode === artist.artistCode}
+                      className="p-1.5 rounded-xl bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] transition-all shadow cursor-pointer disabled:opacity-50"
+                      title="Atualizar foto oficial via Deezer"
                     >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Online</span>
+                      {singleAutoFetchingCode === artist.artistCode ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setSearchModalArtist(artist)}
+                      className="px-2 py-1.5 rounded-xl bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] text-[11px] font-semibold transition-all cursor-pointer"
+                      title="Galeria online de pôsteres e fotos (Deezer e Apple)"
+                    >
+                      Online
                     </button>
 
                     <button
@@ -480,7 +504,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
                         setSingleUploadTargetCode(artist.artistCode);
                         singleFileInputRef.current?.click();
                       }}
-                      className="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] transition-colors text-center"
+                      className="flex-1 py-1.5 px-2 rounded-xl text-[11px] font-semibold bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] transition-colors text-center cursor-pointer"
                       title="Fazer upload de foto do seu computador"
                     >
                       Upload
@@ -491,15 +515,25 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
                         setUrlModalArtist(artist);
                         setInputUrl(photoUrl || '');
                       }}
-                      className="p-1.5 rounded-xl bg-[#1E1833] hover:bg-[#282141] text-[#B3AE9F] border border-[#282141] transition-colors"
+                      className="p-1.5 rounded-xl bg-[#1E1833] hover:bg-[#282141] text-[#B3AE9F] border border-[#282141] transition-colors cursor-pointer"
                       title="Inserir link URL de imagem"
                     >
                       <Link className="w-3.5 h-3.5" />
                     </button>
 
+                    {photoUrl && onRemoveArtistPhoto && (
+                      <button
+                        onClick={() => onRemoveArtistPhoto(artist.artistCode)}
+                        className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer"
+                        title="Remover foto do artista"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
                     <button
                       onClick={() => onNavigateToShowCard(artist.artistCode)}
-                      className="p-1.5 rounded-xl bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 text-[#4FDCDE] border border-[#2FB8BA]/20 transition-colors"
+                      className="p-1.5 rounded-xl bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 text-[#4FDCDE] border border-[#2FB8BA]/20 transition-colors cursor-pointer"
                       title="Gerar Card deste Artista"
                     >
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -567,8 +601,8 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
         </div>
       )}
 
-      {/* Automation Guide Modal */}
-      {showAutomationModal && (
+      {/* Automation Guide Modal - Admin Only */}
+      {showAutomationModal && isAdmin && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
           <div className="bg-[#171226] border border-[#282141] rounded-3xl p-6 sm:p-8 max-w-2xl w-full shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#282141] pb-4">

@@ -2,10 +2,12 @@ import React, { forwardRef } from 'react';
 import { Calendar, MapPin, Building2, Music, Sparkles, Ticket } from 'lucide-react';
 import { ShowItem, CardTemplateConfig } from '../types';
 import { cleanDateOnly } from '../utils/dateUtils';
+import { cleanCityOnly } from '../utils/stateUtils';
 import { LivvoLogo } from './LivvoLogo';
 
 interface EventCardProps {
-  show: ShowItem;
+  show?: ShowItem | null;
+  artistName?: string | null;
   photoUrl?: string | null;
   posterUrl?: string | null;
   config: CardTemplateConfig;
@@ -14,7 +16,7 @@ interface EventCardProps {
 }
 
 export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
-  ({ show, photoUrl, posterUrl, config, className = '' }, ref) => {
+  ({ show, artistName, photoUrl, posterUrl, config, className = '' }, ref) => {
     const {
       templateId,
       aspectRatio,
@@ -34,10 +36,12 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
     // Determine whether to show poster or artist photo
     const isPosterMode = visualMode === 'show-poster';
     const effectiveImageUrl = isPosterMode
-      ? posterUrl || show.posterUrl || photoUrl
-      : photoUrl || posterUrl || show.posterUrl;
+      ? posterUrl || show?.posterUrl || photoUrl
+      : photoUrl || posterUrl || show?.posterUrl;
 
     const hasPhoto = Boolean(effectiveImageUrl);
+    const displayArtistName = show?.artistName || artistName || '';
+    const displayTourName = show?.tourName || '';
 
     // Aspect ratio CSS classes (restored to original generous dimensions so card is not small)
     const getRatioClass = () => {
@@ -112,63 +116,73 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
     // Artist Name & Tour Title Block
     const renderArtistNameBlock = (isCentered = false) => (
       <div className={`space-y-1.5 ${isCentered ? 'text-center' : ''}`}>
-        {show.tourName && (
+        {displayTourName && (
           <div className={`flex items-center gap-1.5 mb-1.5 ${isCentered ? 'justify-center' : ''}`}>
             <Sparkles className="w-3.5 h-3.5 shrink-0" style={{ color: accentColor }} />
             <span
               className={`${tourSizeClasses} uppercase font-extrabold tracking-widest drop-shadow-sm truncate`}
               style={{ color: accentColor }}
             >
-              {show.tourName}
+              {displayTourName}
             </span>
           </div>
         )}
 
-        {templateId === 'festival-bold' ? (
-          <h1
-            className={`${artistHeadingClasses} font-black uppercase tracking-tight text-[#ECE5D1] leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] break-words`}
-            style={{ fontFamily: getFontFamilyStyle() }}
-          >
-            {show.artistName}
-          </h1>
-        ) : templateId === 'minimal-editorial' ? (
-          <h1
-            className={`${artistHeadingClasses} font-light tracking-wide text-[#ECE5D1] leading-tight uppercase`}
-            style={{ fontFamily: config.fontFamily ? getFontFamilyStyle() : "'Playfair Display', serif" }}
-          >
-            {show.artistName}
-          </h1>
-        ) : templateId === 'neon-tour' ? (
-          <h1
-            className={`${artistHeadingClasses} font-black uppercase tracking-tighter text-[#ECE5D1] leading-none`}
-            style={{
-              fontFamily: getFontFamilyStyle(),
-              textShadow: `0 0 15px ${accentColor}90, 0 0 30px ${accentColor}50`,
-            }}
-          >
-            {show.artistName}
-          </h1>
+        {displayArtistName ? (
+          templateId === 'festival-bold' ? (
+            <h1
+              className={`${artistHeadingClasses} font-black uppercase tracking-tight text-[#ECE5D1] leading-none drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)] break-words`}
+              style={{ fontFamily: getFontFamilyStyle() }}
+            >
+              {displayArtistName}
+            </h1>
+          ) : templateId === 'minimal-editorial' ? (
+            <h1
+              className={`${artistHeadingClasses} font-light tracking-wide text-[#ECE5D1] leading-tight uppercase`}
+              style={{ fontFamily: config.fontFamily ? getFontFamilyStyle() : "'Playfair Display', serif" }}
+            >
+              {displayArtistName}
+            </h1>
+          ) : templateId === 'neon-tour' ? (
+            <h1
+              className={`${artistHeadingClasses} font-black uppercase tracking-tighter text-[#ECE5D1] leading-none`}
+              style={{
+                fontFamily: getFontFamilyStyle(),
+                textShadow: `0 0 15px ${accentColor}90, 0 0 30px ${accentColor}50`,
+              }}
+            >
+              {displayArtistName}
+            </h1>
+          ) : (
+            <h1
+              className={`${artistHeadingClasses} font-black uppercase tracking-tight text-[#ECE5D1] leading-tight drop-shadow-lg break-words`}
+              style={{ fontFamily: getFontFamilyStyle() }}
+            >
+              {displayArtistName}
+            </h1>
+          )
         ) : (
-          <h1
-            className={`${artistHeadingClasses} font-black uppercase tracking-tight text-[#ECE5D1] leading-tight drop-shadow-lg break-words`}
-            style={{ fontFamily: getFontFamilyStyle() }}
-          >
-            {show.artistName}
-          </h1>
+          <div className="py-2 select-none">
+            <span className="text-xs sm:text-sm font-semibold tracking-widest uppercase text-[#8A8577]/60 block">
+              Selecione um Artista
+            </span>
+          </div>
         )}
 
-        {/* Accent Divider */}
-        <div
-          className={`h-1 w-20 rounded-full ${isCentered ? 'mx-auto' : ''}`}
-          style={{ backgroundColor: accentColor }}
-        />
+        {/* Accent Divider: Only show if an artist is selected */}
+        {displayArtistName && (
+          <div
+            className={`h-1 w-20 rounded-full ${isCentered ? 'mx-auto' : ''}`}
+            style={{ backgroundColor: accentColor }}
+          />
+        )}
       </div>
     );
 
     return (
       <div
         ref={ref}
-        id={`card-${show.showCode}`}
+        id={show?.showCode ? `card-${show.showCode}` : 'card-livvo-stage'}
         className={`relative overflow-hidden select-none bg-[#100C1F] text-[#ECE5D1] shadow-2xl rounded-2xl transition-all ${getRatioClass()} ${className}`}
         style={{
           fontFamily: getFontFamilyStyle(),
@@ -179,7 +193,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
           {hasPhoto ? (
             <img
               src={effectiveImageUrl!}
-              alt={show.artistName}
+              alt={displayArtistName || 'Livvo Show Card'}
               className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center transform scale-100 transition-transform duration-500"
               crossOrigin="anonymous"
               onError={(e) => {
@@ -195,9 +209,11 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
               <div className="text-center opacity-30">
                 <Music className="w-24 h-24 mx-auto mb-4 text-[#B3AE9F]" />
                 <p className="text-sm font-semibold tracking-widest uppercase text-[#ECE5D1]">
-                  {isPosterMode ? 'Pôster pendente' : 'Foto pendente'}
+                  {displayArtistName
+                    ? (isPosterMode ? 'Pôster pendente' : 'Foto pendente')
+                    : 'Aguardando seleção de artista'}
                 </p>
-                <p className="text-xs text-[#8A8577]">Código: {show.artistCode}</p>
+                {show?.artistCode && <p className="text-xs text-[#8A8577]">Código: {show.artistCode}</p>}
               </div>
             </div>
           )}
@@ -314,7 +330,8 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   )}
                 </div>
 
-                {showShowCode && (
+                {/* SHOW Code: ONLY rendered when a show is chosen and has a showCode */}
+                {showShowCode && show?.showCode && (
                   <span className="text-[10px] tracking-wider text-[#B3AE9F] font-mono pr-0.5">
                     SHOW: <strong className="text-[#ECE5D1]">{show.showCode}</strong>
                   </span>
@@ -351,13 +368,13 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                 <div className="flex items-center gap-2">
                   <div
                     className="p-1 sm:p-1.5 rounded-lg bg-[#282141] flex items-center justify-center shrink-0 border border-[#4FDCDE]/20"
-                    style={{ color: accentColor }}
+                    style={{ color: show?.date ? accentColor : '#8A8577' }}
                   >
                     <Calendar className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <span className={`${dateTextClasses} font-extrabold text-[#ECE5D1] tracking-tight leading-tight block truncate`}>
-                      {cleanDateOnly(show.date)}
+                    <span className={`${dateTextClasses} font-extrabold ${show?.date ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} tracking-tight leading-tight block truncate`}>
+                      {show?.date ? cleanDateOnly(show.date) : '-- / -- / ----'}
                     </span>
                   </div>
                 </div>
@@ -368,30 +385,30 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                 <div className={`flex items-center gap-2 ${showDateHighlight ? 'pt-1.5 border-t border-[#282141]' : ''}`}>
                   <div
                     className="p-1 sm:p-1.5 rounded-lg bg-[#282141] flex items-center justify-center shrink-0 border border-[#4FDCDE]/20"
-                    style={{ color: accentColor }}
+                    style={{ color: show?.venue ? accentColor : '#8A8577' }}
                   >
                     <Building2 className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <div className={`${venueTextClasses} font-extrabold tracking-tight text-[#ECE5D1] truncate leading-tight`} title={show.venue}>
-                      {show.venue || 'Local a confirmar'}
+                    <div className={`${venueTextClasses} font-extrabold tracking-tight ${show?.venue ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} truncate leading-tight`} title={show?.venue}>
+                      {show?.venue || 'Local a confirmar'}
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 3. City */}
+              {/* 3. City (Only city name, state is excluded from card) */}
               {showLocationBadge && (
                 <div className={`flex items-center gap-2 ${(showDateHighlight || showVenueBadge) ? 'pt-1.5 border-t border-[#282141]' : ''}`}>
                   <div
                     className="p-1 sm:p-1.5 rounded-lg bg-[#282141] flex items-center justify-center shrink-0 border border-[#4FDCDE]/20"
-                    style={{ color: accentColor }}
+                    style={{ color: show?.city ? accentColor : '#8A8577' }}
                   >
                     <MapPin className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <div className={`${cityTextClasses} font-extrabold tracking-wide text-[#2FB8BA] truncate leading-tight`}>
-                      {show.city || 'Brasil'}
+                    <div className={`${cityTextClasses} font-extrabold tracking-wide ${show?.city ? 'text-[#2FB8BA]' : 'text-[#8A8577]/60'} truncate leading-tight`}>
+                      {show?.city ? cleanCityOnly(show.city) : 'Cidade'}
                     </div>
                   </div>
                 </div>

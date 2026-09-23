@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { ColumnMapping, ShowItem, ArtistItem } from '../types';
-import { normalizeStateUF } from '../utils/stateUtils';
+import { normalizeStateUF, cleanCityOnly } from '../utils/stateUtils';
 import { normalizeArtistKey } from '../utils/artistUtils';
 
 export function detectColumnMapping(headers: string[]): ColumnMapping {
@@ -128,8 +128,16 @@ export async function parseAndProcessCsv(options: ParseCsvOptions): Promise<{
           const artistName = String(row[mapping.artistName] || '').trim();
           const venue = String(row[mapping.venue] || '').trim();
           const date = String(row[mapping.date] || '').trim();
-          const city = String(row[mapping.city] || '').trim();
-          const state = String(row[mapping.state] || '').trim();
+          const rawCity = String(row[mapping.city] || '').trim();
+          let rawState = String(row[mapping.state] || '').trim();
+          if (!rawState) {
+            const match = rawCity.match(/[\s/,-]+([A-Za-z]{2})\s*$/);
+            if (match) {
+              rawState = match[1];
+            }
+          }
+          const city = cleanCityOnly(rawCity);
+          const state = rawState;
           const photoUrl = mapping.photoUrl ? String(row[mapping.photoUrl] || '').trim() : '';
           const posterUrl = mapping.posterUrl ? String(row[mapping.posterUrl] || '').trim() : '';
           const tourName = mapping.tourName ? String(row[mapping.tourName] || '').trim() : '';

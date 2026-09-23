@@ -607,7 +607,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Download Single Card as high resolution PNG
   const handleDownloadPng = async () => {
-    if (!cardRef.current || !selectedShow) return;
+    if (!cardRef.current || (!selectedShow && !selectedArtist)) return;
     try {
       setIsExporting(true);
 
@@ -617,10 +617,13 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         quality: 0.98,
       });
 
+      const effectiveArtist = selectedShow?.artistName || selectedArtist?.artistName || 'card';
+      const effectiveCity = selectedShow?.city || selectedCity || 'brasil';
+      const effectiveCode = selectedShow?.showCode || 'livvo';
       const link = document.createElement('a');
-      const safeArtist = selectedShow.artistName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      const safeCity = selectedShow.city.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      link.download = `livvo_${safeArtist}_${safeCity}_${selectedShow.showCode}.png`;
+      const safeArtist = effectiveArtist.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const safeCity = effectiveCity.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `livvo_${safeArtist}_${safeCity}_${effectiveCode}.png`;
       link.href = dataUrl;
       link.click();
 
@@ -635,7 +638,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Generate PNG Blob for native sharing & clipboard
   const handleGeneratePngBlob = async (): Promise<Blob | null> => {
-    if (!cardRef.current || !selectedShow) return null;
+    if (!cardRef.current || (!selectedShow && !selectedArtist)) return null;
     try {
       setIsExporting(true);
       const dataUrl = await toPng(cardRef.current, {
@@ -1224,133 +1227,107 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       </div>
 
       {/* ========================================================================= */}
-      {/* MAIN STUDIO AREA: CARD MOUNTED OR EMPTY SELECTION PROMPT                  */}
+      {/* MAIN STUDIO AREA: VISUAL STAGE AND CUSTOMIZATION CONTROLS                  */}
       {/* ========================================================================= */}
-      {!selectedShow ? (
-        /* Empty State: Step-by-step guidance prompt */
-        <div className="bg-[#171226] rounded-3xl border border-[#282141] p-10 sm:p-14 text-center max-w-2xl mx-auto shadow-2xl space-y-5">
-          <div className="w-16 h-16 rounded-2xl bg-[#2FB8BA]/10 text-[#4FDCDE] border border-[#2FB8BA]/20 flex items-center justify-center mx-auto shadow-inner">
-            <Ticket className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-1.5">
-            <h3 className="text-xl font-bold text-[#ECE5D1]">
-              {!selectedArtist
-                ? 'Selecione um Artista para Começar'
-                : 'Filtre a Cidade, Casa de Show e Data'}
-            </h3>
-            <p className="text-xs sm:text-sm text-[#B3AE9F] max-w-md mx-auto">
-              {!selectedArtist
-                ? 'Digite o nome do artista no campo de busca acima ou escolha uma das sugestões para carregar a turnê e montar seu card oficial Livvo.'
-                : `Agora escolha onde e quando foi o show de ${selectedArtist.artistName} para o sistema montar o card na tela.`}
-            </p>
-          </div>
-
-          {/* Quick Artist Suggestions if none selected */}
-          {!selectedArtist && artists.length > 0 && (
-            <div className="pt-4 space-y-2">
-              <span className="text-xs font-bold text-[#8A8577] uppercase tracking-wider block">
-                Artistas em Destaque no Catálogo:
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Visual Card Preview Stage */}
+        <div className="lg:col-span-7 flex flex-col items-center gap-4">
+          {/* Stage Header Controls */}
+          <div className="w-full flex flex-wrap items-center justify-between gap-2.5 bg-[#171226] px-4 py-3 rounded-2xl border border-[#282141]">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#ECE5D1]">
+                {selectedShow?.artistName || selectedArtist?.artistName || 'Prévia do Card'}
               </span>
-              <div className="flex flex-wrap justify-center gap-2 max-w-lg mx-auto">
-                {artists.slice(0, 6).map((art) => (
-                  <button
-                    key={art.artistCode}
-                    onClick={() => handleSelectArtist(art)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1E1833] hover:bg-[#282141] border border-[#282141] hover:border-[#2FB8BA] text-xs font-bold text-[#ECE5D1] transition-all"
-                  >
-                    <span>{art.artistName}</span>
-                    <span className="text-[10px] text-[#4FDCDE] font-mono">({art.showsCount})</span>
-                  </button>
-                ))}
-              </div>
+              {selectedShow && (
+                <>
+                  <span className="text-xs text-[#B3AE9F] hidden sm:inline">•</span>
+                  <span className="text-xs text-[#4FDCDE] hidden sm:inline">
+                    {selectedShow.city} ({selectedShow.state})
+                  </span>
+                </>
+              )}
+              {!selectedShow && selectedArtist && (
+                <>
+                  <span className="text-xs text-[#B3AE9F] hidden sm:inline">•</span>
+                  <span className="text-xs text-[#FFD60A] hidden sm:inline">
+                    Selecione a data ou cidade
+                  </span>
+                </>
+              )}
             </div>
-          )}
-        </div>
-      ) : (
-        /* CARD IS MOUNTED: Show the Visual Stage and Customizer */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Left Column: Visual Card Preview Stage */}
-          <div className="lg:col-span-7 flex flex-col items-center gap-4">
-            {/* Stage Header Controls */}
-            <div className="w-full flex flex-wrap items-center justify-between gap-2.5 bg-[#171226] px-4 py-3 rounded-2xl border border-[#282141]">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#ECE5D1]">
-                  {selectedShow.artistName}
-                </span>
-                <span className="text-xs text-[#B3AE9F] hidden sm:inline">•</span>
-                <span className="text-xs text-[#4FDCDE] hidden sm:inline">
-                  {selectedShow.city} ({selectedShow.state})
-                </span>
-              </div>
 
-              {/* Visual Mode Selector Buttons */}
-              <div className="flex items-center gap-2">
-                <div className="flex items-center bg-[#100C1F] p-1 rounded-xl border border-[#282141]">
-                  <button
-                    onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      config.visualMode !== 'show-poster'
-                        ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
-                        : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
-                    }`}
-                  >
-                    <ImageIcon className="w-3.5 h-3.5" />
-                    <span>Foto</span>
-                  </button>
-
-                  <button
-                    onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      config.visualMode === 'show-poster'
-                        ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
-                        : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
-                    }`}
-                  >
-                    <Ticket className="w-3.5 h-3.5" />
-                    <span>Pôster</span>
-                    {selectedShow.posterUrl && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6]" />
-                    )}
-                  </button>
-                </div>
+            {/* Visual Mode Selector Buttons */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-[#100C1F] p-1 rounded-xl border border-[#282141]">
+                <button
+                  onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    config.visualMode !== 'show-poster'
+                      ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
+                      : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
+                  }`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Foto</span>
+                </button>
 
                 <button
-                  id="open-media-gallery-btn"
-                  onClick={() => {
-                    setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
-                    setIsMediaModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] shadow transition-all"
-                  title="Pesquisa fotos de palco e pôsteres de turnê em alta resolução na web"
+                  onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    config.visualMode === 'show-poster'
+                      ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
+                      : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
+                  }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-[#100C1F]" />
-                  <span className="hidden sm:inline">Buscar Mídias Online</span>
-                  <span className="sm:hidden">Buscar</span>
+                  <Ticket className="w-3.5 h-3.5" />
+                  <span>Pôster</span>
+                  {selectedShow?.posterUrl && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6]" />
+                  )}
                 </button>
               </div>
-            </div>
 
-            {/* Card Stage Container - Restored generous size (max-w-[460px], min-h-[580px]) */}
-            <div className="w-full flex justify-center items-center p-4 sm:p-8 bg-[#100C1F] rounded-3xl border border-[#282141] shadow-2xl relative min-h-[580px]">
-              <div className="relative shadow-2xl rounded-2xl ring-1 ring-[#282141] transition-all flex justify-center items-center w-full max-w-[460px]">
-                <EventCard
-                  ref={cardRef}
-                  show={selectedShow}
-                  photoUrl={currentPhoto}
-                  posterUrl={currentPoster}
-                  config={config}
-                  isExporting={isExporting}
-                />
-              </div>
-            </div>
-
-            {/* Card Status Indicator */}
-            <div className="w-full flex items-center justify-center gap-2 text-xs text-[#B3AE9F] pt-1">
-              <span className="w-2 h-2 rounded-full bg-[#22E3E6] animate-pulse" />
-              <span>Card oficial em alta resolução (300 DPI) pronto para exportação</span>
+              <button
+                id="open-media-gallery-btn"
+                onClick={() => {
+                  setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
+                  setIsMediaModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] shadow transition-all cursor-pointer"
+                title="Pesquisa fotos de palco e pôsteres de turnê em alta resolução na web"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#100C1F]" />
+                <span className="hidden sm:inline">Buscar Mídias Online</span>
+                <span className="sm:hidden">Buscar</span>
+              </button>
             </div>
           </div>
+
+          {/* Card Stage Container - Restored generous size (max-w-[460px], min-h-[580px]) */}
+          <div className="w-full flex justify-center items-center p-4 sm:p-8 bg-[#100C1F] rounded-3xl border border-[#282141] shadow-2xl relative min-h-[580px]">
+            <div className="relative shadow-2xl rounded-2xl ring-1 ring-[#282141] transition-all flex justify-center items-center w-full max-w-[460px]">
+              <EventCard
+                ref={cardRef}
+                show={selectedShow}
+                artistName={selectedArtist?.artistName}
+                photoUrl={currentPhoto}
+                posterUrl={currentPoster}
+                config={config}
+                isExporting={isExporting}
+              />
+            </div>
+          </div>
+
+          {/* Card Status Indicator */}
+          <div className="w-full flex items-center justify-center gap-2 text-xs text-[#B3AE9F] pt-1">
+            <span className={`w-2 h-2 rounded-full ${selectedShow || selectedArtist ? 'bg-[#22E3E6] animate-pulse' : 'bg-[#8A8577]'}`} />
+            <span>
+              {selectedShow || selectedArtist
+                ? 'Card oficial em alta resolução (300 DPI) pronto para exportação'
+                : 'Aguardando seleção de banda ou artista para montagem do card'}
+            </span>
+          </div>
+        </div>
 
           {/* Right Column: Customization & Template Settings */}
           <div className="lg:col-span-5 flex flex-col gap-4">
@@ -1526,12 +1503,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           <span>Pôster Oficial</span>
                         </div>
                         <div className="text-[10px] text-[#8A8577] mt-0.5">
-                          {selectedShow.posterUrl ? 'Pôster oficial ✓' : 'Buscar pôster'}
+                          {selectedShow?.posterUrl ? 'Pôster oficial ✓' : 'Buscar pôster'}
                         </div>
                       </button>
                     </div>
 
-                    {selectedShow.tourName && (
+                    {selectedShow?.tourName && (
                       <div className="text-[11px] text-[#4FDCDE] font-semibold flex items-center gap-1.5 pt-0.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-[#2FB8BA]" />
                         <span>Turnê: {selectedShow.tourName}</span>
@@ -2200,7 +2177,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               <button
                 id="download-card-png-btn"
                 onClick={handleDownloadPng}
-                disabled={isExporting || !selectedShow}
+                disabled={isExporting || (!selectedShow && !selectedArtist)}
                 className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-[#FFD60A] to-[#FFC000] hover:from-[#FFE14D] hover:to-[#FFD60A] text-[#100C1F] shadow-lg shadow-[#FFD60A]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                 title="Baixar Card em PNG de alta resolução"
               >
@@ -2226,7 +2203,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               <button
                 id="share-card-btn"
                 onClick={() => handleOpenShare()}
-                disabled={isExporting || !selectedShow}
+                disabled={isExporting || (!selectedShow && !selectedArtist)}
                 className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] shadow-lg shadow-[#2FB8BA]/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                 title="Compartilhar nas redes sociais (Instagram, WhatsApp, Facebook)"
               >
@@ -2236,7 +2213,6 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
           </div>
         </div>
-      )}
 
       {/* Online Media Search Modal (Posters & Photos) */}
       <MediaSearchModal

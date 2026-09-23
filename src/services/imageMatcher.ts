@@ -30,8 +30,7 @@ export function findMatchingArtist(
   }
 
   // 2. Check normalized name match
-  // Strict matching: exact match OR full word boundary match to prevent partial collisions
-  // (e.g. preventing 'Ney' matching 'Holocausto' or short names matching randomly)
+  // Strict matching: exact match OR strict word-boundary match to prevent partial collisions
   for (const artist of artists) {
     const normName = normalizeKey(artist.artistName);
     if (!normName) continue;
@@ -41,14 +40,16 @@ export function findMatchingArtist(
       return { artist, matchedBy: 'name' };
     }
 
-    // Name contained in file, but ensure artist name is long enough (>= 4 chars) to prevent substring collision
-    if (normName.length >= 4 && normFile.includes(normName)) {
-      return { artist, matchedBy: 'name' };
-    }
+    // Strict word-boundary match on original filename
+    const cleanRaw = nameWithoutExt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const cleanArtist = artist.artistName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
-    // File contained in artist name only if file name is sufficiently long (>= 5 chars)
-    if (normFile.length >= 5 && normName.includes(normFile)) {
-      return { artist, matchedBy: 'name' };
+    if (cleanArtist.length >= 3) {
+      const escapedArtist = cleanArtist.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const wordBoundaryRegex = new RegExp(`(^|[^a-z0-9])${escapedArtist}([^a-z0-9]|$)`, 'i');
+      if (wordBoundaryRegex.test(cleanRaw)) {
+        return { artist, matchedBy: 'name' };
+      }
     }
   }
 

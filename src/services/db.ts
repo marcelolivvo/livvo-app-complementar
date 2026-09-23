@@ -265,6 +265,31 @@ export class DatabaseService {
     });
   }
 
+  async deletePhoto(artistCode: string): Promise<void> {
+    const db = await this.getDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['artists', 'photos'], 'readwrite');
+      const photoStore = transaction.objectStore('photos');
+      const artistStore = transaction.objectStore('artists');
+
+      photoStore.delete(artistCode);
+
+      const getReq = artistStore.get(artistCode);
+      getReq.onsuccess = () => {
+        const artist = getReq.result as ArtistItem | undefined;
+        if (artist) {
+          delete artist.photoUrl;
+          delete artist.photoSource;
+          artist.updatedAt = Date.now();
+          artistStore.put(artist);
+        }
+      };
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
   async getAllPhotos(): Promise<Map<string, string>> {
     const db = await this.getDB();
     return new Promise((resolve, reject) => {

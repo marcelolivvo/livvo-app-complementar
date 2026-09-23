@@ -50,46 +50,66 @@ async function startServer() {
       ]);
 
       const normQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      const alphanumericQuery = normQuery.replace(/[^a-z0-9]/g, '');
+
+      // Strict match helper: validates if candidate name legitimately matches query
+      const isLegitMatch = (cand: string): boolean => {
+        if (!cand) return false;
+        const normCand = cand.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const alphaCand = normCand.replace(/[^a-z0-9]/g, '');
+        if (!alphaCand || !alphanumericQuery) return false;
+        if (alphaCand === alphanumericQuery) return true;
+        // Prefix "the" handling
+        if (alphaCand === `the${alphanumericQuery}` || alphanumericQuery === `the${alphaCand}`) return true;
+        // Junior / Jr handling
+        const expCand = alphaCand.replace(/junior/g, 'jr');
+        const expQuery = alphanumericQuery.replace(/junior/g, 'jr');
+        if (expCand === expQuery) return true;
+        // Close word boundary match
+        if (normCand === normQuery) return true;
+        return false;
+      };
 
       const artists: any[] = [];
       const posters: any[] = [];
 
-      // Process Deezer artists - check name similarity to prevent mismatched artist photos
+      // Process Deezer artists - check name similarity strictly to prevent mismatched artist photos
       (artistData.data || []).forEach((a: any) => {
         const photoUrl = a.picture_xl || a.picture_big || a.picture_medium;
         if (!photoUrl || photoUrl.includes('/artist//')) return; // skip placeholder/empty images
 
+        const isExactMatch = isLegitMatch(a.name);
         const normArtistName = (a.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-        const isCloseMatch = normArtistName === normQuery || normArtistName.includes(normQuery) || normQuery.includes(normArtistName);
+        const isSubstringMatch = normArtistName.startsWith(normQuery) || (normQuery.length >= 6 && normArtistName.includes(normQuery));
 
-        // Put close matches first
         const item = {
           id: `dz-${a.id}`,
           name: a.name,
           photoUrl,
           thumbnailUrl: a.picture_medium || a.picture_small,
           source: 'deezer',
-          isExactMatch: isCloseMatch,
+          isExactMatch,
         };
 
-        if (isCloseMatch) {
+        if (isExactMatch) {
           artists.unshift(item);
-        } else {
+        } else if (isSubstringMatch) {
           artists.push(item);
         }
       });
 
       // Process Wikipedia & Wikimedia Commons images (Free licenses)
       const wikiPages = {
-        ...(wikiData?.query?.pages || {}),
-        ...(ptWikiData?.query?.pages || {}),
+        ...((wikiData as any)?.query?.pages || {}),
+        ...((ptWikiData as any)?.query?.pages || {}),
       };
 
       Object.values(wikiPages).forEach((page: any) => {
         if (page?.thumbnail?.source) {
           const title = page.title || query;
+          const isExactMatch = isLegitMatch(title);
           const normTitle = title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-          const isCloseMatch = normTitle === normQuery || normTitle.includes(normQuery) || normQuery.includes(normTitle);
+          const isSubstringMatch = normTitle.startsWith(normQuery) || (normQuery.length >= 6 && normTitle.includes(normQuery));
 
           const wikiItem = {
             id: `wiki-${page.pageid || Math.random()}`,
@@ -97,51 +117,57 @@ async function startServer() {
             photoUrl: page.thumbnail.source,
             thumbnailUrl: page.thumbnail.source,
             source: 'wikimedia',
-            isExactMatch: isCloseMatch,
+            isExactMatch,
           };
 
-          if (isCloseMatch) {
+          if (isExactMatch) {
             artists.splice(1, 0, wikiItem);
-          } else {
+          } else if (isSubstringMatch) {
             artists.push(wikiItem);
           }
         }
       });
 
-      // Process Deezer album / tour posters
+      // Process Deezer album / tour posters (strictly check album artist if available)
       (albumData.data || []).forEach((alb: any) => {
         const posterUrl = alb.cover_xl || alb.cover_big || alb.cover_medium;
         if (posterUrl && !posterUrl.includes('/cover//')) {
-          posters.push({
-            id: `dz-alb-${alb.id}`,
-            title: alb.title,
-            artistName: alb.artist?.name,
-            posterUrl,
-            thumbnailUrl: alb.cover_medium,
-            source: 'deezer',
-          });
+          const artistMatches = !alb.artist?.name || isLegitMatch(alb.artist.name);
+          if (artistMatches) {
+            posters.push({
+              id: `dz-alb-${alb.id}`,
+              title: alb.title,
+              artistName: alb.artist?.name || query,
+              posterUrl,
+              thumbnailUrl: alb.cover_medium,
+              source: 'deezer',
+            });
+          }
         }
       });
 
-      // Merge itunes high-res posters
+      // Merge itunes high-res posters (strictly verify artist name)
       if (itunesData.results && itunesData.results.length > 0) {
         for (const item of itunesData.results) {
           if (item.artworkUrl100) {
-            posters.push({
-              id: `itunes-${item.collectionId || Math.random()}`,
-              title: item.collectionName || query,
-              artistName: item.artistName || query,
-              posterUrl: item.artworkUrl100.replace('100x100bb', '1000x1000bb'),
-              thumbnailUrl: item.artworkUrl100,
-              source: 'itunes',
-            });
+            const artistMatches = !item.artistName || isLegitMatch(item.artistName);
+            if (artistMatches) {
+              posters.push({
+                id: `itunes-${item.collectionId || Math.random()}`,
+                title: item.collectionName || query,
+                artistName: item.artistName || query,
+                posterUrl: item.artworkUrl100.replace('100x100bb', '1000x1000bb'),
+                thumbnailUrl: item.artworkUrl100,
+                source: 'itunes',
+              });
+            }
           }
         }
       }
 
-      // Best photo calculation: prioritize exact matches
+      // Best photo calculation: ONLY accept verified exact matches
       const exactArtist = artists.find((a) => a.isExactMatch);
-      const bestPhoto = exactArtist?.photoUrl || artists[0]?.photoUrl || posters[0]?.posterUrl || null;
+      const bestPhoto = exactArtist ? exactArtist.photoUrl : (artists[0]?.isExactMatch ? artists[0].photoUrl : null);
       const bestPoster = posters[0]?.posterUrl || null;
 
       return res.json({
