@@ -1,12 +1,69 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
+import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog';
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
+
+  // Security: Block any direct client requests to private server data or CSV files
+  app.use((req, res, next) => {
+    const lowerPath = req.path.toLowerCase();
+    if (lowerPath.startsWith('/data') || lowerPath.endsWith('.csv')) {
+      return res.status(404).json({ error: 'Not Found' });
+    }
+    next();
+  });
+
+  // Initialize in-memory catalog once on server start
+  initCatalog();
+
+  // API Route: Protected Catalog Search (Paginated, Rate-Limited, No mass dumping)
+  app.get('/api/catalog/search', (req, res) => {
+    // 1. IP-based rate limiting to prevent automated scraping
+    const clientIp =
+      (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
+      req.socket.remoteAddress ||
+      'unknown-client';
+
+    const rateLimit = checkRateLimit(clientIp);
+    res.setHeader('X-RateLimit-Limit', '60');
+    res.setHeader('X-RateLimit-Remaining', String(rateLimit.remaining));
+
+    if (!rateLimit.allowed) {
+      res.setHeader('Retry-After', String(rateLimit.resetInSec));
+      const message =
+        rateLimit.reason === 'burst'
+          ? 'Limite de requisições por rajada excedido (máx 10 a cada 10 segundos). Aguarde alguns instantes.'
+          : 'Muitas requisições em curto intervalo. Aguarde alguns segundos antes de tentar novamente.';
+
+      return res.status(429).json({
+        error: message,
+        retryAfter: rateLimit.resetInSec,
+      });
+    }
+
+    try {
+      const { q, artist, state, city, venue, page, limit } = req.query;
+      const result = searchCatalog({
+        q: q ? String(q) : undefined,
+        artist: artist ? String(artist) : undefined,
+        state: state ? String(state) : undefined,
+        city: city ? String(city) : undefined,
+        venue: venue ? String(venue) : undefined,
+        page: page ? parseInt(String(page), 10) : undefined,
+        limit: limit ? parseInt(String(limit), 10) : undefined,
+      });
+
+      return res.json(result);
+    } catch (err: any) {
+      console.error('Erro na rota /api/catalog/search:', err);
+      return res.status(500).json({ error: 'Erro ao consultar catálogo' });
+    }
+  });
 
   // API Route: Search Artist Photos & Posters via Deezer, iTunes, Wikimedia Commons & Wikipedia (Free & Open APIs)
   app.get('/api/artist-search', async (req, res) => {

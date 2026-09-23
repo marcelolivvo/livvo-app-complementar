@@ -226,3 +226,120 @@ export async function parseAndProcessCsv(options: ParseCsvOptions): Promise<{
     });
   });
 }
+
+/**
+ * Parses and loads shows and artists directly from CSV text content
+ * (used for automatic seeding from /data/shows.csv on first visit)
+ */
+export async function parseAndLoadShowsCsv(
+  csvText: string
+): Promise<{
+  shows: ShowItem[];
+  artists: ArtistItem[];
+  photosMap: Map<string, string>;
+}> {
+  return new Promise((resolve, reject) => {
+    Papa.parse(csvText, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      dynamicTyping: false,
+      complete: (results) => {
+        try {
+          const fields = results.meta.fields || [];
+          const mapping = detectColumnMapping(fields);
+          const artistsMap = new Map<string, ArtistItem>();
+          const shows: ShowItem[] = [];
+          const photosMap = new Map<string, string>();
+          let processedCount = 0;
+
+          for (const row of results.data as Record<string, string>[]) {
+            const showCode = String(row[mapping.showCode] || '').trim();
+            const artistCode = String(row[mapping.artistCode] || '').trim();
+            const artistName = String(row[mapping.artistName] || '').trim();
+            const venue = String(row[mapping.venue] || '').trim();
+            const date = String(row[mapping.date] || '').trim();
+            const rawCity = String(row[mapping.city] || '').trim();
+            let rawState = String(row[mapping.state] || '').trim();
+            if (!rawState) {
+              const match = rawCity.match(/[\s/,-]+([A-Za-z]{2})\s*$/);
+              if (match) {
+                rawState = match[1];
+              }
+            }
+            const city = cleanCityOnly(rawCity);
+            const state = rawState;
+            const photoUrl = mapping.photoUrl ? String(row[mapping.photoUrl] || '').trim() : '';
+            const posterUrl = mapping.posterUrl ? String(row[mapping.posterUrl] || '').trim() : '';
+            const tourName = mapping.tourName ? String(row[mapping.tourName] || '').trim() : '';
+
+            if (!artistName && !artistCode && !showCode) continue;
+
+            processedCount++;
+            const id = `show_${processedCount}_${showCode || 'item'}`;
+            const isDateValue = (val: string) => /^\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}$/.test(val.trim());
+            const cleanRawCode = (artistCode && !isDateValue(artistCode) && artistCode !== date) ? artistCode : '';
+            const finalArtistCode = cleanRawCode || (artistName ? `ART-${artistName.trim().replace(/[^A-Za-z0-9]/g, '_').toUpperCase()}` : `ART-${processedCount}`);
+
+            const showItem: ShowItem = {
+              id,
+              showCode: showCode || `SHOW-${processedCount}`,
+              artistCode: finalArtistCode,
+              artistName: artistName || 'Artista Desconhecido',
+              tourName: tourName || undefined,
+              venue: venue || 'Local a confirmar',
+              date: date || 'A definir',
+              city: city || 'Brasil',
+              state: normalizeStateUF(state) || 'BR',
+              posterUrl: posterUrl || undefined,
+            };
+
+            shows.push(showItem);
+
+            const normName = normalizeArtistKey(showItem.artistName);
+            const artistKey = normName || finalArtistCode.toLowerCase();
+
+            if (photoUrl) {
+              photosMap.set(finalArtistCode, photoUrl);
+              if (normName) photosMap.set(normName, photoUrl);
+            }
+
+            const existing = artistsMap.get(artistKey);
+            if (existing) {
+              existing.showsCount += 1;
+              if (!existing.photoUrl && photoUrl) {
+                existing.photoUrl = photoUrl;
+                existing.photoSource = 'auto';
+              }
+              if (!existing.featuredPosterUrl && posterUrl) {
+                existing.featuredPosterUrl = posterUrl;
+              }
+              if (cleanRawCode && existing.artistCode.startsWith('ART-') && existing.artistCode !== cleanRawCode) {
+                existing.artistCode = cleanRawCode;
+              }
+            } else {
+              artistsMap.set(artistKey, {
+                artistCode: finalArtistCode,
+                artistName: showItem.artistName,
+                showsCount: 1,
+                photoUrl: photoUrl || undefined,
+                featuredPosterUrl: posterUrl || undefined,
+                photoSource: photoUrl ? 'auto' : undefined,
+                updatedAt: Date.now(),
+              });
+            }
+          }
+
+          resolve({
+            shows,
+            artists: Array.from(artistsMap.values()),
+            photosMap,
+          });
+        } catch (err) {
+          reject(err);
+        }
+      },
+      error: (err: any) => reject(err),
+    });
+  });
+}
+

@@ -19,6 +19,7 @@ import { ShowsTable } from './components/ShowsTable';
 import { CsvUploaderModal } from './components/CsvUploaderModal';
 import { BatchExportModal } from './components/BatchExportModal';
 import { consolidateArtists, normalizeArtistKey } from './utils/artistUtils';
+import { searchCatalogApi } from './services/catalogService';
 
 // Canonical verified high-res artist portraits to auto-repair base collisions
 const VERIFIED_CANONICAL_ARTIST_PHOTOS: Record<string, string> = {
@@ -93,28 +94,6 @@ export default function App() {
       const dbArtists = await dbService.getAllArtists();
 
       if (dbShows.length > 0) {
-        // Auto-synchronize missing base artists (e.g. Kendrick Lamar, John Mayer, Hiatus Kaiyote) if not yet in DB
-        const sample = generateSampleDataset();
-        const existingNames = new Set(dbArtists.map((a) => a.artistName.trim().toLowerCase()));
-        const missingArtists = sample.artists.filter(
-          (a) => !existingNames.has(a.artistName.trim().toLowerCase())
-        );
-
-        const existingShowCodes = new Set(dbShows.map((s) => s.showCode));
-        const missingShows = sample.shows.filter((s) => !existingShowCodes.has(s.showCode));
-
-        if (missingArtists.length > 0 || missingShows.length > 0) {
-          if (missingArtists.length > 0) {
-            await dbService.saveArtists(missingArtists);
-            dbArtists.push(...missingArtists);
-          }
-          if (missingShows.length > 0) {
-            await dbService.saveShowsBatch(missingShows, false);
-            dbShows.push(...missingShows);
-          }
-          await dbService.batchUpdateArtistPhotos(sample.photosMap);
-        }
-
         // Build photos map in one fast batch
         const storedPhotos = await dbService.getAllPhotos();
         const pMap = new Map<string, string>(storedPhotos);
@@ -151,13 +130,6 @@ export default function App() {
           repairUpdates.forEach((url, code) => pMap.set(code, url));
         }
 
-        // Populate sample photos strictly as fallback for non-existing keys (never overwrite)
-        sample.photosMap.forEach((url, key) => {
-          if (!pMap.has(key)) {
-            pMap.set(key, url);
-          }
-        });
-
         // Consolidate artists strictly by unique artist name
         const consolidated = consolidateArtists(dbArtists, dbShows, pMap);
 
@@ -186,15 +158,46 @@ export default function App() {
 
         setPhotosMap(pMap);
       } else {
-        // First time initialization: populate with sample catalog
-        await handleLoadSample();
+        // First-time visit: To protect the catalog against bulk extraction/scraping,
+        // we do NOT dump the entire CSV into client-side IndexedDB.
+        // Instead, we fetch only the initial featured preview via the protected server API.
+        try {
+          const catalogRes = await searchCatalogApi({ limit: 10 });
+          const previewArtists: ArtistItem[] = catalogRes.artists.map((a) => ({
+            artistCode: a.artistCode,
+            artistName: a.artistName,
+            photoUrl: a.photoUrl,
+            featuredPosterUrl: a.featuredPosterUrl,
+            showsCount: a.showsCount,
+            updatedAt: Date.now(),
+          }));
+
+          const pMap = new Map<string, string>();
+          previewArtists.forEach((a) => {
+            if (a.photoUrl) {
+              pMap.set(a.artistCode, a.photoUrl);
+              const norm = normalizeArtistKey(a.artistName);
+              if (norm) pMap.set(norm, a.photoUrl);
+            }
+          });
+
+          setArtists(previewArtists);
+          setShows([]);
+          setPhotosMap(pMap);
+          setSelectedShow(null);
+        } catch (apiErr) {
+          console.warn('Erro ao carregar prévia do catálogo:', apiErr);
+          setArtists([]);
+          setShows([]);
+          setPhotosMap(new Map());
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar banco de dados:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [handleLoadSample]);
+  }, []);
 
   useEffect(() => {
     loadDatabaseData();

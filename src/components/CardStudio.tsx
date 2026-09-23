@@ -37,6 +37,7 @@ import { normalizeStateUF, isSameState } from '../utils/stateUtils';
 import { normalizeArtistKey, isDateString } from '../utils/artistUtils';
 import { dbService } from '../services/db';
 import { SAMPLE_ARTISTS_DATA, generateSampleDataset } from '../services/sampleData';
+import { searchCatalogApi } from '../services/catalogService';
 
 interface CardStudioProps {
   shows: ShowItem[];
@@ -120,6 +121,10 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   const [artistSearchQuery, setArtistSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<ArtistItem | null>(null);
+  const [isSearchingCatalog, setIsSearchingCatalog] = useState(false);
+  const [catalogArtists, setCatalogArtists] = useState<ArtistItem[]>([]);
+  const [defaultPreviewArtists, setDefaultPreviewArtists] = useState<ArtistItem[]>([]);
+  const [serverArtistShows, setServerArtistShows] = useState<ShowItem[]>([]);
 
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
@@ -275,28 +280,113 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     return Array.from(artistMap.values());
   }, [artists, shows]);
 
-  // Filtered artists for autocomplete search with accent-insensitive normalization and typo tolerance
-  const filteredArtists = useMemo(() => {
-    if (!artistSearchQuery.trim()) {
-      return allAvailableArtists.slice(0, 15);
-    }
-    const normalize = (str: string) =>
-      str
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/kiyaote/g, 'kaiyote') // seamless typo tolerance for Hiatus Kiyaote / Kaiyote
-        .trim();
-
-    const q = normalize(artistSearchQuery);
-    return allAvailableArtists
-      .filter((a) => {
-        const normName = normalize(a.artistName);
-        const normCode = normalize(a.artistCode);
-        return normName.includes(q) || normCode.includes(q);
+  // Fetch default featured preview once on mount to show when query is empty or < 3 chars
+  useEffect(() => {
+    let isCancelled = false;
+    searchCatalogApi({ limit: 12 })
+      .then((res) => {
+        if (!isCancelled && res.artists && res.artists.length > 0) {
+          const mapped: ArtistItem[] = res.artists.map((a) => ({
+            artistCode: a.artistCode,
+            artistName: a.artistName,
+            photoUrl: a.photoUrl,
+            featuredPosterUrl: a.featuredPosterUrl,
+            showsCount: a.showsCount,
+            updatedAt: Date.now(),
+          }));
+          setDefaultPreviewArtists(mapped);
+          setCatalogArtists((prev) => (prev.length === 0 ? mapped : prev));
+        }
       })
-      .slice(0, 25);
-  }, [allAvailableArtists, artistSearchQuery]);
+      .catch((err) => {
+        console.warn('Erro ao carregar prévia padrão do catálogo:', err);
+      });
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  // 300ms debounced catalog search from protected server API (with in-memory caching)
+  // ONLY fires network search when field has 3 or more characters (q.length >= 3).
+  // Below 3 characters, shows the default featured preview without calling the API.
+  useEffect(() => {
+    const q = artistSearchQuery.trim();
+
+    // If query has fewer than 3 characters, DO NOT call search API!
+    // Restore the default preview without making any network request.
+    if (q.length < 3) {
+      setIsSearchingCatalog(false);
+      if (defaultPreviewArtists.length > 0) {
+        setCatalogArtists(defaultPreviewArtists);
+      }
+      return;
+    }
+
+    let isCancelled = false;
+    const controller = new AbortController();
+
+    setIsSearchingCatalog(true);
+    const handler = setTimeout(async () => {
+      try {
+        const res = await searchCatalogApi(
+          { q, limit: 20 },
+          controller.signal
+        );
+
+        if (!isCancelled) {
+          const mapped: ArtistItem[] = res.artists.map((a) => ({
+            artistCode: a.artistCode,
+            artistName: a.artistName,
+            photoUrl: a.photoUrl,
+            featuredPosterUrl: a.featuredPosterUrl,
+            showsCount: a.showsCount,
+            updatedAt: Date.now(),
+          }));
+          setCatalogArtists(mapped);
+          setIsSearchingCatalog(false);
+        }
+      } catch (err: any) {
+        if (!isCancelled && err.name !== 'AbortError') {
+          console.warn('Erro na busca do catálogo:', err);
+          setIsSearchingCatalog(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(handler);
+      controller.abort();
+    };
+  }, [artistSearchQuery, defaultPreviewArtists]);
+
+  // Filtered artists for autocomplete search combining server API results and local state
+  const filteredArtists = useMemo(() => {
+    const artistMap = new Map<string, ArtistItem>();
+
+    // 1. Add catalog artists returned by the server API
+    catalogArtists.forEach((a) => {
+      const key = normalizeArtistKey(a.artistName);
+      if (key) artistMap.set(key, a);
+    });
+
+    // 2. Also incorporate local artists (from state/admin imports)
+    allAvailableArtists.forEach((a) => {
+      const key = normalizeArtistKey(a.artistName);
+      if (key && !artistMap.has(key)) {
+        if (!artistSearchQuery.trim()) {
+          artistMap.set(key, a);
+        } else {
+          const normQuery = artistSearchQuery.trim().toLowerCase();
+          if (a.artistName.toLowerCase().includes(normQuery)) {
+            artistMap.set(key, a);
+          }
+        }
+      }
+    });
+
+    return Array.from(artistMap.values()).slice(0, 25);
+  }, [catalogArtists, allAvailableArtists, artistSearchQuery]);
 
   const [dbArtistShows, setDbArtistShows] = useState<ShowItem[]>([]);
   const [customPosterUrl, setCustomPosterUrl] = useState<string | null>(null);
@@ -322,10 +412,16 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     };
   }, [selectedArtist]);
 
-  // Shows belonging to the currently selected artist (combining memory, IndexedDB, and sample dataset)
+  // Shows belonging to the currently selected artist (combining server API, memory, and IndexedDB)
   const artistShows = useMemo(() => {
     if (!selectedArtist) return [];
     const normTarget = selectedArtist.artistName.trim().toLowerCase();
+
+    // 1. If server returned shows for this artist, prioritize them
+    if (serverArtistShows.length > 0) {
+      return serverArtistShows;
+    }
+
     const fromMemory = shows.filter(
       (s) =>
         s.artistCode === selectedArtist.artistCode ||
@@ -334,13 +430,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     if (fromMemory.length > 0) return fromMemory;
     if (dbArtistShows.length > 0) return dbArtistShows;
 
-    const sample = generateSampleDataset();
-    return sample.shows.filter(
-      (s) =>
-        s.artistCode === selectedArtist.artistCode ||
-        (normTarget && s.artistName && s.artistName.trim().toLowerCase() === normTarget)
-    );
-  }, [shows, selectedArtist, dbArtistShows]);
+    return [];
+  }, [selectedArtist, serverArtistShows, shows, dbArtistShows]);
 
   // Available states: if artist is selected, states from that artist's shows; otherwise, all states in catalog
   const availableStates = useMemo(() => {
@@ -480,43 +571,54 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     // Automatically trigger "Auto-vincular" without asking the user
     triggerAutoLinkPhoto(artist);
 
-    // Fetch shows from IndexedDB or sample dataset
-    dbService
-      .getShowsByArtist(artist.artistCode, artist.artistName)
-      .then((artistShowsFromDb) => {
-        const targetName = artist.artistName.trim().toLowerCase();
-        let allShows =
-          artistShowsFromDb.length > 0
-            ? artistShowsFromDb
-            : shows.filter(
-                (s) =>
-                  s.artistCode === artist.artistCode ||
-                  (s.artistName && s.artistName.trim().toLowerCase() === targetName)
-              );
+    // Fetch shows for this artist from the protected server API (with in-memory cache)
+    searchCatalogApi({ artist: artist.artistName, limit: 25 })
+      .then((catalogRes) => {
+        let allShows: ShowItem[] = (catalogRes.shows || []).map((s) => ({
+          id: s.id,
+          showCode: s.showCode,
+          artistCode: s.artistCode,
+          artistName: s.artistName,
+          tourName: s.tourName,
+          venue: s.venue,
+          date: s.date,
+          city: s.city,
+          state: s.state,
+          posterUrl: s.posterUrl,
+          photoUrl: s.photoUrl,
+        }));
 
-        if (allShows.length === 0) {
-          const sample = generateSampleDataset();
-          const sampleShows = sample.shows.filter(
+        // Also check if any local shows exist in state for this artist
+        if (shows && shows.length > 0) {
+          const targetName = artist.artistName.trim().toLowerCase();
+          const localMatches = shows.filter(
             (s) =>
               s.artistCode === artist.artistCode ||
               (s.artistName && s.artistName.trim().toLowerCase() === targetName)
           );
-          if (sampleShows.length > 0) {
-            allShows = sampleShows;
-            dbService.saveShowsBatch(sampleShows, false).catch(() => {});
+          if (localMatches.length > 0) {
+            const existingCodes = new Set(allShows.map((s) => s.showCode));
+            localMatches.forEach((ls) => {
+              if (!existingCodes.has(ls.showCode)) {
+                allShows.push(ls);
+              }
+            });
           }
         }
 
+        setServerArtistShows(allShows);
         setDbArtistShows(allShows);
 
         if (allShows.length > 0) {
           const firstShow = allShows[0];
           // If only 1 show, lock to it; if multiple shows, keep city/venue/date open so user can pick other filters!
           if (allShows.length === 1) {
+            setSelectedState(normalizeStateUF(firstShow.state));
             setSelectedCity(firstShow.city);
             setSelectedVenue(firstShow.venue);
             setSelectedDate(firstShow.date);
           } else {
+            setSelectedState('');
             setSelectedCity('');
             setSelectedVenue('');
             setSelectedDate('');
@@ -551,10 +653,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         if (showsForThisArtist.length > 0) {
           const firstShow = showsForThisArtist[0];
           if (showsForThisArtist.length === 1) {
+            setSelectedState(normalizeStateUF(firstShow.state));
             setSelectedCity(firstShow.city);
             setSelectedVenue(firstShow.venue);
             setSelectedDate(firstShow.date);
           } else {
+            setSelectedState('');
             setSelectedCity('');
             setSelectedVenue('');
             setSelectedDate('');
@@ -839,7 +943,11 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               />
               <Search className="w-4 h-4 text-[#8A8577] absolute left-3 top-3 pointer-events-none" />
 
-              {artistSearchQuery && (
+              {isSearchingCatalog ? (
+                <div className="absolute right-3 top-3 pointer-events-none">
+                  <RefreshCw className="w-3.5 h-3.5 text-[#2FB8BA] animate-spin" />
+                </div>
+              ) : artistSearchQuery ? (
                 <button
                   onClick={() => {
                     setArtistSearchQuery('');
@@ -855,7 +963,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
-              )}
+              ) : null}
             </div>
 
             {/* Dropdown list of matching artists */}
@@ -866,7 +974,36 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                   onClick={() => setIsSearchOpen(false)}
                 />
                 <div className="absolute z-30 top-full mt-1.5 inset-x-0 bg-[#171226] border border-[#282141] rounded-2xl shadow-2xl max-h-64 overflow-y-auto divide-y divide-[#282141]">
-                  {filteredArtists.length === 0 ? (
+                  {artistSearchQuery.trim().length > 0 && artistSearchQuery.trim().length < 3 && (
+                    <div className="px-3.5 py-2 bg-[#201838] border-b border-[#282141] flex items-center justify-between text-[11px] text-[#A69F8D]">
+                      <span>Digite pelo menos 3 caracteres para buscar</span>
+                      <span className="text-[10px] text-[#2FB8BA] font-semibold uppercase tracking-wider">
+                        Destaques
+                      </span>
+                    </div>
+                  )}
+                  {isSearchingCatalog ? (
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center gap-3 animate-pulse">
+                        <div className="w-8 h-8 rounded-full bg-[#282141]" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-[#282141] rounded w-3/4" />
+                          <div className="h-2.5 bg-[#282141] rounded w-1/2" />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 animate-pulse">
+                        <div className="w-8 h-8 rounded-full bg-[#282141]" />
+                        <div className="flex-1 space-y-1.5">
+                          <div className="h-3 bg-[#282141] rounded w-2/3" />
+                          <div className="h-2.5 bg-[#282141] rounded w-1/3" />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-[#2FB8BA]">
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Buscando no catálogo seguro...</span>
+                      </div>
+                    </div>
+                  ) : filteredArtists.length === 0 ? (
                     <div className="p-4 text-center text-xs space-y-2">
                       <p className="text-[#8A8577]">
                         Nenhum artista na base com &quot;{artistSearchQuery}&quot;
