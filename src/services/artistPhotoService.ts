@@ -103,7 +103,7 @@ export async function searchArtistMedia(artistName: string): Promise<ArtistMedia
     // API failed or running in client-only preview - continue to client fallback
   }
 
-  // 2. Client-side Fallback: iTunes Direct Search
+  // 2. Client-side Fallback: iTunes & Wikipedia Direct Search
   try {
     const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(cleanName)}&entity=album&limit=6`;
     const res = await fetch(itunesUrl);

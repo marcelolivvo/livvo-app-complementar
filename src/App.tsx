@@ -18,6 +18,7 @@ import { PhotoManager } from './components/PhotoManager';
 import { ShowsTable } from './components/ShowsTable';
 import { CsvUploaderModal } from './components/CsvUploaderModal';
 import { BatchExportModal } from './components/BatchExportModal';
+import { consolidateArtists, normalizeArtistKey } from './utils/artistUtils';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('studio');
@@ -26,6 +27,7 @@ export default function App() {
   const [photosMap, setPhotosMap] = useState<Map<string, string>>(new Map());
   const [selectedShow, setSelectedShow] = useState<ShowItem | null>(null);
   const [preselectedArtist, setPreselectedArtist] = useState<ArtistItem | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(true); // Admin permission toggle for CSV import
 
   // Modals
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
@@ -99,10 +101,6 @@ export default function App() {
           await dbService.batchUpdateArtistPhotos(sample.photosMap);
         }
 
-        setShows(dbShows);
-        setArtists(dbArtists);
-        setSelectedShow(dbShows[0]);
-
         // Build photos map in one fast batch
         const storedPhotos = await dbService.getAllPhotos();
         const pMap = new Map<string, string>(storedPhotos);
@@ -112,23 +110,30 @@ export default function App() {
           pMap.set(key, url);
         });
 
-        // Ensure every artist in dbArtists and sample has photo mapped by code AND normalized name
-        for (const artist of [...dbArtists, ...sample.artists]) {
-          const normName = artist.artistName.trim().toLowerCase();
-          const photo = artist.photoUrl || pMap.get(artist.artistCode) || pMap.get(normName);
+        // Consolidate artists strictly by unique artist name
+        const consolidated = consolidateArtists(dbArtists, dbShows, pMap);
+
+        setShows(dbShows);
+        setArtists(consolidated);
+        setSelectedShow(dbShows[0]);
+
+        // Ensure every artist in consolidated list has photo mapped by code AND normalized name
+        for (const artist of consolidated) {
+          const normName = normalizeArtistKey(artist.artistName);
+          const photo = artist.photoUrl || pMap.get(artist.artistCode) || (normName ? pMap.get(normName) : undefined);
           if (photo) {
             pMap.set(artist.artistCode, photo);
-            pMap.set(normName, photo);
+            if (normName) pMap.set(normName, photo);
           }
         }
 
         // Map show artistCodes to photo if matching artist name has a photo
         for (const show of dbShows) {
-          const normName = show.artistName.trim().toLowerCase();
-          const photo = pMap.get(normName) || pMap.get(show.artistCode);
+          const normName = normalizeArtistKey(show.artistName);
+          const photo = (normName ? pMap.get(normName) : undefined) || pMap.get(show.artistCode);
           if (photo) {
             pMap.set(show.artistCode, photo);
-            pMap.set(normName, photo);
+            if (normName) pMap.set(normName, photo);
           }
         }
 
@@ -362,8 +367,9 @@ export default function App() {
 
   // On import CSV complete
   const handleImportComplete = (newShows: ShowItem[], newArtists: ArtistItem[]) => {
+    const consolidated = consolidateArtists(newArtists, newShows);
     setShows(newShows);
-    setArtists(newArtists);
+    setArtists(consolidated);
     setPhotosMap(new Map());
     if (newShows.length > 0) {
       setSelectedShow(newShows[0]);
@@ -390,6 +396,8 @@ export default function App() {
         onOpenCsvModal={() => setIsCsvModalOpen(true)}
         onLoadSample={handleLoadSample}
         onClearAll={handleClearAll}
+        isAdmin={isAdmin}
+        onToggleAdmin={() => setIsAdmin((prev) => !prev)}
       />
 
       {/* Main Content Area */}
@@ -458,13 +466,24 @@ export default function App() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
-              <button
-                onClick={() => setIsCsvModalOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
-              >
-                <UploadCloud className="w-5 h-5" />
-                <span>Importar Planilha CSV</span>
-              </button>
+              {isAdmin ? (
+                <button
+                  onClick={() => setIsCsvModalOpen(true)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                >
+                  <UploadCloud className="w-5 h-5" />
+                  <span>Importar Planilha CSV</span>
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-slate-800/40 text-slate-500 border border-slate-800 cursor-not-allowed"
+                  title="Importação restrita a administradores"
+                >
+                  <UploadCloud className="w-5 h-5 text-slate-600" />
+                  <span>Importar CSV (Apenas Admin)</span>
+                </button>
+              )}
 
               <button
                 onClick={handleLoadSample}

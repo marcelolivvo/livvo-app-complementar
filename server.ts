@@ -8,7 +8,7 @@ async function startServer() {
 
   app.use(express.json());
 
-  // API Route: Search Artist Photos & Posters via Deezer & iTunes (No CORS, No Script Error)
+  // API Route: Search Artist Photos & Posters via Deezer, iTunes, Wikimedia Commons & Wikipedia (Free & Open APIs)
   app.get('/api/artist-search', async (req, res) => {
     const query = String(req.query.q || '').trim();
     if (!query) {
@@ -31,28 +31,97 @@ async function startServer() {
         .then((r) => (r.ok ? r.json() : { results: [] }))
         .catch(() => ({ results: [] }));
 
-      const [artistData, albumData, itunesData] = await Promise.all([
+      // 4. Search on Wikipedia / Wikimedia Commons (Free public domain encyclopedia photos)
+      const wikiPromise = fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=3&prop=pageimages&format=json&pithumbsize=1000`)
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+
+      // 5. Search on pt.wikipedia.org for Brazilian artists
+      const ptWikiPromise = fetch(`https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=3&prop=pageimages&format=json&pithumbsize=1000`)
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+
+      const [artistData, albumData, itunesData, wikiData, ptWikiData] = await Promise.all([
         artistPromise,
         albumPromise,
         itunesPromise,
+        wikiPromise,
+        ptWikiPromise,
       ]);
 
-      const artists = (artistData.data || []).map((a: any) => ({
-        id: a.id,
-        name: a.name,
-        photoUrl: a.picture_xl || a.picture_big || a.picture_medium,
-        thumbnailUrl: a.picture_medium || a.picture_small,
-        source: 'deezer',
-      }));
+      const normQuery = query.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 
-      const posters = (albumData.data || []).map((alb: any) => ({
-        id: alb.id,
-        title: alb.title,
-        artistName: alb.artist?.name,
-        posterUrl: alb.cover_xl || alb.cover_big || alb.cover_medium,
-        thumbnailUrl: alb.cover_medium,
-        source: 'deezer',
-      }));
+      const artists: any[] = [];
+      const posters: any[] = [];
+
+      // Process Deezer artists - check name similarity to prevent mismatched artist photos
+      (artistData.data || []).forEach((a: any) => {
+        const photoUrl = a.picture_xl || a.picture_big || a.picture_medium;
+        if (!photoUrl || photoUrl.includes('/artist//')) return; // skip placeholder/empty images
+
+        const normArtistName = (a.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const isCloseMatch = normArtistName === normQuery || normArtistName.includes(normQuery) || normQuery.includes(normArtistName);
+
+        // Put close matches first
+        const item = {
+          id: `dz-${a.id}`,
+          name: a.name,
+          photoUrl,
+          thumbnailUrl: a.picture_medium || a.picture_small,
+          source: 'deezer',
+          isExactMatch: isCloseMatch,
+        };
+
+        if (isCloseMatch) {
+          artists.unshift(item);
+        } else {
+          artists.push(item);
+        }
+      });
+
+      // Process Wikipedia & Wikimedia Commons images (Free licenses)
+      const wikiPages = {
+        ...(wikiData?.query?.pages || {}),
+        ...(ptWikiData?.query?.pages || {}),
+      };
+
+      Object.values(wikiPages).forEach((page: any) => {
+        if (page?.thumbnail?.source) {
+          const title = page.title || query;
+          const normTitle = title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+          const isCloseMatch = normTitle === normQuery || normTitle.includes(normQuery) || normQuery.includes(normTitle);
+
+          const wikiItem = {
+            id: `wiki-${page.pageid || Math.random()}`,
+            name: title,
+            photoUrl: page.thumbnail.source,
+            thumbnailUrl: page.thumbnail.source,
+            source: 'wikimedia',
+            isExactMatch: isCloseMatch,
+          };
+
+          if (isCloseMatch) {
+            artists.splice(1, 0, wikiItem);
+          } else {
+            artists.push(wikiItem);
+          }
+        }
+      });
+
+      // Process Deezer album / tour posters
+      (albumData.data || []).forEach((alb: any) => {
+        const posterUrl = alb.cover_xl || alb.cover_big || alb.cover_medium;
+        if (posterUrl && !posterUrl.includes('/cover//')) {
+          posters.push({
+            id: `dz-alb-${alb.id}`,
+            title: alb.title,
+            artistName: alb.artist?.name,
+            posterUrl,
+            thumbnailUrl: alb.cover_medium,
+            source: 'deezer',
+          });
+        }
+      });
 
       // Merge itunes high-res posters
       if (itunesData.results && itunesData.results.length > 0) {
@@ -70,10 +139,15 @@ async function startServer() {
         }
       }
 
+      // Best photo calculation: prioritize exact matches
+      const exactArtist = artists.find((a) => a.isExactMatch);
+      const bestPhoto = exactArtist?.photoUrl || artists[0]?.photoUrl || posters[0]?.posterUrl || null;
+      const bestPoster = posters[0]?.posterUrl || null;
+
       return res.json({
         query,
-        bestPhotoUrl: artists[0]?.photoUrl || posters[0]?.posterUrl || null,
-        bestPosterUrl: posters[0]?.posterUrl || null,
+        bestPhotoUrl: bestPhoto,
+        bestPosterUrl: bestPoster,
         artists,
         posters,
       });

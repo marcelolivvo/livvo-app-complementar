@@ -30,9 +30,24 @@ export function findMatchingArtist(
   }
 
   // 2. Check normalized name match
+  // Strict matching: exact match OR full word boundary match to prevent partial collisions
+  // (e.g. preventing 'Ney' matching 'Holocausto' or short names matching randomly)
   for (const artist of artists) {
     const normName = normalizeKey(artist.artistName);
-    if (normName && (normFile === normName || normFile.includes(normName) || normName.includes(normFile))) {
+    if (!normName) continue;
+
+    // Exact match
+    if (normFile === normName) {
+      return { artist, matchedBy: 'name' };
+    }
+
+    // Name contained in file, but ensure artist name is long enough (>= 4 chars) to prevent substring collision
+    if (normName.length >= 4 && normFile.includes(normName)) {
+      return { artist, matchedBy: 'name' };
+    }
+
+    // File contained in artist name only if file name is sufficiently long (>= 5 chars)
+    if (normFile.length >= 5 && normName.includes(normFile)) {
       return { artist, matchedBy: 'name' };
     }
   }

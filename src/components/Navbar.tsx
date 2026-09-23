@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Layers,
   Image as ImageIcon,
@@ -6,9 +6,11 @@ import {
   UploadCloud,
   Sparkles,
   Trash2,
+  ShieldCheck,
+  ShieldAlert,
+  Lock,
 } from 'lucide-react';
 import { LivvoLogo } from './LivvoLogo';
-import { GlobalSearchBar } from './GlobalSearchBar';
 import { ShowItem, ArtistItem } from '../types';
 
 export type ActiveTab = 'studio' | 'photos' | 'shows';
@@ -27,14 +29,14 @@ interface NavbarProps {
   onOpenCsvModal: () => void;
   onLoadSample: () => void;
   onClearAll: () => void;
+  isAdmin?: boolean;
+  onToggleAdmin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   setActiveTab,
   showsCount,
-  artistsCount,
-  photosCount,
   shows,
   artists,
   photosMap,
@@ -43,12 +45,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCsvModal,
   onLoadSample,
   onClearAll,
+  isAdmin = true,
+  onToggleAdmin,
 }) => {
+  const [showAdminTooltip, setShowAdminTooltip] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 bg-[#100C1F]/95 backdrop-blur-xl border-b border-[#282141]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20 gap-3 sm:gap-4">
-          {/* Logo & Brand */}
+          {/* Logo & Brand - Clean branding without global search bar */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="flex items-center hover:scale-105 transition-transform">
               <LivvoLogo className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-lg" />
@@ -65,19 +71,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             </div>
           </div>
-
-          {/* Global Search Bar (Desktop) */}
-          {showsCount > 0 && (
-            <div className="flex-1 max-w-sm lg:max-w-md mx-2 hidden md:block">
-              <GlobalSearchBar
-                shows={shows}
-                artists={artists}
-                photosMap={photosMap}
-                onSelectArtist={onSelectArtist}
-                onSelectShow={onSelectShow}
-              />
-            </div>
-          )}
 
           {/* Navigation Tabs */}
           <nav className="flex items-center gap-1 bg-[#171226] p-1 rounded-2xl border border-[#282141] shrink-0">
@@ -121,16 +114,63 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </nav>
 
-          {/* Action Buttons */}
+          {/* Action Buttons & Profile Controls */}
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              id="open-csv-modal-btn"
-              onClick={onOpenCsvModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 text-[#4FDCDE] border border-[#2FB8BA]/30 transition-all hover:border-[#4FDCDE]"
-            >
-              <UploadCloud className="w-4 h-4" />
-              <span className="hidden md:inline">Importar CSV</span>
-            </button>
+            {/* Admin Profile Indicator & Switcher */}
+            {onToggleAdmin && (
+              <button
+                onClick={onToggleAdmin}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all ${
+                  isAdmin
+                    ? 'bg-[#2FB8BA]/10 text-[#4FDCDE] border-[#2FB8BA]/30 hover:bg-[#2FB8BA]/20'
+                    : 'bg-[#1E1833] text-[#8A8577] border-[#282141] hover:text-[#ECE5D1]'
+                }`}
+                title={isAdmin ? 'Perfil: Administrador (acesso total habilitado)' : 'Perfil: Usuário Comum (modo restrito)'}
+              >
+                {isAdmin ? (
+                  <>
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#2FB8BA]" />
+                    <span className="hidden sm:inline">Admin</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert className="w-3.5 h-3.5 text-[#8A8577]" />
+                    <span className="hidden sm:inline">Padrão</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Importar CSV - Strictly active only for Administrators */}
+            {isAdmin ? (
+              <button
+                id="open-csv-modal-btn"
+                onClick={onOpenCsvModal}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 text-[#4FDCDE] border border-[#2FB8BA]/30 transition-all hover:border-[#4FDCDE]"
+                title="Importar catálogo de shows em lote (Apenas Administradores)"
+              >
+                <UploadCloud className="w-4 h-4" />
+                <span className="hidden md:inline">Importar CSV</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  disabled
+                  onMouseEnter={() => setShowAdminTooltip(true)}
+                  onMouseLeave={() => setShowAdminTooltip(false)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#1E1833]/40 text-[#8A8577] border border-[#282141]/50 cursor-not-allowed opacity-60"
+                  title="Importação restrita a perfis de administradores"
+                >
+                  <Lock className="w-3.5 h-3.5 text-[#8A8577]" />
+                  <span className="hidden md:inline">Importar CSV</span>
+                </button>
+                {showAdminTooltip && (
+                  <div className="absolute right-0 top-full mt-2 w-48 p-2 rounded-xl bg-[#100C1F] border border-[#282141] text-[11px] text-[#B3AE9F] shadow-2xl z-50 animate-in fade-in">
+                    Disponível apenas para perfis de administradores.
+                  </div>
+                )}
+              </div>
+            )}
 
             {showsCount === 0 && (
               <button
@@ -144,7 +184,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {showsCount > 0 && (
+            {showsCount > 0 && isAdmin && (
               <button
                 onClick={onClearAll}
                 className="p-2 rounded-xl text-[#8A8577] hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -155,20 +195,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
         </div>
-
-        {/* Global Search Bar (Mobile) */}
-        {showsCount > 0 && (
-          <div className="pb-3 md:hidden">
-            <GlobalSearchBar
-              shows={shows}
-              artists={artists}
-              photosMap={photosMap}
-              onSelectArtist={onSelectArtist}
-              onSelectShow={onSelectShow}
-            />
-          </div>
-        )}
       </div>
     </header>
   );
 };
+

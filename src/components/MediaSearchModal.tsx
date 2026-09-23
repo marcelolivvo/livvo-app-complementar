@@ -122,7 +122,8 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
               </h2>
               <p className="text-xs text-[#B3AE9F]">
                 {artist ? `Artista: ${artist.artistName} • ` : ''}
-                {selectedShow ? `Show: ${selectedShow.city} (${selectedShow.state})` : 'Escolha uma mídia oficial'}
+                {selectedShow ? `Show: ${selectedShow.city} (${selectedShow.state}) • ` : ''}
+                Bancos livres: Deezer, Wikimedia Commons & Apple
               </p>
             </div>
           </div>

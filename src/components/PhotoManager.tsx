@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Upload,
   Image as ImageIcon,
@@ -19,6 +19,7 @@ import {
 } from '../services/imageMatcher';
 import { autoFetchArtistPhoto } from '../services/artistPhotoService';
 import { MediaSearchModal } from './MediaSearchModal';
+import { consolidateArtists } from '../utils/artistUtils';
 
 interface PhotoManagerProps {
   artists: ArtistItem[];
@@ -62,14 +63,19 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
   const singleFileInputRef = useRef<HTMLInputElement>(null);
   const [singleUploadTargetCode, setSingleUploadTargetCode] = useState<string | null>(null);
 
+  // Consolidate artists strictly by unique artist name to eliminate duplicate entries
+  const uniqueArtists = useMemo(() => {
+    return consolidateArtists(artists, undefined, photosMap);
+  }, [artists, photosMap]);
+
   // Stats calculation
-  const totalArtists = artists.length;
-  const artistsWithPhoto = artists.filter((a) => photosMap.has(a.artistCode) || Boolean(a.photoUrl)).length;
+  const totalArtists = uniqueArtists.length;
+  const artistsWithPhoto = uniqueArtists.filter((a) => photosMap.has(a.artistCode) || Boolean(a.photoUrl)).length;
   const artistsWithoutPhoto = totalArtists - artistsWithPhoto;
   const coveragePercent = totalArtists > 0 ? Math.round((artistsWithPhoto / totalArtists) * 100) : 0;
 
   // Filtered artists
-  const filteredArtists = artists.filter((a) => {
+  const filteredArtists = uniqueArtists.filter((a) => {
     const hasPhoto = photosMap.has(a.artistCode) || Boolean(a.photoUrl);
     if (filterMode === 'with-photo' && !hasPhoto) return false;
     if (filterMode === 'without-photo' && hasPhoto) return false;
@@ -151,7 +157,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
 
   // Batch Auto Fetch from Deezer / Web for all artists without photo
   const handleBatchAutoFetchPhotos = async () => {
-    const missing = artists.filter((a) => !photosMap.has(a.artistCode) && !a.photoUrl);
+    const missing = uniqueArtists.filter((a) => !photosMap.has(a.artistCode) && !a.photoUrl);
     if (missing.length === 0) return;
 
     setIsBatchAutoFetching(true);

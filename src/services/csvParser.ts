@@ -1,6 +1,7 @@
 import Papa from 'papaparse';
 import { ColumnMapping, ShowItem, ArtistItem } from '../types';
 import { normalizeStateUF } from '../utils/stateUtils';
+import { normalizeArtistKey } from '../utils/artistUtils';
 
 export function detectColumnMapping(headers: string[]): ColumnMapping {
   const normalize = (h: string) =>
@@ -159,7 +160,7 @@ export async function parseAndProcessCsv(options: ParseCsvOptions): Promise<{
           currentChunk.push(showItem);
 
           // Aggregate artists uniquely by normalized artist name to avoid collisions
-          const artistKey = (showItem.artistName || finalArtistCode).trim().toLowerCase();
+          const artistKey = normalizeArtistKey(showItem.artistName) || finalArtistCode.toLowerCase();
           const existing = artistsMap.get(artistKey);
           if (existing) {
             existing.showsCount += 1;
@@ -169,6 +170,10 @@ export async function parseAndProcessCsv(options: ParseCsvOptions): Promise<{
             }
             if (!existing.featuredPosterUrl && posterUrl) {
               existing.featuredPosterUrl = posterUrl;
+            }
+            // Keep clean code if existing had fallback
+            if (cleanRawCode && existing.artistCode.startsWith('ART-') && existing.artistCode !== cleanRawCode) {
+              existing.artistCode = cleanRawCode;
             }
           } else {
             artistsMap.set(artistKey, {

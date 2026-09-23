@@ -34,6 +34,7 @@ import { MediaSearchModal } from './MediaSearchModal';
 import { ShareModal } from './ShareModal';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { normalizeStateUF, isSameState } from '../utils/stateUtils';
+import { normalizeArtistKey, isDateString } from '../utils/artistUtils';
 import { dbService } from '../services/db';
 import { SAMPLE_ARTISTS_DATA, generateSampleDataset } from '../services/sampleData';
 
@@ -194,22 +195,15 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Master list of artists combining runtime state, imported shows, and sample catalog.
   // CRITICAL: Deduplicates strictly by normalized artistName so date strings mistakenly parsed as codes
-  // do not duplicate artist entries (e.g., Zeca Pagodinho with multiple show dates).
+  // do not duplicate artist entries (e.g., Ney Matogrosso or Zeca Pagodinho with multiple show dates).
   const allAvailableArtists = useMemo(() => {
     const artistMap = new Map<string, ArtistItem>();
-
-    const normalizeKey = (name: string) =>
-      name
-        .trim()
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '');
 
     // 1. Process all artists from state/IndexedDB
     artists.forEach((a) => {
       if (!a.artistName) return;
-      const key = normalizeKey(a.artistName);
-      const isCodeDate = isDateValue(a.artistCode || '');
+      const key = normalizeArtistKey(a.artistName);
+      const isCodeDate = isDateString(a.artistCode || '');
       const cleanCode = !isCodeDate && a.artistCode ? a.artistCode : '';
       const count = Number(a.showsCount) || 1;
 
@@ -226,7 +220,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       } else {
         const item = artistMap.get(key)!;
         item.showsCount += count;
-        if (cleanCode && (!item.artistCode || isDateValue(item.artistCode) || item.artistCode.startsWith('ART-'))) {
+        if (cleanCode && (!item.artistCode || isDateString(item.artistCode) || item.artistCode.startsWith('ART-'))) {
           item.artistCode = cleanCode;
         }
         if (!item.photoUrl && a.photoUrl) {
@@ -244,7 +238,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       const showCountsByName = new Map<string, number>();
       shows.forEach((s) => {
         if (!s.artistName) return;
-        const k = normalizeKey(s.artistName);
+        const k = normalizeArtistKey(s.artistName);
         showCountsByName.set(k, (showCountsByName.get(k) || 0) + 1);
       });
 
@@ -258,7 +252,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
     // 3. Guarantee all sample artists are available (including Hiatus Kaiyote)
     SAMPLE_ARTISTS_DATA.forEach((s) => {
-      const key = normalizeKey(s.name);
+      const key = normalizeArtistKey(s.name);
       if (!artistMap.has(key)) {
         artistMap.set(key, {
           artistCode: s.code,
