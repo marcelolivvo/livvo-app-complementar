@@ -1,0 +1,6 @@
+{
+  "name": "Livvo Show Card",
+  "description": "Crie sua lembrança oficial de shows com fotos de palco, pôsteres de turnê e catálogo com mais de 50 artistas nacionais e internacionais.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

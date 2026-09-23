@@ -1,0 +1,86 @@
+<svg viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Vibrant Livvo Cyan / Turquoise Gradient -->
+    <linearGradient id="livvoBg" x1="60" y1="20" x2="450" y2="490" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#55F5EF" />
+      <stop offset="40%" stopColor="#3EE8E2" />
+      <stop offset="100%" stopColor="#22D5CE" />
+    </linearGradient>
+
+    <!-- Deep Ambient Glow beneath 3D Block -->
+    <filter id="livvoDepth" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="10" floodColor="#0F787C" floodOpacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Squircle / Rounded Square App Icon Box with transparent exterior -->
+  <rect x="0" y="0" width="512" height="512" rx="124" fill="url(#livvoBg)" />
+
+  <!-- 3D Extrusion Shadow (Solid Black + Connective Facets) -->
+  <g filter="url(#livvoDepth)">
+    <!-- Base 3D Solid Black Extrusion -->
+    <g fill="#000000">
+      <!-- L Shadow -->
+      <path d="M 52 208 L 84 208 L 84 266 L 148 266 L 148 298 L 52 298 Z" transform="translate(4, 22)" />
+      <!-- I Shadow -->
+      <path d="M 135 208 L 172 208 L 172 298 L 135 298 Z" transform="translate(4, 22)" />
+      <!-- V1 Shadow -->
+      <path d="M 175 208 L 208 208 L 232 272 L 256 208 L 289 208 L 250 298 L 214 298 Z" transform="translate(4, 22)" />
+      <!-- V2 Shadow -->
+      <path d="M 285 208 L 318 208 L 342 272 L 366 208 L 399 208 L 360 298 L 324 298 Z" transform="translate(4, 22)" />
+      <!-- O Shadow -->
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M 436 202 C 468 202 492 224 492 254 C 492 284 468 306 436 306 C 404 306 380 284 380 254 C 380 224 404 202 436 202 Z M 436 230 C 423 230 414 240 414 254 C 414 268 423 278 436 278 C 449 278 458 268 458 254 C 458 240 449 230 436 230 Z"
+        transform="translate(8, 22)"
+      />
+
+      <!-- 3D Connection Facets (Solid Black Wall between front face and back shadow) -->
+      <!-- L facets -->
+      <polygon points="52,298 56,320 152,320 148,298" />
+      <polygon points="148,266 152,288 152,320 148,298" />
+      <polygon points="84,208 88,230 88,266 84,266" />
+      <!-- I facets -->
+      <polygon points="135,298 139,320 176,320 172,298" />
+      <polygon points="172,208 176,230 176,320 172,298" />
+      <!-- V1 facets -->
+      <polygon points="214,298 218,320 254,320 250,298" />
+      <polygon points="289,208 293,230 254,320 250,298" />
+      <!-- V2 facets -->
+      <polygon points="324,298 328,320 364,320 360,298" />
+      <polygon points="399,208 403,230 364,320 360,298" />
+      <!-- O facets (curved 3D block) -->
+      <path d="M 404 290 Q 444 328 472 290 L 480 312 Q 448 344 412 312 Z" />
+      <path d="M 488 234 L 498 256 Q 500 286 476 312 L 468 290 Q 488 268 488 234 Z" />
+    </g>
+
+    <!-- Front Faces (Off-white / Ivory Cream #F5F1E8 with Bold Black Outline) -->
+    <g
+      fill="#F5F1E8"
+      stroke="#000000"
+      stroke-width="7.5"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    >
+      <!-- L -->
+      <path d="M 52 208 L 84 208 L 84 266 L 148 266 L 148 298 L 52 298 Z" />
+
+      <!-- I -->
+      <path d="M 135 208 L 172 208 L 172 298 L 135 298 Z" />
+
+      <!-- First V -->
+      <path d="M 175 208 L 208 208 L 232 272 L 256 208 L 289 208 L 250 298 L 214 298 Z" />
+
+      <!-- Second V -->
+      <path d="M 285 208 L 318 208 L 342 272 L 366 208 L 399 208 L 360 298 L 324 298 Z" />
+
+      <!-- O (tilted oval with circular counter hole) -->
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M 436 202 C 468 202 492 224 492 254 C 492 284 468 306 436 306 C 404 306 380 284 380 254 C 380 224 404 202 436 202 Z M 436 230 C 423 230 414 240 414 254 C 414 268 423 278 436 278 C 449 278 458 268 458 254 C 458 240 449 230 436 230 Z"
+      />
+    </g>
+  </g>
+</svg>
