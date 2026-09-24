@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import Papa from 'papaparse';
+import { buildCatalogIndex, CompactShowRow, CompactArtistRow, CatalogIndexData } from './scripts/build-catalog';
 
 export interface CatalogShow {
   id: string;
@@ -12,8 +12,10 @@ export interface CatalogShow {
   date: string;
   city: string;
   state: string;
+  country?: string;
   posterUrl?: string;
   photoUrl?: string;
+  setlistUrl?: string;
 }
 
 export interface CatalogArtist {
@@ -36,13 +38,24 @@ export interface CatalogSearchResult {
   info?: string;
 }
 
-// In-memory singletons populated once at startup
-let catalogShows: CatalogShow[] = [];
+// In-memory data store loaded once at server startup
+let catalogRawShows: CompactShowRow[] = [];
 let catalogArtists: CatalogArtist[] = [];
 let isCatalogLoaded = false;
+let catalogMetadata: CatalogIndexData['metadata'] | null = null;
 
-// Canonical verified artist portraits for high fidelity
+// Canonical verified artist portraits for high-profile artists
 const CANONICAL_PHOTOS: Record<string, string> = {
+  anitta: 'https://cdn-images.dzcdn.net/images/artist/e1a33054b719a936f00dc2050f3c90a9/1000x1000-000000-80-0-0.jpg',
+  ludmilla: 'https://cdn-images.dzcdn.net/images/artist/99d3d3733075c3db11a37c9a6feecce2/1000x1000-000000-80-0-0.jpg',
+  luisasonza: 'https://cdn-images.dzcdn.net/images/artist/e57e035caeca80b70ebe378662a36aed/1000x1000-000000-80-0-0.jpg',
+  jao: 'https://cdn-images.dzcdn.net/images/artist/f1997d020d2979e2c48ea92a95e72d24/1000x1000-000000-80-0-0.jpg',
+  gusttavolima: 'https://cdn-images.dzcdn.net/images/artist/0954d544bbd4183580375545145decd7/1000x1000-000000-80-0-0.jpg',
+  jorgemateus: 'https://cdn-images.dzcdn.net/images/artist/46bf72b87250439262cc168d8fdcd240/1000x1000-000000-80-0-0.jpg',
+  jorgeemateus: 'https://cdn-images.dzcdn.net/images/artist/46bf72b87250439262cc168d8fdcd240/1000x1000-000000-80-0-0.jpg',
+  henriquejuliano: 'https://cdn-images.dzcdn.net/images/artist/19eb92f69ae705d9c19356616053ea6a/1000x1000-000000-80-0-0.jpg',
+  henriqueejuliano: 'https://cdn-images.dzcdn.net/images/artist/19eb92f69ae705d9c19356616053ea6a/1000x1000-000000-80-0-0.jpg',
+  anacastela: 'https://cdn-images.dzcdn.net/images/artist/e13f4f69904321c7fae98f0694aa2801/1000x1000-000000-80-0-0.jpg',
   charliebrownjr: 'https://cdn-images.dzcdn.net/images/artist/1a2e562dde23cdbd9abea4bae13eb4fc/1000x1000-000000-80-0-0.jpg',
   charliebrownjunior: 'https://cdn-images.dzcdn.net/images/artist/1a2e562dde23cdbd9abea4bae13eb4fc/1000x1000-000000-80-0-0.jpg',
   raimundos: 'https://cdn-images.dzcdn.net/images/artist/5c751567df18d06962a6107f68761bde/1000x1000-000000-80-0-0.jpg',
@@ -62,93 +75,51 @@ function normalizeText(text: string): string {
     .trim();
 }
 
-function normalizeKey(name: string): string {
-  return normalizeText(name).replace(/[^a-z0-9]/g, '');
+function normalizeKey(text: string): string {
+  return normalizeText(text).replace(/[^a-z0-9]/g, '');
 }
 
 /**
- * Loads and parses the private server CSV once, caching everything in memory
+ * Loads the pre-compiled shows-index.json once at server startup.
+ * If shows-index.json does not exist, triggers buildCatalogIndex() to generate it.
  */
 export function initCatalog(): void {
   if (isCatalogLoaded) return;
 
-  const csvPath = path.join(process.cwd(), 'data', 'shows.csv');
-  if (!fs.existsSync(csvPath)) {
-    console.warn(`[Catalog] Arquivo CSV não encontrado em: ${csvPath}`);
-    return;
-  }
+  const indexPath = path.join(process.cwd(), 'data', 'shows-index.json');
 
   try {
-    const rawContent = fs.readFileSync(csvPath, 'utf-8');
-    const parsed = Papa.parse<Record<string, string>>(rawContent, {
-      header: true,
-      skipEmptyLines: 'greedy',
-    });
+    let indexData: CatalogIndexData;
 
-    const shows: CatalogShow[] = [];
-    const artistsMap = new Map<string, CatalogArtist>();
-
-    let rowIdx = 0;
-    for (const row of parsed.data) {
-      rowIdx++;
-      const showCode = String(row['codigo_show'] || row['codigoshow'] || '').trim();
-      const artistCode = String(row['codigo_artista'] || row['codartista'] || '').trim();
-      const artistName = String(row['nome_artista'] || row['artista'] || '').trim();
-      const tourName = String(row['turne'] || row['tour'] || '').trim();
-      const venue = String(row['local'] || row['venue'] || '').trim();
-      const date = String(row['data'] || row['date'] || '').trim();
-      const city = String(row['cidade'] || row['city'] || '').trim();
-      const state = String(row['estado'] || row['uf'] || '').trim();
-      let photoUrl = String(row['foto_url'] || row['fotourl'] || '').trim();
-      const posterUrl = String(row['poster_url'] || row['posterurl'] || '').trim();
-
-      if (!artistName && !artistCode && !showCode) continue;
-
-      const normArtist = normalizeKey(artistName);
-      if (CANONICAL_PHOTOS[normArtist]) {
-        photoUrl = CANONICAL_PHOTOS[normArtist];
-      }
-
-      const showItem: CatalogShow = {
-        id: `show_${rowIdx}_${showCode || 'item'}`,
-        showCode: showCode || `SHW-${rowIdx}`,
-        artistCode: artistCode || `ART-${rowIdx}`,
-        artistName: artistName || 'Artista Desconhecido',
-        tourName: tourName || undefined,
-        venue: venue || 'Local a definir',
-        date: date || 'A definir',
-        city: city || 'Brasil',
-        state: state.toUpperCase() || 'BR',
-        posterUrl: posterUrl || undefined,
-        photoUrl: photoUrl || undefined,
-      };
-
-      shows.push(showItem);
-
-      // Aggregate artists
-      const artistKey = normArtist || artistCode.toLowerCase();
-      const existing = artistsMap.get(artistKey);
-      if (existing) {
-        existing.showsCount += 1;
-        if (!existing.photoUrl && photoUrl) existing.photoUrl = photoUrl;
-        if (!existing.featuredPosterUrl && posterUrl) existing.featuredPosterUrl = posterUrl;
-      } else {
-        artistsMap.set(artistKey, {
-          artistCode: artistCode || `ART-${rowIdx}`,
-          artistName: showItem.artistName,
-          photoUrl: photoUrl || undefined,
-          featuredPosterUrl: posterUrl || undefined,
-          showsCount: 1,
-        });
-      }
+    if (!fs.existsSync(indexPath)) {
+      console.warn(`[Catalog] '${indexPath}' não encontrado. Gerando índice agora...`);
+      indexData = buildCatalogIndex();
+    } else {
+      console.log(`[Catalog] Carregando índice em memória de: ${indexPath}`);
+      const raw = fs.readFileSync(indexPath, 'utf-8');
+      indexData = JSON.parse(raw);
     }
 
-    catalogShows = shows;
-    catalogArtists = Array.from(artistsMap.values()).sort((a, b) => b.showsCount - a.showsCount);
+    catalogRawShows = indexData.shows;
+    catalogMetadata = indexData.metadata;
+
+    // Convert artists array to CatalogArtist format
+    catalogArtists = indexData.artists.map((a: CompactArtistRow) => {
+      const normKey = normalizeKey(a[1]);
+      const photo = CANONICAL_PHOTOS[normKey] || a[4] || undefined;
+      return {
+        artistCode: a[0],
+        artistName: a[1],
+        photoUrl: photo,
+        featuredPosterUrl: a[5] || undefined,
+        showsCount: a[3],
+      };
+    });
+
     isCatalogLoaded = true;
-    console.log(`[Catalog] Carregado com sucesso: ${catalogShows.length} shows e ${catalogArtists.length} artistas em memória.`);
+    console.log(`[Catalog] Inicializado com sucesso: ${catalogRawShows.length} shows e ${catalogArtists.length} artistas em memória.`);
   } catch (err) {
-    console.error('[Catalog] Erro ao carregar shows.csv:', err);
+    console.error('[Catalog] Erro ao carregar shows-index.json:', err);
   }
 }
 
@@ -229,37 +200,46 @@ export function searchCatalog(options: SearchOptions): CatalogSearchResult {
   }
 
   // 1. Filter Shows
-  const matchingShows = catalogShows.filter((s) => {
+  // CompactShowRow:
+  // [0: setlistId, 1: date, 2: artist, 3: mbid, 4: tour, 5: venue, 6: city, 7: state, 8: country, 9: url, 10: normArtist, 11: normCity]
+  const matchingShowRows = catalogRawShows.filter((row) => {
+    const setlistId = row[0];
+    const artistName = row[2];
+    const mbid = row[3];
+    const tour = row[4];
+    const venue = row[5];
+    const city = row[6];
+    const state = row[7];
+    const normArtist = row[10];
+    const normCity = row[11];
+
     if (artistFilter) {
-      const normArtist = normalizeText(s.artistName);
-      const normCode = normalizeText(s.artistCode);
-      if (!normArtist.includes(artistFilter) && !normCode.includes(artistFilter)) {
-        return false;
-      }
+      const matchArtist = normArtist.includes(artistFilter) || normalizeText(mbid).includes(artistFilter);
+      if (!matchArtist) return false;
     }
 
     if (stateFilter) {
-      if (s.state.toUpperCase() !== stateFilter) return false;
+      if (state.toUpperCase() !== stateFilter) return false;
     }
 
     if (cityFilter) {
-      const normCity = normalizeText(s.city);
       if (!normCity.includes(cityFilter)) return false;
     }
 
     if (venueFilter) {
-      const normVenue = normalizeText(s.venue);
+      const normVenue = normalizeText(venue);
       if (!normVenue.includes(venueFilter)) return false;
     }
 
     if (q && q.length >= 3) {
-      const matchArtist = normalizeText(s.artistName).includes(q);
-      const matchTour = normalizeText(s.tourName || '').includes(q);
-      const matchVenue = normalizeText(s.venue).includes(q);
-      const matchCity = normalizeText(s.city).includes(q);
-      const matchState = s.state.toLowerCase().includes(q);
-      const matchCode = normalizeText(s.showCode).includes(q);
-      if (!matchArtist && !matchTour && !matchVenue && !matchCity && !matchState && !matchCode) {
+      const matchArtist = normArtist.includes(q);
+      const matchCity = normCity.includes(q);
+      const matchTour = tour ? normalizeText(tour).includes(q) : false;
+      const matchVenue = venue ? normalizeText(venue).includes(q) : false;
+      const matchState = state ? state.toLowerCase().includes(q) : false;
+      const matchId = setlistId ? setlistId.toLowerCase().includes(q) : false;
+
+      if (!matchArtist && !matchCity && !matchTour && !matchVenue && !matchState && !matchId) {
         return false;
       }
     }
@@ -269,43 +249,81 @@ export function searchCatalog(options: SearchOptions): CatalogSearchResult {
 
   // 2. Filter Artists
   const matchingArtists = catalogArtists.filter((a) => {
+    const normName = normalizeText(a.artistName);
+    const normCode = normalizeText(a.artistCode);
+
     if (artistFilter) {
-      const normName = normalizeText(a.artistName);
-      const normCode = normalizeText(a.artistCode);
       if (!normName.includes(artistFilter) && !normCode.includes(artistFilter)) {
         return false;
       }
     }
 
     if (q && q.length >= 3) {
-      const matchName = normalizeText(a.artistName).includes(q);
-      const matchCode = normalizeText(a.artistCode).includes(q);
+      const matchName = normName.includes(q);
+      const matchCode = normCode.includes(q);
       if (!matchName && !matchCode) {
-        return false;
+        // Also check if any matching show was found for this artist in the query
+        const hasMatchingShow = matchingShowRows.some((s) => s[3] === a.artistCode || s[10] === normName);
+        if (!hasMatchingShow) return false;
       }
     }
 
     // If state/city/venue filter is set, only include artists who have matching shows
     if (stateFilter || cityFilter || venueFilter) {
-      const hasShow = matchingShows.some((s) => normalizeKey(s.artistName) === normalizeKey(a.artistName));
+      const hasShow = matchingShowRows.some((s) => s[3] === a.artistCode || s[10] === normName);
       if (!hasShow) return false;
     }
 
     return true;
   });
 
-  // Calculate pagination based on shows (or artists if no shows matched or artist search was primary)
-  const totalItems = Math.max(matchingShows.length, matchingArtists.length);
+  // Calculate pagination based on shows (or artists)
+  const totalItems = Math.max(matchingShowRows.length, matchingArtists.length);
   const totalPages = Math.ceil(totalItems / limit) || 1;
   const startIndex = (page - 1) * limit;
-  const paginatedShows = matchingShows.slice(startIndex, startIndex + limit);
+
+  // Convert paginated show rows into CatalogShow objects
+  // Empty values in tour, venue, or state remain empty string or undefined (never fabricated!)
+  const paginatedShows: CatalogShow[] = matchingShowRows
+    .slice(startIndex, startIndex + limit)
+    .map((row) => {
+      const setlistId = String(row[0]);
+      const date = row[1];
+      const artist = row[2];
+      const mbid = row[3];
+      const tour = row[4];
+      const venue = row[5];
+      const city = row[6];
+      const state = row[7];
+      const country = row[8];
+      const url = row[9];
+      const normKey = normalizeKey(artist);
+
+      const photoUrl = CANONICAL_PHOTOS[normKey] || undefined;
+
+      return {
+        id: setlistId,
+        showCode: setlistId, // Always exact string identifier
+        artistCode: mbid,     // MusicBrainz ID string
+        artistName: artist,
+        tourName: tour ? tour : undefined, // Omit field if empty
+        venue: venue || '',                // Never invent a fabricated venue name
+        date: date || '',
+        city: city || '',
+        state: state ? state.toUpperCase() : '',
+        country: country || undefined,
+        setlistUrl: url || undefined,
+        photoUrl,
+      };
+    });
+
   const paginatedArtists = matchingArtists.slice(startIndex, startIndex + limit);
   const hasMore = page < totalPages;
 
   return {
     page,
     limit,
-    totalShows: matchingShows.length,
+    totalShows: matchingShowRows.length,
     totalArtists: matchingArtists.length,
     totalPages,
     hasMore,

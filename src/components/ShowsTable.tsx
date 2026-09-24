@@ -215,18 +215,25 @@ export const ShowsTable: React.FC<ShowsTableProps> = ({
 
                       {/* Local */}
                       <td className="py-3 px-4 text-[#ECE5D1] truncate max-w-[160px]">
-                        {show.venue}
+                        {show.venue || <span className="text-[#8A8577] italic text-xs">Indisponível</span>}
                       </td>
 
                       {/* Data */}
                       <td className="py-3 px-4 font-mono text-[#B3AE9F] whitespace-nowrap">
-                        {cleanDateOnly(show.date)}
+                        {show.date ? cleanDateOnly(show.date) : <span className="text-[#8A8577] italic text-xs">Indisponível</span>}
                       </td>
 
                       {/* Cidade / UF */}
                       <td className="py-3 px-4">
-                        <span className="text-[#ECE5D1]">{show.city}</span>{' '}
-                        <strong className="text-[#4FDCDE] font-mono">({normalizeStateUF(show.state) || show.state})</strong>
+                        <span className="text-[#ECE5D1]">{show.city || 'Indisponível'}</span>
+                        {show.state && (
+                          <>
+                            {' '}
+                            <strong className="text-[#4FDCDE] font-mono">
+                              ({normalizeStateUF(show.state) || show.state})
+                            </strong>
+                          </>
+                        )}
                       </td>
 
                       {/* Código Show */}

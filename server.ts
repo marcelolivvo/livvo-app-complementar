@@ -9,10 +9,15 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Security: Block any direct client requests to private server data or CSV files
+  // Security: Block any direct client requests to private server data, CSV, or index files
   app.use((req, res, next) => {
     const lowerPath = req.path.toLowerCase();
-    if (lowerPath.startsWith('/data') || lowerPath.endsWith('.csv')) {
+    if (
+      lowerPath.startsWith('/data') ||
+      lowerPath.endsWith('.csv') ||
+      lowerPath.includes('shows-index') ||
+      lowerPath.includes('shows-completo')
+    ) {
       return res.status(404).json({ error: 'Not Found' });
     }
     next();

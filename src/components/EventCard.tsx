@@ -391,7 +391,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   </div>
                   <div className="min-w-0">
                     <div className={`${venueTextClasses} font-extrabold tracking-tight ${show?.venue ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} truncate leading-tight`} title={show?.venue}>
-                      {show?.venue || 'Local a confirmar'}
+                      {show?.venue || 'Indisponível'}
                     </div>
                   </div>
                 </div>
@@ -408,7 +408,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   </div>
                   <div className="min-w-0">
                     <div className={`${cityTextClasses} font-extrabold tracking-wide ${show?.city ? 'text-[#2FB8BA]' : 'text-[#8A8577]/60'} truncate leading-tight`}>
-                      {show?.city ? cleanCityOnly(show.city) : 'Cidade'}
+                      {show?.city ? cleanCityOnly(show.city) : 'Indisponível'}
                     </div>
                   </div>
                 </div>
