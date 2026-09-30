@@ -158,39 +158,9 @@ export default function App() {
 
         setPhotosMap(pMap);
       } else {
-        // First-time visit: To protect the catalog against bulk extraction/scraping,
-        // we do NOT dump the entire CSV into client-side IndexedDB.
-        // Instead, we fetch only the initial featured preview via the protected server API.
-        try {
-          const catalogRes = await searchCatalogApi({ limit: 10 });
-          const previewArtists: ArtistItem[] = catalogRes.artists.map((a) => ({
-            artistCode: a.artistCode,
-            artistName: a.artistName,
-            photoUrl: a.photoUrl,
-            featuredPosterUrl: a.featuredPosterUrl,
-            showsCount: a.showsCount,
-            updatedAt: Date.now(),
-          }));
-
-          const pMap = new Map<string, string>();
-          previewArtists.forEach((a) => {
-            if (a.photoUrl) {
-              pMap.set(a.artistCode, a.photoUrl);
-              const norm = normalizeArtistKey(a.artistName);
-              if (norm) pMap.set(norm, a.photoUrl);
-            }
-          });
-
-          setArtists(previewArtists);
-          setShows([]);
-          setPhotosMap(pMap);
-          setSelectedShow(null);
-        } catch (apiErr) {
-          console.warn('Erro ao carregar prévia do catálogo:', apiErr);
-          setArtists([]);
-          setShows([]);
-          setPhotosMap(new Map());
-        }
+        // First-time visit: automatically populate with the initial verified sample catalog
+        // so that the CardStudio, cards, templates, and full application load immediately
+        await handleLoadSample();
       }
     } catch (err) {
       console.error('Erro ao carregar banco de dados:', err);
