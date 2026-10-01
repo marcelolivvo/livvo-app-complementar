@@ -4,6 +4,7 @@ import { ShowItem, CardTemplateConfig } from '../types';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly } from '../utils/stateUtils';
 import { LivvoLogo } from './LivvoLogo';
+import { LivvoTicketIcon } from './LivvoTicketIcon';
 
 interface EventCardProps {
   show?: ShowItem | null;
@@ -42,6 +43,151 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
     const hasPhoto = Boolean(effectiveImageUrl);
     const displayArtistName = show?.artistName || artistName || '';
     const displayTourName = show?.tourName || '';
+
+    // Photo Filters CSS calculation
+    const getPhotoFilterStyle = () => {
+      switch (config.photoFilter) {
+        case 'noir':
+          return 'filter grayscale contrast-125 brightness-95';
+        case 'duotone':
+          return 'filter grayscale contrast-150 brightness-90';
+        case 'vibrant':
+          return 'filter saturate-200 contrast-110';
+        case 'grain':
+          return 'filter contrast-115 brightness-95';
+        case 'cyber':
+          return 'filter contrast-130 brightness-110 hue-rotate-15 saturate-150';
+        default:
+          return '';
+      }
+    };
+
+    // Calculate Stamp data (Eu Fui, Countdown, VIP Pass, etc.)
+    const stampData = React.useMemo(() => {
+      const type = config.stampType;
+      if (!type || type === 'none') return null;
+
+      if (type === 'eu-fui') {
+        return {
+          title: 'EU FUI!',
+          subtitle: 'PRESENÇA HISTÓRICA',
+          color: '#FFD60A',
+        };
+      }
+      if (type === 'historico') {
+        return {
+          title: 'SHOW HISTÓRICO',
+          subtitle: 'PATRIMÔNIO AO VIVO',
+          color: '#FFD60A',
+        };
+      }
+      if (type === 'saudade') {
+        return {
+          title: 'SHOW DA VIDA',
+          subtitle: 'MEMÓRIA INESQUECÍVEL',
+          color: '#ff5c5c',
+        };
+      }
+      if (type === 'vip') {
+        return {
+          title: 'VIP PASS',
+          subtitle: 'ACESSO EXCLUSIVO',
+          color: '#4FDCDE',
+        };
+      }
+      if (type === 'countdown') {
+        // Try parsing show date
+        let countdownText = 'EM BREVE';
+        if (show?.date) {
+          const parts = show.date.match(/(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/);
+          if (parts) {
+            const showDateObj = new Date(parseInt(parts[3]), parseInt(parts[2]) - 1, parseInt(parts[1]));
+            const now = new Date();
+            const diffDays = Math.ceil((showDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays > 0) {
+              countdownText = `FALTAM ${diffDays}D`;
+            } else if (diffDays === 0) {
+              countdownText = 'É HOJE!';
+            } else {
+              const yearsAgo = Math.floor(Math.abs(diffDays) / 365);
+              countdownText = yearsAgo >= 1 ? `HÁ ${yearsAgo} ANOS` : 'PRESENÇA';
+            }
+          }
+        }
+        return {
+          title: countdownText,
+          subtitle: 'SHOW OFICIAL',
+          color: '#2FB8BA',
+        };
+      }
+      return null;
+    }, [config.stampType, show?.date]);
+
+    // Collector Gamification Data for Card
+    const collectorData = React.useMemo(() => {
+      if (!config.showCollectorBadge) return null;
+      const rarity = config.collectorRarity || 'gold';
+      const edition = config.collectorEdition || '#042';
+
+      switch (rarity) {
+        case 'legendary':
+          return {
+            label: 'COLECIONADOR LIVVO',
+            rarityText: 'RARIDADE LENDÁRIA',
+            editionText: `EDIÇÃO ${edition}`,
+            badgeBg: 'bg-gradient-to-r from-amber-500 via-rose-500 to-purple-600',
+            textColor: 'text-amber-100',
+            borderColor: 'border-amber-400/80',
+            glowColor: 'rgba(245, 158, 11, 0.45)',
+            icon: '👑',
+          };
+        case 'diamond':
+          return {
+            label: 'COLECIONADOR LIVVO',
+            rarityText: 'RARIDADE DIAMANTE',
+            editionText: `EDIÇÃO ${edition}`,
+            badgeBg: 'bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600',
+            textColor: 'text-cyan-100',
+            borderColor: 'border-cyan-400/80',
+            glowColor: 'rgba(34, 227, 230, 0.45)',
+            icon: '⚡',
+          };
+        case 'platinum':
+          return {
+            label: 'COLECIONADOR LIVVO',
+            rarityText: 'RARIDADE PLATINA',
+            editionText: `EDIÇÃO ${edition}`,
+            badgeBg: 'bg-gradient-to-r from-slate-400 via-slate-300 to-zinc-500',
+            textColor: 'text-slate-950 font-black',
+            borderColor: 'border-white/80',
+            glowColor: 'rgba(255, 255, 255, 0.4)',
+            icon: '💎',
+          };
+        case 'classic':
+          return {
+            label: 'COLECIONADOR LIVVO',
+            rarityText: 'EDIÇÃO VINTAGE',
+            editionText: `SÉRIE ${edition}`,
+            badgeBg: 'bg-gradient-to-r from-amber-900 via-amber-800 to-stone-900',
+            textColor: 'text-amber-200',
+            borderColor: 'border-amber-600/70',
+            glowColor: 'rgba(180, 83, 9, 0.35)',
+            icon: '🎟️',
+          };
+        case 'gold':
+        default:
+          return {
+            label: 'COLECIONADOR LIVVO',
+            rarityText: 'RARIDADE OURO',
+            editionText: `EDIÇÃO ${edition}`,
+            badgeBg: 'bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-600',
+            textColor: 'text-amber-950 font-black',
+            borderColor: 'border-yellow-300/90',
+            glowColor: 'rgba(255, 214, 10, 0.55)',
+            icon: '✨',
+          };
+      }
+    }, [config.showCollectorBadge, config.collectorRarity, config.collectorEdition]);
 
     // Aspect ratio CSS classes (restored to original generous dimensions so card is not small)
     const getRatioClass = () => {
@@ -99,12 +245,13 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
         ? 'text-sm sm:text-base'
         : 'text-base sm:text-lg';
 
+    // Nome do Lugar (2º box embaixo da data): reduzido em 50% conforme solicitado
     const venueTextClasses =
       fontSize === 'small'
-        ? 'text-xs sm:text-sm'
+        ? 'text-[7px] sm:text-[8px]'
         : fontSize === 'medium'
-        ? 'text-sm sm:text-base'
-        : 'text-base sm:text-lg';
+        ? 'text-[8px] sm:text-[9px]'
+        : 'text-[9px] sm:text-[10px]';
 
     const cityTextClasses =
       fontSize === 'small'
@@ -191,19 +338,37 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
         {/* Background Image Layer - 100% card coverage without side margins */}
         <div className="absolute inset-0 z-0 overflow-hidden rounded-2xl">
           {hasPhoto ? (
-            <img
-              src={effectiveImageUrl!}
-              alt={displayArtistName || 'Livvo Show Card'}
-              className="absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center transform scale-100 transition-transform duration-500"
-              crossOrigin="anonymous"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (target.getAttribute('crossorigin')) {
-                  target.removeAttribute('crossorigin');
-                  target.src = effectiveImageUrl!;
-                }
-              }}
-            />
+            <>
+              <img
+                src={effectiveImageUrl!}
+                alt={displayArtistName || 'Livvo Show Card'}
+                className={`absolute inset-0 w-full h-full min-w-full min-h-full object-cover object-center transform scale-100 transition-transform duration-500 ${getPhotoFilterStyle()}`}
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (target.getAttribute('crossorigin')) {
+                    target.removeAttribute('crossorigin');
+                    target.src = effectiveImageUrl!;
+                  }
+                }}
+              />
+              {/* Duotone tint overlay */}
+              {config.photoFilter === 'duotone' && (
+                <div
+                  className="absolute inset-0 mix-blend-color opacity-70 pointer-events-none"
+                  style={{ backgroundColor: accentColor }}
+                />
+              )}
+              {/* Film Grain Texture overlay */}
+              {config.photoFilter === 'grain' && (
+                <div
+                  className="absolute inset-0 pointer-events-none opacity-25 mix-blend-overlay"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+                  }}
+                />
+              )}
+            </>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#100C1F] via-[#171226] to-[#1E1833] flex items-center justify-center p-8">
               <div className="text-center opacity-30">
@@ -284,7 +449,37 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
               <div className="absolute inset-0 bg-gradient-to-t from-[#100C1F] via-[#171226]/60 to-[#100C1F]/50" />
             </>
           )}
+
+          {/* Holographic Prismatic Foil Sheen */}
+          {config.showHologram && (
+            <div
+              className="absolute inset-0 pointer-events-none mix-blend-color-dodge opacity-50 transition-opacity hover:opacity-75 z-10"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,0,128,0.25) 0%, rgba(0,255,255,0.3) 25%, rgba(255,215,0,0.3) 50%, rgba(0,255,128,0.3) 75%, rgba(128,0,255,0.25) 100%)',
+                backgroundSize: '200% 200%',
+              }}
+            />
+          )}
         </div>
+
+        {/* Retro Stamp / Carimbo (Eu Fui, Countdown, VIP Pass) */}
+        {stampData && (
+          <div
+            className="absolute top-20 right-5 sm:right-6 z-30 pointer-events-none transform -rotate-12 border-2 border-dashed px-3 py-1 rounded-lg text-center backdrop-blur-xs shadow-2xl animate-in zoom-in-75 duration-300"
+            style={{
+              borderColor: stampData.color,
+              color: stampData.color,
+              backgroundColor: 'rgba(16, 12, 31, 0.7)',
+            }}
+          >
+            <div className="text-xs sm:text-sm font-black tracking-widest leading-tight uppercase font-mono drop-shadow">
+              {stampData.title}
+            </div>
+            <div className="text-[7.5px] font-bold tracking-wider mt-0.5 opacity-90 uppercase">
+              {stampData.subtitle}
+            </div>
+          </div>
+        )}
 
         {/* Content Layer */}
         <div className="relative z-10 h-full w-full flex flex-col justify-between p-6 sm:p-7">
@@ -372,8 +567,8 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   >
                     <Calendar className="w-3.5 h-3.5" />
                   </div>
-                  <div className="min-w-0">
-                    <span className={`${dateTextClasses} font-extrabold ${show?.date ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} tracking-tight leading-tight block truncate`}>
+                  <div className="min-w-0 flex-1 text-center">
+                    <span className={`${dateTextClasses} font-extrabold ${show?.date ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} tracking-tight leading-tight block truncate text-center`}>
                       {show?.date ? cleanDateOnly(show.date) : '-- / -- / ----'}
                     </span>
                   </div>
@@ -389,8 +584,8 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   >
                     <Building2 className="w-3.5 h-3.5" />
                   </div>
-                  <div className="min-w-0">
-                    <div className={`${venueTextClasses} font-extrabold tracking-tight ${show?.venue ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} truncate leading-tight`} title={show?.venue}>
+                  <div className="min-w-0 flex-1 text-center">
+                    <div className={`${venueTextClasses} font-extrabold tracking-tight ${show?.venue ? 'text-[#ECE5D1]' : 'text-[#8A8577]/60'} truncate leading-tight text-center`} title={show?.venue}>
                       {show?.venue || 'Indisponível'}
                     </div>
                   </div>
@@ -406,8 +601,8 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   >
                     <MapPin className="w-3.5 h-3.5" />
                   </div>
-                  <div className="min-w-0">
-                    <div className={`${cityTextClasses} font-extrabold tracking-wide ${show?.city ? 'text-[#2FB8BA]' : 'text-[#8A8577]/60'} truncate leading-tight`}>
+                  <div className="min-w-0 flex-1 text-center">
+                    <div className={`${cityTextClasses} font-extrabold tracking-wide ${show?.city ? 'text-[#2FB8BA]' : 'text-[#8A8577]/60'} truncate leading-tight text-center`}>
                       {show?.city ? cleanCityOnly(show.city) : 'Indisponível'}
                     </div>
                   </div>
@@ -415,11 +610,73 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
               )}
             </div>
 
+            {/* Badges Bar: Sector, Companion, Favorite Song, Setlist */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Ticket Sector Badge */}
+              {config.ticketSector && (
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg backdrop-blur-md bg-[#100C1F]/90 border border-[#FFD60A]/30 text-[10px] text-[#ECE5D1] shadow">
+                  <LivvoTicketIcon className="w-3.5 h-3.5 text-[#FFD60A] shrink-0" />
+                  <span className="font-black uppercase tracking-wider text-[#FFD60A]">{config.ticketSector}</span>
+                </div>
+              )}
+
+              {/* Companion Handle Badge */}
+              {config.companionHandle && (
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg backdrop-blur-md bg-[#100C1F]/90 border border-[#282141] text-[10px] text-[#ECE5D1] shadow">
+                  <span className="text-xs">👥</span>
+                  <span className="text-[#8A8577]">Com</span>
+                  <span className="font-mono font-bold text-[#4FDCDE]">{config.companionHandle}</span>
+                </div>
+              )}
+
+              {/* Favorite Song Badge */}
+              {config.favoriteSong && (
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg backdrop-blur-md bg-[#100C1F]/90 border border-[#282141] text-[10px] text-[#ECE5D1] shadow max-w-[220px]">
+                  <Music className="w-3 h-3 text-[#2FB8BA] shrink-0 animate-pulse" />
+                  <span className="text-[#8A8577] font-bold uppercase tracking-wider">Faixa:</span>
+                  <span className="truncate font-bold text-[#4FDCDE]">"{config.favoriteSong}"</span>
+                </div>
+              )}
+
+              {/* Setlist Highlights */}
+              {config.setlistHighlights && (
+                <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg backdrop-blur-md bg-[#100C1F]/80 border border-[#282141] text-[9.5px] text-[#B3AE9F] shadow max-w-[260px]">
+                  <Sparkles className="w-3 h-3 text-[#FFD60A] shrink-0" />
+                  <span className="truncate font-mono">{config.setlistHighlights}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Official Collector Gamification Badge on the Card */}
+            {collectorData && (
+              <div
+                className={`flex items-center justify-between gap-3 px-3 py-1.5 rounded-xl border shadow-xl backdrop-blur-md ${collectorData.badgeBg} ${collectorData.borderColor} animate-in zoom-in-95 duration-300 w-full max-w-[340px]`}
+                style={{
+                  boxShadow: `0 4px 20px ${collectorData.glowColor}`,
+                }}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-base shrink-0">{collectorData.icon}</span>
+                  <div className="min-w-0 flex flex-col leading-tight">
+                    <span className={`text-[9.5px] font-black uppercase tracking-wider truncate ${collectorData.textColor}`}>
+                      {collectorData.label}
+                    </span>
+                    <span className="text-[8px] font-extrabold uppercase tracking-widest text-white/90">
+                      {collectorData.rarityText}
+                    </span>
+                  </div>
+                </div>
+                <div className="shrink-0 px-2 py-0.5 rounded-md bg-black/40 border border-white/20 text-[9px] font-mono font-black text-white">
+                  {collectorData.editionText}
+                </div>
+              </div>
+            )}
+
             {/* Ticket Pass Footer or Brand Tag */}
             {templateId === 'ticket-pass' ? (
               <div className="flex items-center justify-between pt-2 border-t-2 border-dashed border-[#282141] text-xs font-mono text-[#B3AE9F]">
                 <div className="flex items-center gap-1.5">
-                  <Ticket className="w-4 h-4 text-[#2FB8BA]" />
+                  <LivvoTicketIcon className="w-4 h-4 text-[#2FB8BA]" />
                   <span className="text-[#ECE5D1]">LIVVO PASS OFICIAL</span>
                 </div>
                 <div className="tracking-widest font-mono text-[10px] text-[#4FDCDE]">
@@ -435,7 +692,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   Livvo Virtual Poster
                 </span>
                 <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A8577]">
-                  Registro Personalizado
+                  {config.showCollectorBadge ? 'Item de Colecionador Autêntico' : 'Registro Personalizado'}
                 </span>
               </div>
             )}

@@ -26,18 +26,32 @@ import {
   Instagram,
   Facebook,
   MessageCircle,
+  Wand2,
+  Copy,
+  Smartphone,
+  Bookmark,
+  Dice5,
+  Flame,
+  ChevronRight,
+  Trophy,
+  Award,
 } from 'lucide-react';
-import { ShowItem, ArtistItem, CardTemplateConfig, CardTemplateId, AspectRatio, CardFontFamily } from '../types';
+import { ShowItem, ArtistItem, CardTemplateConfig, CardTemplateId, AspectRatio, CardFontFamily, CollectorRarity } from '../types';
 import { EventCard } from './EventCard';
 import { autoFetchArtistPhoto } from '../services/artistPhotoService';
 import { MediaSearchModal } from './MediaSearchModal';
 import { ShareModal } from './ShareModal';
+import { TourWrappedModal } from './TourWrappedModal';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { normalizeStateUF, isSameState } from '../utils/stateUtils';
 import { normalizeArtistKey, isDateString } from '../utils/artistUtils';
 import { dbService } from '../services/db';
+import { PassportIcon } from './PassportIcon';
+import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { SAMPLE_ARTISTS_DATA, generateSampleDataset } from '../services/sampleData';
 import { searchCatalogApi } from '../services/catalogService';
+import { extractDominantColor } from '../services/colorExtractor';
+import { walletService } from '../services/walletService';
 
 interface CardStudioProps {
   shows: ShowItem[];
@@ -56,6 +70,8 @@ interface CardStudioProps {
   onUpdateShowPoster?: (showIdOrCode: string, posterUrl: string) => Promise<void>;
   preselectedArtist?: ArtistItem | null;
   onClearPreselectedArtist?: () => void;
+  onWalletUpdated?: () => void;
+  onGoToWallet?: () => void;
 }
 
 const ACCENT_COLORS = [
@@ -67,6 +83,148 @@ const ACCENT_COLORS = [
   { name: 'Rosa Neon', hex: '#ec4899' },
   { name: 'Coral Show', hex: '#ff5c5c' },
   { name: 'Branco Puro', hex: '#ffffff' },
+];
+
+const STYLE_VIBES = [
+  {
+    id: 'cyberpunk',
+    name: 'Neon Cyberpunk',
+    icon: '⚡',
+    config: {
+      templateId: 'neon-tour' as CardTemplateId,
+      accentColor: '#22E3E6',
+      photoFilter: 'vibrant' as const,
+      fontFamily: 'impact' as CardFontFamily,
+      showHologram: true,
+      tagline: 'CYBER TOUR',
+    },
+  },
+  {
+    id: 'vintage',
+    name: 'Vintage Woodstock',
+    icon: '🎸',
+    config: {
+      templateId: 'minimal-editorial' as CardTemplateId,
+      accentColor: '#ECE5D1',
+      photoFilter: 'grain' as const,
+      fontFamily: 'vintage' as CardFontFamily,
+      showHologram: false,
+      tagline: 'CLÁSSICO AO VIVO',
+    },
+  },
+  {
+    id: 'vip',
+    name: 'Festival VIP',
+    icon: '🏆',
+    config: {
+      templateId: 'festival-bold' as CardTemplateId,
+      accentColor: '#FFD60A',
+      photoFilter: 'duotone' as const,
+      stampType: 'vip' as const,
+      fontFamily: 'impact' as CardFontFamily,
+      showHologram: true,
+      tagline: 'ACESSO VIP PASS',
+    },
+  },
+  {
+    id: 'editorial',
+    name: 'Minimal Editorial',
+    icon: '📰',
+    config: {
+      templateId: 'minimal-editorial' as CardTemplateId,
+      accentColor: '#ffffff',
+      photoFilter: 'noir' as const,
+      fontFamily: 'serif' as CardFontFamily,
+      showHologram: false,
+      tagline: 'EDIÇÃO LIMITADA',
+    },
+  },
+  {
+    id: 'carnaval',
+    name: 'Carnaval Elétrico',
+    icon: '🎭',
+    config: {
+      templateId: 'modern-stage' as CardTemplateId,
+      accentColor: '#ec4899',
+      photoFilter: 'vibrant' as const,
+      stampType: 'eu-fui' as const,
+      fontFamily: 'sans' as CardFontFamily,
+      showHologram: true,
+      tagline: 'AO VIVO NO BRASIL',
+    },
+  },
+  {
+    id: 'sunset',
+    name: 'Sunset Acústico',
+    icon: '🌅',
+    config: {
+      templateId: 'modern-stage' as CardTemplateId,
+      accentColor: '#ff5c5c',
+      photoFilter: 'vibrant' as const,
+      fontFamily: 'sans' as CardFontFamily,
+      showHologram: false,
+      tagline: 'SUNSET SESSION',
+    },
+  },
+  {
+    id: 'rock',
+    name: 'Rock Underground',
+    icon: '🖤',
+    config: {
+      templateId: 'festival-bold' as CardTemplateId,
+      accentColor: '#2FB8BA',
+      photoFilter: 'noir' as const,
+      stampType: 'eu-fui' as const,
+      fontFamily: 'impact' as CardFontFamily,
+      showHologram: false,
+      tagline: 'ROCK UNDERGROUND',
+    },
+  },
+  {
+    id: 'hologram',
+    name: 'Holo Tour Pass',
+    icon: '💎',
+    config: {
+      templateId: 'neon-tour' as CardTemplateId,
+      accentColor: '#22E3E6',
+      photoFilter: 'cyber' as const,
+      stampType: 'vip' as const,
+      fontFamily: 'mono' as CardFontFamily,
+      showHologram: true,
+      tagline: 'HOLOGRAPHIC PASS',
+    },
+  },
+];
+
+const HISTORICAL_SHORTCUTS = [
+  { label: 'Rock in Rio', query: 'Rock in Rio', icon: '🎸' },
+  { label: 'Lollapalooza', query: 'Lollapalooza', icon: '🎡' },
+  { label: 'The Town', query: 'The Town', icon: '🎪' },
+  { label: 'Planeta Atlântida', query: 'Planeta Atlantida', icon: '🌴' },
+  { label: 'Circo Voador', query: 'Circo Voador', icon: '🎪' },
+  { label: 'Maracanã', query: 'Maracana', icon: '🏟️' },
+  { label: 'Anos 80', query: '198', icon: '📻' },
+  { label: 'Anos 90', query: '199', icon: '📼' },
+  { label: 'Anos 2000', query: '200', icon: '💿' },
+  { label: '2020+', query: '202', icon: '⚡' },
+];
+
+const PHOTO_FILTERS = [
+  { id: 'none', label: 'Normal', desc: 'Cores originais' },
+  { id: 'noir', label: 'P&B Noir', desc: 'Preto e branco dramático' },
+  { id: 'duotone', label: 'Duotone', desc: 'Tingido com a cor de destaque' },
+  { id: 'grain', label: 'Film Grain', desc: 'Granulado analógico vintage' },
+  { id: 'vibrant', label: 'Vibrante', desc: 'Saturação e pop' },
+  { id: 'cyber', label: 'Cyber Glitch', desc: 'Cromático futurista com glow' },
+];
+
+const STAMP_TYPES = [
+  { id: 'none', label: 'Sem Carimbo', desc: 'Padrão limpo' },
+  { id: 'eu-fui', label: 'EU FUI!', desc: 'Carimbo retrô de presença' },
+  { id: 'countdown', label: 'Contagem Regressiva', desc: 'Faltam X dias / Anos' },
+  { id: 'vip', label: 'VIP Pass', desc: 'Acesso especial' },
+  { id: 'saudade', label: 'Show da Minha Vida', desc: 'Memória inesquecível' },
+  { id: 'historico', label: 'Show Histórico', desc: 'Patrimônio da música ao vivo' },
 ];
 
 const TEMPLATES: { id: CardTemplateId; name: string; desc: string }[] = [
@@ -111,6 +269,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   onUpdateShowPoster,
   preselectedArtist,
   onClearPreselectedArtist,
+  onWalletUpdated,
+  onGoToWallet,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -149,6 +309,18 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     setIsShareModalOpen(true);
   };
 
+  // Toast feedback state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isExtractingColor, setIsExtractingColor] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [savedToWalletSuccess, setSavedToWalletSuccess] = useState(false);
+  const [isTourWrappedOpen, setIsTourWrappedOpen] = useState(false);
+  const [fanStats, setFanStats] = useState(() => walletService.getStats());
+
+  const refreshStats = () => {
+    setFanStats(walletService.getStats());
+  };
+
   // Template configuration state
   const [config, setConfig] = useState<CardTemplateConfig>({
     templateId: 'modern-stage',
@@ -166,6 +338,17 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     showDateHighlight: true,
     contrastOverlay: 40,
     customBadgeText: 'INGRESSO VERIFICADO',
+    photoFilter: 'none',
+    stampType: 'none',
+    showHologram: false,
+    favoriteSong: '',
+    phoneMockup: false,
+    showCollectorBadge: false,
+    collectorEdition: '#042',
+    collectorRarity: 'gold',
+    ticketSector: '',
+    companionHandle: '',
+    setlistHighlights: '',
   });
 
   // Dropdown menu state for Personalizar Card topics (null = all controls hidden by default until clicked)
@@ -711,7 +894,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Download Single Card as high resolution PNG
   const handleDownloadPng = async () => {
-    if (!cardRef.current || (!selectedShow && !selectedArtist)) return;
+    if (!cardRef.current) return;
+    if (!selectedShow && !selectedArtist) {
+      setToastMessage('💡 Escolha uma banda ou show na busca acima para baixar seu card!');
+      setTimeout(() => setToastMessage(null), 3500);
+      return;
+    }
     try {
       setIsExporting(true);
 
@@ -758,6 +946,140 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // 1. Auto Palette from photo
+  const handleAutoPalette = async () => {
+    const imgUrl = currentPhoto || currentPoster;
+    if (!imgUrl) return;
+    setIsExtractingColor(true);
+    try {
+      const hex = await extractDominantColor(imgUrl);
+      if (hex) {
+        setConfig((prev) => ({ ...prev, accentColor: hex }));
+        setToastMessage(`✨ Cor harmonizada da foto: ${hex}`);
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error('Erro na auto-palette:', err);
+    } finally {
+      setIsExtractingColor(false);
+    }
+  };
+
+  // 2. Quick Copy Image to Clipboard
+  const handleCopyImage = async () => {
+    try {
+      const blob = await handleGeneratePngBlob();
+      if (!blob) return;
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      setCopySuccess(true);
+      setToastMessage('📋 Imagem copiada! Cole direto no WhatsApp ou Stories');
+      setTimeout(() => {
+        setCopySuccess(false);
+        setToastMessage(null);
+      }, 3500);
+    } catch (err) {
+      console.error('Erro ao copiar imagem:', err);
+      // Fallback
+      handleDownloadPng();
+    }
+  };
+
+  // 3. Save current card to Ticket Wallet (Gamification)
+  const handleSaveToWallet = () => {
+    if (!selectedShow && !selectedArtist) {
+      setToastMessage('💡 Escolha uma banda ou show na busca acima para salvar seu passaporte!');
+      setTimeout(() => setToastMessage(null), 3500);
+      return;
+    }
+    const effectiveShowCode = selectedShow?.showCode || `LIVVO_${selectedArtist?.artistCode || 'TICKET'}`;
+    const effectiveArtistName = selectedShow?.artistName || selectedArtist?.artistName || 'Artista';
+
+    walletService.saveTicket({
+      showCode: effectiveShowCode,
+      artistName: effectiveArtistName,
+      tourName: selectedShow?.tourName,
+      venue: selectedShow?.venue || 'Local a confirmar',
+      city: selectedShow?.city || 'Brasil',
+      state: selectedShow?.state || 'BR',
+      date: selectedShow?.date || new Date().toLocaleDateString('pt-BR'),
+      photoUrl: currentPhoto || undefined,
+      posterUrl: currentPoster || undefined,
+      config: { ...config },
+      stampType: config.stampType,
+      favoriteSong: config.favoriteSong,
+    });
+
+    refreshStats();
+    if (onWalletUpdated) onWalletUpdated();
+
+    setSavedToWalletSuccess(true);
+    setToastMessage('🎟️ Salvo no seu Passaporte de Shows! Veja na aba "Livvo Wallet"');
+    setTimeout(() => {
+      setSavedToWalletSuccess(false);
+      setToastMessage(null);
+    }, 4000);
+  };
+
+  // 4. Surpreenda-me (Random Show & Style Preset)
+  const handleSurpriseMe = async () => {
+    try {
+      // Pick a random vibe
+      const randomVibe = STYLE_VIBES[Math.floor(Math.random() * STYLE_VIBES.length)];
+      
+      let targetShow: ShowItem | null = null;
+      if (shows && shows.length > 0) {
+        targetShow = shows[Math.floor(Math.random() * shows.length)];
+      } else {
+        const sampleArtists = ['Anitta', 'Titãs', 'Charlie Brown Jr.', 'Raimundos', 'Ivete Sangalo', 'Nando Reis', 'Ludmilla', 'Capital Inicial'];
+        const randomArtistName = sampleArtists[Math.floor(Math.random() * sampleArtists.length)];
+        const res = await searchCatalogApi({ q: randomArtistName, limit: 10 });
+        if (res.shows && res.shows.length > 0) {
+          const s = res.shows[Math.floor(Math.random() * res.shows.length)];
+          targetShow = {
+            id: s.id,
+            showCode: s.showCode,
+            artistCode: s.artistCode,
+            artistName: s.artistName,
+            tourName: s.tourName,
+            venue: s.venue,
+            city: s.city,
+            state: s.state,
+            date: s.date,
+          };
+        }
+      }
+
+      if (targetShow) {
+        handleApplyShow(targetShow);
+        setConfig((prev) => ({
+          ...prev,
+          ...randomVibe.config,
+        }));
+        setToastMessage(`🎲 Sorteado: ${targetShow.artistName} com estilo ${randomVibe.name}!`);
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } catch (err) {
+      console.error('Erro no Surpreenda-me:', err);
+    }
+  };
+
+  // 5. Apply Historical / Festival Shortcut
+  const handleHistoricalShortcut = (query: string) => {
+    setArtistSearchQuery(query);
+    setIsSearchOpen(true);
+    searchInputRef.current?.focus();
+  };
+
+  // 6. Apply Quick Vibe
+  const handleApplyVibe = (vibe: typeof STYLE_VIBES[0]) => {
+    setConfig((prev) => ({
+      ...prev,
+      ...vibe.config,
+    }));
+    setToastMessage(`⚡ Estilo "${vibe.name}" aplicado!`);
+    setTimeout(() => setToastMessage(null), 2500);
   };
 
   // Current photo for selected show or artist (checks local cache, photosMap, artist record, and catalogs)
@@ -1019,7 +1341,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                             };
                             handleSelectArtist(newArtist);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A] text-[#100C1F] hover:bg-[#FFE14D] transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] transition-colors cursor-pointer shadow-sm"
                         >
                           <Sparkles className="w-3.5 h-3.5" />
                           <span>Buscar Online & Auto-vincular</span>
@@ -1260,8 +1582,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         </div>
 
         {/* Selected Artist Details & Photo Status Bar */}
-        {selectedArtist && (
-          <div className="pt-2 border-t border-[#282141] flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-2 border-t border-[#282141] flex flex-wrap items-center justify-between gap-3">
+          {selectedArtist ? (
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full overflow-hidden bg-[#100C1F] border border-[#282141] shrink-0 flex items-center justify-center shadow">
                 {currentPhoto ? (
@@ -1284,48 +1606,91 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 </span>
               )}
             </div>
+          ) : (
+            <div className="text-xs text-[#8A8577] flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#2FB8BA]" />
+              <span>Selecione uma banda ou artista para montar seu poster virtual</span>
+            </div>
+          )}
 
-            {/* Quick actions for artist media */}
-            <div className="flex items-center gap-2">
+          {/* Quick actions for artist media */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Opção Foto / Pôster ao lado de Gerenciar Foto */}
+            <div className="flex items-center bg-[#100C1F] p-0.5 rounded-xl border border-[#282141]">
               <button
-                onClick={() => {
-                  setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
-                  setIsMediaModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] shadow transition-all cursor-pointer"
-                title="Abrir galeria online de pôsteres e fotos em alta resolução"
+                type="button"
+                onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  config.visualMode !== 'show-poster'
+                    ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
+                    : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
+                }`}
+                title="Exibir foto do artista"
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#100C1F]" />
-                <span>Buscar Pôsteres & Fotos Online</span>
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>Foto</span>
               </button>
 
-              {!currentPhoto ? (
-                <button
-                  id="auto-fetch-photo-btn"
-                  onClick={handleAutoFetchPhoto}
-                  disabled={isFetchingPhoto}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#282141] hover:bg-[#1E1833] text-[#4FDCDE] border border-[#2FB8BA]/30 transition-all disabled:opacity-50"
-                  title="Conecta o nome do artista com a foto oficial via API pública do Deezer"
-                >
-                  {isFetchingPhoto ? (
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#4FDCDE]" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                  )}
-                  <span>Auto-vincular</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => onOpenPhotoManager(selectedArtist.artistCode)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs text-[#ECE5D1] bg-[#1E1833] hover:bg-[#282141] border border-[#282141]"
-                >
-                  <ImageIcon className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                  <span>Gerenciar Foto</span>
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  config.visualMode === 'show-poster'
+                    ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
+                    : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
+                }`}
+                title="Exibir pôster da turnê"
+              >
+                <LivvoTicketIcon className="w-3.5 h-3.5" />
+                <span>Pôster</span>
+                {selectedShow?.posterUrl && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6]" />
+                )}
+              </button>
             </div>
+
+            <button
+              type="button"
+              onClick={() => onOpenPhotoManager(selectedArtist?.artistCode)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#ECE5D1] bg-[#1E1833] hover:bg-[#282141] border border-[#282141] transition-all cursor-pointer"
+              title="Gerenciar fotos do artista"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-[#2FB8BA]" />
+              <span>Gerenciar Foto</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
+                setIsMediaModalOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-sm transition-all cursor-pointer"
+              title="Abrir galeria online de pôsteres e fotos em alta resolução"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#100C1F]" />
+              <span>Buscar Mídias Online</span>
+            </button>
+
+            {selectedArtist && !currentPhoto && (
+              <button
+                type="button"
+                id="auto-fetch-photo-btn"
+                onClick={handleAutoFetchPhoto}
+                disabled={isFetchingPhoto}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#282141] hover:bg-[#1E1833] text-[#4FDCDE] border border-[#2FB8BA]/30 transition-all disabled:opacity-50 cursor-pointer"
+                title="Conecta o nome do artista com a foto oficial via API pública do Deezer"
+              >
+                {isFetchingPhoto ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#4FDCDE]" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 text-[#2FB8BA]" />
+                )}
+                <span>Auto-vincular</span>
+              </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Feedback message for auto-photo */}
         {autoPhotoMessage && (
@@ -1369,77 +1734,6 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Visual Card Preview Stage */}
         <div className="lg:col-span-7 flex flex-col items-center gap-4">
-          {/* Stage Header Controls */}
-          <div className="w-full flex flex-wrap items-center justify-between gap-2.5 bg-[#171226] px-4 py-3 rounded-2xl border border-[#282141]">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-[#ECE5D1]">
-                {selectedShow?.artistName || selectedArtist?.artistName || 'Prévia do Card'}
-              </span>
-              {selectedShow && (
-                <>
-                  <span className="text-xs text-[#B3AE9F] hidden sm:inline">•</span>
-                  <span className="text-xs text-[#4FDCDE] hidden sm:inline">
-                    {selectedShow.city} ({selectedShow.state})
-                  </span>
-                </>
-              )}
-              {!selectedShow && selectedArtist && (
-                <>
-                  <span className="text-xs text-[#B3AE9F] hidden sm:inline">•</span>
-                  <span className="text-xs text-[#FFD60A] hidden sm:inline">
-                    Selecione a data ou cidade
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* Visual Mode Selector Buttons */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center bg-[#100C1F] p-1 rounded-xl border border-[#282141]">
-                <button
-                  onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    config.visualMode !== 'show-poster'
-                      ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
-                      : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
-                  }`}
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>Foto</span>
-                </button>
-
-                <button
-                  onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    config.visualMode === 'show-poster'
-                      ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
-                      : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
-                  }`}
-                >
-                  <Ticket className="w-3.5 h-3.5" />
-                  <span>Pôster</span>
-                  {selectedShow?.posterUrl && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6]" />
-                  )}
-                </button>
-              </div>
-
-              <button
-                id="open-media-gallery-btn"
-                onClick={() => {
-                  setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
-                  setIsMediaModalOpen(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] shadow transition-all cursor-pointer"
-                title="Pesquisa fotos de palco e pôsteres de turnê em alta resolução na web"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#100C1F]" />
-                <span className="hidden sm:inline">Buscar Mídias Online</span>
-                <span className="sm:hidden">Buscar</span>
-              </button>
-            </div>
-          </div>
-
           {/* Card Stage Container - Restored generous size (max-w-[460px], min-h-[580px]) */}
           <div className="w-full flex justify-center items-center p-4 sm:p-8 bg-[#100C1F] rounded-3xl border border-[#282141] shadow-2xl relative min-h-[580px]">
             <div className="relative shadow-2xl rounded-2xl ring-1 ring-[#282141] transition-all flex justify-center items-center w-full max-w-[460px]">
@@ -1468,6 +1762,149 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
           {/* Right Column: Customization & Template Settings */}
           <div className="lg:col-span-5 flex flex-col gap-4">
+            {/* ========================================================================= */}
+            {/* CARD DE GAMIFICAÇÃO DE COLECIONADOR & PASSAPORTE DE FÃ                    */}
+            {/* ========================================================================= */}
+            <div className="bg-gradient-to-br from-[#171226] via-[#1A142D] to-[#120E22] rounded-3xl border border-[#FFD60A]/30 p-5 shadow-2xl relative overflow-hidden space-y-4">
+              {/* Ambient Glow */}
+              <div className="absolute top-0 right-0 w-36 h-36 bg-[#FFD60A]/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#2FB8BA]/10 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#282141] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 flex items-center justify-center shrink-0 bg-transparent" title="Passaporte Oficial do Colecionador">
+                    <PassportIcon className="w-9 h-9 text-[#2FB8BA]" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-[#ECE5D1] uppercase tracking-wide">
+                      Passaporte do Colecionador
+                    </h3>
+                    <p className="text-[11px] text-[#B3AE9F]">
+                      {fanStats.totalShows} {fanStats.totalShows === 1 ? 'ingresso colecionado' : 'ingressos colecionados'} • {fanStats.uniqueArtists} artistas
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
+                  {/* Palavra Nível / Nível de Fã acima do box */}
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A8577]">
+                    Nível de Fã
+                  </span>
+
+                  {/* Box quadrado idêntico ao botão Livvo Wallet, com número e título centralizados e destacados */}
+                  <div className="w-full min-w-[140px] px-3 py-1.5 rounded-xl text-xs font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 border border-[#2FB8BA]/30 flex items-center justify-center gap-1.5 shadow-sm text-center">
+                    <span className="text-sm">{fanStats.currentMedal?.icon || '🥉'}</span>
+                    <span className="font-mono font-black text-sm">{fanStats.level}</span>
+                    <span className="text-[#4FDCDE]/60">-</span>
+                    <span className="truncate">{fanStats.levelTitle}</span>
+                  </div>
+
+                  {/* Botão Livvo Wallet logo abaixo desse box */}
+                  {onGoToWallet && (
+                    <button
+                      onClick={onGoToWallet}
+                      className="w-full min-w-[140px] px-3 py-1.5 rounded-xl text-xs font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 border border-[#2FB8BA]/30 transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                      title="Abrir Livvo Wallet"
+                    >
+                      <span>Livvo Wallet</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Level Progress */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[10px] font-mono text-[#8A8577]">
+                  <span>
+                    {fanStats.nextMedal ? (
+                      <span>
+                        Faltam <strong className="text-[#FFD60A]">{Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows)}</strong>{' '}
+                        {Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows) === 1 ? 'show' : 'shows'} para o Nível {fanStats.nextMedal.name.replace(/^Fã\s+/, '')}
+                      </span>
+                    ) : (
+                      <span className="text-[#FFD60A]">Nível Máximo de Fã Atingido (Lenda) 👑</span>
+                    )}
+                  </span>
+                  <span className="text-[#FFD60A] font-bold">{fanStats.nextLevelProgress}%</span>
+                </div>
+                <div className="w-full bg-[#100C1F] h-1.5 rounded-full overflow-hidden border border-[#282141]">
+                  <div
+                    className="bg-gradient-to-r from-[#2FB8BA] via-[#4FDCDE] to-[#FFD60A] h-full transition-all duration-500 rounded-full"
+                    style={{ width: `${fanStats.nextLevelProgress}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Quick Action Grid */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* 1. Salvar no Passaporte (Gamificação) */}
+                <button
+                  id="save-to-wallet-btn"
+                  onClick={handleSaveToWallet}
+                  className="inline-flex items-center justify-center gap-2 p-2.5 rounded-2xl font-bold text-xs bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/20 active:scale-95 transition-all cursor-pointer"
+                >
+                  <LivvoTicketIcon className="w-4 h-4 text-[#100C1F]" />
+                  <span>{savedToWalletSuccess ? 'Salvo na Livvo Wallet!' : 'Salvar o Passaporte'}</span>
+                </button>
+
+                {/* 2. Copiar Imagem (Clipboard) */}
+                <button
+                  id="quick-copy-image-btn"
+                  onClick={handleCopyImage}
+                  disabled={isExporting || (!selectedShow && !selectedArtist)}
+                  className="inline-flex items-center justify-center gap-2 p-2.5 rounded-2xl font-bold text-xs bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] hover:border-[#2FB8BA] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                  title="Copiar direto para área de transferência para colar no WhatsApp ou Stories"
+                >
+                  {copySuccess ? (
+                    <>
+                      <Check className="w-4 h-4 text-[#2FB8BA]" />
+                      <span className="text-[#2FB8BA]">Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-[#4FDCDE]" />
+                      <span>Copiar Imagem</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Quick Features Row: Surpreenda-me & Gerar Tour Wrapped & Toggle Selo no Card */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#282141]/60">
+                <button
+                  id="quick-surprise-me-btn"
+                  onClick={handleSurpriseMe}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#100C1F] hover:bg-[#1E1833] text-[#4FDCDE] border border-[#282141] hover:border-[#2FB8BA]/40 transition-all cursor-pointer"
+                >
+                  <Dice5 className="w-3.5 h-3.5 text-[#2FB8BA]" />
+                  <span>Surpreenda-me</span>
+                </button>
+
+                <button
+                  onClick={() => setIsTourWrappedOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#100C1F] hover:bg-[#1E1833] text-[#FFD60A] border border-[#282141] hover:border-[#FFD60A]/40 transition-all cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#FFD60A]" />
+                  <span>Tour Wrapped 9:16</span>
+                </button>
+
+                {/* Toggle Selo de Colecionador no Card */}
+                <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#ECE5D1] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(config.showCollectorBadge)}
+                    onChange={(e) => setConfig((prev) => ({ ...prev, showCollectorBadge: e.target.checked }))}
+                    className="w-4 h-4 rounded text-[#FFD60A] focus:ring-0 bg-[#100C1F] border-[#282141] cursor-pointer"
+                  />
+                  <span className={config.showCollectorBadge ? 'text-[#FFD60A]' : 'text-[#8A8577]'}>
+                    Selo no Card
+                  </span>
+                </label>
+              </div>
+            </div>
+
             {/* Personalizar Card - Single line with Dropdown option */}
             <div className="bg-[#171226] rounded-3xl border border-[#282141] shadow-xl overflow-hidden transition-all">
               <button
@@ -1490,7 +1927,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 <div className="flex items-center gap-2 shrink-0 ml-2">
                   <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#2FB8BA]/10 text-[#4FDCDE] font-mono text-[11px] border border-[#2FB8BA]/25 select-none">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6] animate-pulse" />
-                    <span>Tempo Real</span>
+                    <span>5 Categorias</span>
                   </span>
                   <div className={`p-1.5 rounded-lg bg-[#282141] text-[#2FB8BA] transition-transform duration-200 ${isPersonalizarOpen ? 'rotate-180' : ''}`}>
                     <ChevronDown className="w-4 h-4" />
@@ -1520,20 +1957,31 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                   onChange={(e) => setActiveDropdown(e.target.value || null)}
                   className="w-full bg-[#100C1F] border border-[#282141] hover:border-[#2FB8BA]/60 text-[#ECE5D1] text-xs font-bold rounded-xl px-3.5 py-2.5 appearance-none cursor-pointer focus:outline-none focus:border-[#2FB8BA] transition-all"
                 >
-                  <option value="">-- Escolha um tópico para abrir os controles --</option>
-                  <optgroup label="Tipografia e Arte">
-                    <option value="art">🎨 Arte do Card (Foto ou Pôster)</option>
-                    <option value="fontSize">🔤 Tamanho da Fonte (Controle Deslizante / Rápidos)</option>
-                    <option value="fontFamily">✒️ Tipo de Fonte (Sans, Impact, Editorial, Mono, Vintage)</option>
-                    <option value="artistPos">↕️ Posição do Nome da Banda (Em Cima, No Meio, Embaixo)</option>
+                  <option value="">-- Escolha um tópico das 5 Categorias --</option>
+                  <optgroup label="1. Gamificação & Colecionador">
+                    <option value="collector">🏆 Selo de Colecionador & Raridade</option>
+                    <option value="stamp">🏷️ Carimbos de Presença (EU FUI, VIP Pass...)</option>
                   </optgroup>
-                  <optgroup label="Demais Ajustes">
+                  <optgroup label="2. Vibes & Presets 1-Clique">
+                    <option value="vibes">⚡ Vibes & Presets de Estilo</option>
+                  </optgroup>
+                  <optgroup label="3. Memória & Conteúdo do Show">
+                    <option value="music">🎵 Faixa Marcante, Setor & Companhia</option>
+                  </optgroup>
+                  <optgroup label="4. Filtros Fotográficos & Efeitos">
+                    <option value="effects">✨ Filtros de Foto & Efeito Holográfico</option>
+                    <option value="art">🎨 Arte do Card (Foto ou Pôster)</option>
+                    <option value="fontSize">🔤 Tamanho da Fonte (Pequeno, Médio, Grande)</option>
+                    <option value="fontFamily">✒️ Tipo de Fonte (5 Famílias)</option>
+                    <option value="artistPos">↕️ Posição do Nome da Banda (Em Cima, No Meio, Embaixo)</option>
+                    <option value="color">🎨 Cor de Destaque Oficial</option>
+                    <option value="ratio">📐 Formato & Proporção (Story, Feed...)</option>
+                    <option value="template">🎭 Estilo Visual (Tema)</option>
+                  </optgroup>
+                  <optgroup label="5. Identificação & Detalhes">
                     <option value="venue">🏟️ Casa de Show e Localização</option>
                     <option value="userHandle">👤 Usuário (@nomedousuario)</option>
-                    <option value="badge">🏷️ Selo de Status (Ingresso Verificado...)</option>
-                    <option value="ratio">📐 Formato & Proporção (Story, Feed...)</option>
-                    <option value="color">🎨 Cor de Destaque</option>
-                    <option value="template">✨ Estilo Visual (Tema)</option>
+                    <option value="badge">🏷️ Selo de Status Superior</option>
                     <option value="tagline">✍️ Frase Superior (Tagline)</option>
                   </optgroup>
                 </select>
@@ -1555,6 +2003,407 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Box A: Selo de Colecionador & Raridade */}
+                <div
+                  className={`rounded-2xl border transition-all overflow-hidden ${
+                    activeDropdown === 'collector'
+                      ? 'sm:col-span-2 bg-[#1E1833] border-[#FFD60A] shadow-lg shadow-[#FFD60A]/10'
+                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#FFD60A]/40'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    id="dropdown-topic-collector"
+                    onClick={() => toggleDropdown('collector')}
+                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'collector' ? 'bg-[#FFD60A] text-[#100C1F]' : 'bg-[#282141] text-[#FFD60A]'}`}>
+                        <Trophy className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#ECE5D1] block">Selo de Colecionador & Raridade</span>
+                        <span className="text-[10px] text-[#8A8577]">Emblema oficial, número da edição e raridade</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-mono font-bold text-[#FFD60A] bg-[#FFD60A]/10 px-2 py-0.5 rounded-full border border-[#FFD60A]/20">
+                        {config.showCollectorBadge ? `Ativo (${config.collectorRarity || 'Ouro'})` : 'Desativado'}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
+                          activeDropdown === 'collector' ? 'rotate-180 text-[#FFD60A]' : ''
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'collector' && (
+                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#171226] border border-[#282141]">
+                        <div>
+                          <span className="text-xs font-bold text-[#ECE5D1] block">Exibir Selo de Colecionador no Card</span>
+                          <span className="text-[10px] text-[#8A8577]">Adiciona emblema com raridade e série no card</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(config.showCollectorBadge)}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, showCollectorBadge: e.target.checked }))}
+                          className="w-5 h-5 rounded text-[#FFD60A] focus:ring-0 bg-[#100C1F] border-[#282141] cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] block">Raridade do Card Colecionável:</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                          {[
+                            { id: 'gold', label: 'Ouro ✨' },
+                            { id: 'platinum', label: 'Platina 💎' },
+                            { id: 'diamond', label: 'Diamante ⚡' },
+                            { id: 'legendary', label: 'Lendário 👑' },
+                            { id: 'classic', label: 'Vintage 🎟️' },
+                          ].map((r) => (
+                            <button
+                              key={r.id}
+                              type="button"
+                              onClick={() => setConfig((prev) => ({ ...prev, collectorRarity: r.id as CollectorRarity, showCollectorBadge: true }))}
+                              className={`p-2 rounded-xl border text-center text-xs font-bold transition-all cursor-pointer ${
+                                config.collectorRarity === r.id && config.showCollectorBadge
+                                  ? 'border-[#FFD60A] bg-[#FFD60A]/15 text-[#ECE5D1] shadow'
+                                  : 'border-[#282141] bg-[#171226] text-[#8A8577] hover:text-[#ECE5D1]'
+                              }`}
+                            >
+                              <span className="block text-sm mb-0.5">{r.label.slice(-2)}</span>
+                              <span className="text-[10px] block truncate">{r.label.slice(0, -2)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
+                          <span>Número da Edição / Série:</span>
+                          <span className="text-[10px] text-[#8A8577]">Ex: #001, #042, #777</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={config.collectorEdition || ''}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, collectorEdition: e.target.value }))}
+                          placeholder="#042"
+                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] font-mono focus:outline-none focus:border-[#FFD60A]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box B: Carimbos de Presença & Tempo */}
+                <div
+                  className={`rounded-2xl border transition-all overflow-hidden ${
+                    activeDropdown === 'stamp'
+                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
+                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    id="dropdown-topic-stamp"
+                    onClick={() => toggleDropdown('stamp')}
+                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'stamp' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                        <Award className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#ECE5D1] block">Carimbos de Presença</span>
+                        <span className="text-[10px] text-[#8A8577]">Carimbo EU FUI, Show Histórico, Contagem</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                        {STAMP_TYPES.find((s) => s.id === (config.stampType || 'none'))?.label || 'Sem carimbo'}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
+                          activeDropdown === 'stamp' ? 'rotate-180 text-[#2FB8BA]' : ''
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'stamp' && (
+                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {STAMP_TYPES.map((s) => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => setConfig((prev) => ({ ...prev, stampType: s.id as any }))}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              (config.stampType || 'none') === s.id
+                                ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
+                                : 'bg-[#100C1F] border-[#282141] text-[#8A8577] hover:text-[#ECE5D1]'
+                            }`}
+                          >
+                            <span className="text-xs font-bold text-[#ECE5D1] block">{s.label}</span>
+                            <span className="text-[10px] text-[#8A8577] block mt-0.5">{s.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box C: Vibes & Presets 1-Clique */}
+                <div
+                  className={`rounded-2xl border transition-all overflow-hidden ${
+                    activeDropdown === 'vibes'
+                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
+                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    id="dropdown-topic-vibes"
+                    onClick={() => toggleDropdown('vibes')}
+                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'vibes' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                        <Wand2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#ECE5D1] block">Vibes & Presets de Estilo</span>
+                        <span className="text-[10px] text-[#8A8577]">8 estilos visuais pré-configurados em 1 clique</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                        8 Presets
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
+                          activeDropdown === 'vibes' ? 'rotate-180 text-[#2FB8BA]' : ''
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'vibes' && (
+                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {STYLE_VIBES.map((v) => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => handleApplyVibe(v)}
+                            className="p-3 rounded-xl border border-[#282141] bg-[#171226] hover:bg-[#1E1833] hover:border-[#2FB8BA] text-left transition-all cursor-pointer group"
+                          >
+                            <span className="text-lg block mb-1 group-hover:scale-110 transition-transform">{v.icon}</span>
+                            <span className="text-xs font-bold text-[#ECE5D1] block leading-tight">{v.name}</span>
+                            <span className="text-[9px] text-[#8A8577] block mt-0.5">{v.config.tagline}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box D: Memória & Conteúdo do Show */}
+                <div
+                  className={`rounded-2xl border transition-all overflow-hidden ${
+                    activeDropdown === 'music'
+                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
+                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    id="dropdown-topic-music"
+                    onClick={() => toggleDropdown('music')}
+                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'music' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                        <Music className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#ECE5D1] block">Faixa Marcante, Setor & Companhia</span>
+                        <span className="text-[10px] text-[#8A8577]">Música favorita, lugar no show e quem foi com você</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                        {config.favoriteSong ? 'Configurado' : 'Opcional'}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
+                          activeDropdown === 'music' ? 'rotate-180 text-[#2FB8BA]' : ''
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'music' && (
+                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
+                          <span className="flex items-center gap-1.5">
+                            <Music className="w-3 h-3 text-[#2FB8BA]" />
+                            Faixa Marcante (Música Favorita do Show):
+                          </span>
+                          <span className="text-[10px] text-[#8A8577]">Aparece como tag no card</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={config.favoriteSong || ''}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, favoriteSong: e.target.value }))}
+                          placeholder="Ex: Céu Azul, Mulher de Fases, Show das Poderosas..."
+                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] block">Setor do Ingresso:</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                          {['Pista Premium', 'Na Grade', 'Camarote VIP', 'Pista', 'Cadeira'].map((sec) => (
+                            <button
+                              key={sec}
+                              type="button"
+                              onClick={() => setConfig((prev) => ({ ...prev, ticketSector: config.ticketSector === sec ? '' : sec }))}
+                              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                                config.ticketSector === sec
+                                  ? 'border-[#FFD60A] bg-[#FFD60A]/15 text-[#FFD60A]'
+                                  : 'border-[#282141] bg-[#171226] text-[#8A8577] hover:text-[#ECE5D1]'
+                              }`}
+                            >
+                              {sec}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
+                          <span>Companhia no Show:</span>
+                          <span className="text-[10px] text-[#8A8577]">Ex: @mariana, @amor, @amigos</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={config.companionHandle || ''}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, companionHandle: e.target.value }))}
+                          placeholder="Ex: @mariana"
+                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] font-mono focus:outline-none focus:border-[#2FB8BA]"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
+                          <span>Destaques da Turnê / Setlist:</span>
+                          <span className="text-[10px] text-[#8A8577]">Músicas marcantes separadas por ponto</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={config.setlistHighlights || ''}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, setlistHighlights: e.target.value }))}
+                          placeholder="Ex: Céu Azul • Zoio de Lula • Proibida pra Mim"
+                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Box E: Filtros de Foto & Efeito Holográfico */}
+                <div
+                  className={`rounded-2xl border transition-all overflow-hidden ${
+                    activeDropdown === 'effects'
+                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
+                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    id="dropdown-topic-effects"
+                    onClick={() => toggleDropdown('effects')}
+                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'effects' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#ECE5D1] block">Filtros de Foto & Efeito Holográfico</span>
+                        <span className="text-[10px] text-[#8A8577]">P&B Noir, Duotone, Grain, Cyber e Brilho Foil</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                        {PHOTO_FILTERS.find((f) => f.id === (config.photoFilter || 'none'))?.label || 'Normal'}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
+                          activeDropdown === 'effects' ? 'rotate-180 text-[#2FB8BA]' : ''
+                        }`}
+                      />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'effects' && (
+                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-[#ECE5D1] block">Filtro de Imagem:</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {PHOTO_FILTERS.map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => setConfig((prev) => ({ ...prev, photoFilter: f.id as any }))}
+                              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                (config.photoFilter || 'none') === f.id
+                                  ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
+                                  : 'bg-[#100C1F] border-[#282141] text-[#8A8577] hover:text-[#ECE5D1]'
+                              }`}
+                            >
+                              <span className="text-xs font-bold text-[#ECE5D1] block">{f.label}</span>
+                              <span className="text-[10px] text-[#8A8577] block mt-0.5">{f.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#171226] border border-[#282141]">
+                        <div>
+                          <span className="text-xs font-bold text-[#ECE5D1] block">Película Prismática Holográfica (Foil)</span>
+                          <span className="text-[10px] text-[#8A8577]">Brilho iridescente sobreposto ao card</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(config.showHologram)}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, showHologram: e.target.checked }))}
+                          className="w-5 h-5 rounded text-[#2FB8BA] focus:ring-0 bg-[#100C1F] border-[#282141] cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-[#ECE5D1]">
+                          <span>Intensidade do Contraste / Sombra:</span>
+                          <span className="font-mono text-[#2FB8BA]">{config.contrastOverlay}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="80"
+                          value={config.contrastOverlay}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, contrastOverlay: parseInt(e.target.value) }))}
+                          className="w-full accent-[#2FB8BA] cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {/* Box 1: Arte do Card */}
                 <div
                   className={`rounded-2xl border transition-all overflow-hidden ${
@@ -2309,45 +3158,47 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     </div>
 
             {/* Options directly BELOW Personalizar Card: Download and Compartilhar side by side */}
-            <div className="flex items-center gap-3">
-              {/* Download Button */}
-              <button
-                id="download-card-png-btn"
-                onClick={handleDownloadPng}
-                disabled={isExporting || (!selectedShow && !selectedArtist)}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-gradient-to-r from-[#FFD60A] to-[#FFC000] hover:from-[#FFE14D] hover:to-[#FFD60A] text-[#100C1F] shadow-lg shadow-[#FFD60A]/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                title="Baixar Card em PNG de alta resolução"
-              >
-                {downloadSuccess ? (
-                  <>
-                    <Check className="w-4 h-4 text-[#100C1F]" />
-                    <span>Baixado!</span>
-                  </>
-                ) : isExporting ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin text-[#100C1F]" />
-                    <span>Gerando PNG...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 text-[#100C1F]" />
-                    <span>Download</span>
-                  </>
-                )}
-              </button>
+              <div>
+                <div className="flex items-center gap-3">
+                  {/* Download Button */}
+                  <button
+                    id="download-card-png-btn"
+                    onClick={handleDownloadPng}
+                    disabled={isExporting}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/25 active:scale-95 transition-all cursor-pointer"
+                    title="Baixar Card em PNG de alta resolução (300 DPI)"
+                  >
+                    {downloadSuccess ? (
+                      <>
+                        <Check className="w-4 h-4 text-[#100C1F]" />
+                        <span>Baixado!</span>
+                      </>
+                    ) : isExporting ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin text-[#100C1F]" />
+                        <span>Gerando PNG...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 text-[#100C1F]" />
+                        <span>Download PNG</span>
+                      </>
+                    )}
+                  </button>
 
-              {/* Compartilhar Button (triggers social media options) */}
-              <button
-                id="share-card-btn"
-                onClick={() => handleOpenShare()}
-                disabled={isExporting || (!selectedShow && !selectedArtist)}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] shadow-lg shadow-[#2FB8BA]/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                title="Compartilhar nas redes sociais (Instagram, WhatsApp, Facebook)"
-              >
-                <Share2 className="w-4 h-4 text-[#100C1F]" />
-                <span>Compartilhar</span>
-              </button>
-            </div>
+                  {/* Compartilhar Button (triggers social media options) */}
+                  <button
+                    id="share-card-btn"
+                    onClick={() => handleOpenShare()}
+                    disabled={isExporting || (!selectedShow && !selectedArtist)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] shadow-lg shadow-[#2FB8BA]/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                    title="Compartilhar nas redes sociais (Instagram, WhatsApp, Facebook)"
+                  >
+                    <Share2 className="w-4 h-4 text-[#100C1F]" />
+                    <span>Compartilhar</span>
+                  </button>
+                </div>
+              </div>
           </div>
         </div>
 
@@ -2373,6 +3224,15 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         onGeneratePng={handleGeneratePngBlob}
         onDownloadPng={handleDownloadPng}
         initialChannel={shareChannel}
+      />
+
+      {/* Tour Wrapped Modal (Resumo Retrospectiva do Fã 9:16) */}
+      <TourWrappedModal
+        isOpen={isTourWrappedOpen}
+        onClose={() => setIsTourWrappedOpen(false)}
+        stats={fanStats}
+        tickets={walletService.getTickets()}
+        userHandle={config.userHandle}
       />
     </div>
   );

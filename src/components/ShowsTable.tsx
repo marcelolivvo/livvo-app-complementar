@@ -1,293 +1,158 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Search,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  Music,
-} from 'lucide-react';
-import { ShowItem, ArtistItem } from '../types';
+import { Search, MapPin, Calendar, Building2, Plus, Sparkles, Filter } from 'lucide-react';
+import { ShowItem, CardTemplateConfig } from '../types';
 import { cleanDateOnly } from '../utils/dateUtils';
-import { normalizeStateUF, isSameState } from '../utils/stateUtils';
+import { cleanCityOnly } from '../utils/stateUtils';
+import { LivvoTicketIcon } from './LivvoTicketIcon';
 
 interface ShowsTableProps {
   shows: ShowItem[];
-  artists: ArtistItem[];
-  photosMap: Map<string, string>;
-  onSelectShowForCard: (show: ShowItem) => void;
-  onOpenPhotoManager: (artistCode: string) => void;
+  onSelectShowForStudio: (show: ShowItem) => void;
+  onOpenUploader?: () => void;
 }
 
 export const ShowsTable: React.FC<ShowsTableProps> = ({
   shows,
-  artists,
-  photosMap,
-  onSelectShowForCard,
-  onOpenPhotoManager,
+  onSelectShowForStudio,
+  onOpenUploader,
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterState, setFilterState] = useState('ALL');
-  const [filterPhoto, setFilterPhoto] = useState<'all' | 'with-photo' | 'without-photo'>('all');
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const [filterText, setFilterText] = useState('');
+  const [selectedState, setSelectedState] = useState<string>('ALL');
 
-  // Extract unique Brazilian states (consolidated UF codes e.g. 'São Paulo' -> 'SP')
-  const uniqueStates = useMemo(() => {
+  const states = useMemo(() => {
     const set = new Set<string>();
-    shows.forEach((s) => {
-      const uf = normalizeStateUF(s.state);
-      if (uf) set.add(uf);
-    });
-    return Array.from(set).sort();
+    shows.forEach((s) => s.state && set.add(s.state.toUpperCase()));
+    return ['ALL', ...Array.from(set).sort()];
   }, [shows]);
 
-  // Filter shows
   const filteredShows = useMemo(() => {
-    const q = searchTerm.toLowerCase().trim();
     return shows.filter((s) => {
-      const normName = s.artistName ? s.artistName.trim().toLowerCase() : '';
-      const hasPhoto =
-        photosMap.has(s.artistCode) ||
-        (normName && photosMap.has(normName)) ||
-        Boolean(artists.find((a) => a.artistName.trim().toLowerCase() === normName)?.photoUrl);
+      const matchesText =
+        !filterText ||
+        s.artistName.toLowerCase().includes(filterText.toLowerCase()) ||
+        s.city.toLowerCase().includes(filterText.toLowerCase()) ||
+        s.venue.toLowerCase().includes(filterText.toLowerCase());
 
-      if (filterPhoto === 'with-photo' && !hasPhoto) return false;
-      if (filterPhoto === 'without-photo' && hasPhoto) return false;
-
-      if (filterState !== 'ALL' && !isSameState(s.state, filterState)) return false;
-
-      if (q) {
-        return (
-          s.artistName.toLowerCase().includes(q) ||
-          s.venue.toLowerCase().includes(q) ||
-          s.city.toLowerCase().includes(q) ||
-          s.showCode.toLowerCase().includes(q) ||
-          s.artistCode.toLowerCase().includes(q)
-        );
-      }
-      return true;
+      const matchesState = selectedState === 'ALL' || s.state?.toUpperCase() === selectedState;
+      return matchesText && matchesState;
     });
-  }, [shows, searchTerm, filterState, filterPhoto, photosMap, artists]);
-
-  // Paginate
-  const totalPages = Math.max(1, Math.ceil(filteredShows.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const paginatedShows = useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filteredShows.slice(start, start + pageSize);
-  }, [filteredShows, currentPage, pageSize]);
+  }, [shows, filterText, selectedState]);
 
   return (
-    <div className="space-y-4">
-      {/* Top Controls Bar */}
-      <div className="bg-[#171226] p-4 sm:p-5 rounded-2xl border border-[#282141] shadow-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8A8577]" />
+    <div className="space-y-6 animate-fadeIn">
+      {/* Top Banner / Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#171226] border border-[#282141] p-5 rounded-3xl shadow-xl">
+        <div>
+          <h2 className="text-xl font-black text-[#ECE5D1] flex items-center gap-2">
+            <LivvoTicketIcon className="w-6 h-6 text-[#2FB8BA]" />
+            <span>Catálogo Oficial de Shows ({shows.length})</span>
+          </h2>
+          <p className="text-xs text-[#8A8577] mt-0.5">
+            Consulte datas confirmadas e crie seus ingressos colecionáveis personalizados
+          </p>
+        </div>
+
+        {onOpenUploader && (
+          <button
+            onClick={onOpenUploader}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] font-black text-xs transition-all shadow-lg shadow-[#2FB8BA]/20 cursor-pointer self-start sm:self-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Importar Shows (CSV)</span>
+          </button>
+        )}
+      </div>
+
+      {/* Filter Row */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1 relative">
+          <Search className="w-4 h-4 text-[#8A8577] absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Buscar por artista, local, cidade, código do show..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setPage(1);
-            }}
-            className="w-full pl-10 pr-4 py-2.5 bg-[#1E1833] border border-[#282141] rounded-xl text-xs text-[#ECE5D1] placeholder-[#8A8577] focus:outline-none focus:border-[#2FB8BA]"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            placeholder="Filtrar por artista, cidade ou local do show..."
+            className="w-full bg-[#171226] border border-[#282141] rounded-2xl pl-10 pr-4 py-2.5 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Photo filter */}
-          <select
-            value={filterPhoto}
-            onChange={(e) => {
-              setFilterPhoto(e.target.value as any);
-              setPage(1);
-            }}
-            className="bg-[#1E1833] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
-          >
-            <option value="all">Todas as Fotos</option>
-            <option value="with-photo">Com Foto de Artista</option>
-            <option value="without-photo">Sem Foto Cadastrada</option>
-          </select>
-
-          {/* State filter */}
-          <select
-            value={filterState}
-            onChange={(e) => {
-              setFilterState(e.target.value);
-              setPage(1);
-            }}
-            className="bg-[#1E1833] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
-          >
-            <option value="ALL">Todos os Estados</option>
-            {uniqueStates.map((st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ))}
-          </select>
-
-          <span className="text-xs font-mono text-[#B3AE9F] pl-2">
-            {filteredShows.length.toLocaleString()} shows
-          </span>
-        </div>
+        <select
+          value={selectedState}
+          onChange={(e) => setSelectedState(e.target.value)}
+          className="bg-[#171226] border border-[#282141] text-[#ECE5D1] rounded-2xl px-4 py-2.5 text-xs focus:outline-none focus:border-[#2FB8BA] cursor-pointer"
+        >
+          {states.map((st) => (
+            <option key={st} value={st}>
+              {st === 'ALL' ? 'Todos os Estados' : `Estado: ${st}`}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Shows Table */}
-      <div className="bg-[#171226] rounded-2xl border border-[#282141] overflow-hidden shadow-xl">
+      {/* Shows Table Card */}
+      <div className="bg-[#171226] border border-[#282141] rounded-3xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-[#ECE5D1]">
-            <thead className="bg-[#100C1F] uppercase text-[10px] font-extrabold tracking-wider text-[#B3AE9F] border-b border-[#282141]">
-              <tr>
-                <th className="py-3 px-4">Artista</th>
-                <th className="py-3 px-4">Código Artista</th>
-                <th className="py-3 px-4">Status Foto</th>
-                <th className="py-3 px-4">Local / Espaço</th>
-                <th className="py-3 px-4">Data / Dia</th>
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#282141] bg-[#120E22]/60 text-[10px] font-mono font-bold text-[#8A8577] uppercase tracking-wider">
+                <th className="py-3 px-4">Artista & Turnê</th>
+                <th className="py-3 px-4">Local</th>
                 <th className="py-3 px-4">Cidade / UF</th>
-                <th className="py-3 px-4">Código Show</th>
+                <th className="py-3 px-4">Data</th>
                 <th className="py-3 px-4 text-right">Ação</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#282141]">
-              {paginatedShows.length === 0 ? (
+            <tbody className="divide-y divide-[#282141]/50 text-xs">
+              {filteredShows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-[#8A8577]">
+                  <td colSpan={5} className="py-12 text-center text-[#8A8577]">
                     Nenhum show encontrado para os filtros selecionados.
                   </td>
                 </tr>
               ) : (
-                paginatedShows.map((show) => {
-                  const normName = show.artistName ? show.artistName.trim().toLowerCase() : '';
-                  const photoUrl =
-                    photosMap.get(show.artistCode) ||
-                    (normName ? photosMap.get(normName) : undefined) ||
-                    artists.find((a) => a.artistName.trim().toLowerCase() === normName)?.photoUrl;
-                  const hasPhoto = Boolean(photoUrl);
-
-                  return (
-                    <tr
-                      key={show.id}
-                      className="hover:bg-[#1E1833]/70 transition-colors group"
-                    >
-                      {/* Artista */}
-                      <td className="py-3 px-4 font-bold text-[#ECE5D1] flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full overflow-hidden bg-[#100C1F] shrink-0 border border-[#282141]">
-                          {photoUrl ? (
-                            <img
-                              src={photoUrl}
-                              alt={show.artistName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[#8A8577]">
-                              <Music className="w-4 h-4" />
-                            </div>
+                filteredShows.map((show) => (
+                  <tr
+                    key={show.id}
+                    className="hover:bg-[#1E1833]/50 transition-colors group cursor-pointer"
+                    onClick={() => onSelectShowForStudio(show)}
+                  >
+                    <td className="py-3.5 px-4 font-bold text-[#ECE5D1]">
+                      <div className="flex items-center gap-2">
+                        <LivvoTicketIcon className="w-4 h-4 text-[#2FB8BA] shrink-0" />
+                        <div>
+                          <div>{show.artistName}</div>
+                          {show.tourName && (
+                            <div className="text-[10px] text-[#2FB8BA] font-normal">{show.tourName}</div>
                           )}
                         </div>
-                        <span className="truncate max-w-[160px]">{show.artistName}</span>
-                      </td>
-
-                      {/* Código Artista */}
-                      <td className="py-3 px-4 font-mono text-[11px] text-[#4FDCDE]">
-                        {show.artistCode}
-                      </td>
-
-                      {/* Status Foto */}
-                      <td className="py-3 px-4">
-                        {hasPhoto ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#2FB8BA]/15 text-[#4FDCDE] border border-[#2FB8BA]/30">
-                            <CheckCircle2 className="w-3 h-3 text-[#22E3E6]" /> Vinculada
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() => onOpenPhotoManager(show.artistCode)}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#FFD60A]/10 text-[#FFD60A] border border-[#FFD60A]/20 hover:bg-[#FFD60A]/20 transition-colors"
-                          >
-                            <AlertCircle className="w-3 h-3" /> + Adicionar
-                          </button>
-                        )}
-                      </td>
-
-                      {/* Local */}
-                      <td className="py-3 px-4 text-[#ECE5D1] truncate max-w-[160px]">
-                        {show.venue || <span className="text-[#8A8577] italic text-xs">Indisponível</span>}
-                      </td>
-
-                      {/* Data */}
-                      <td className="py-3 px-4 font-mono text-[#B3AE9F] whitespace-nowrap">
-                        {show.date ? cleanDateOnly(show.date) : <span className="text-[#8A8577] italic text-xs">Indisponível</span>}
-                      </td>
-
-                      {/* Cidade / UF */}
-                      <td className="py-3 px-4">
-                        <span className="text-[#ECE5D1]">{show.city || 'Indisponível'}</span>
-                        {show.state && (
-                          <>
-                            {' '}
-                            <strong className="text-[#4FDCDE] font-mono">
-                              ({normalizeStateUF(show.state) || show.state})
-                            </strong>
-                          </>
-                        )}
-                      </td>
-
-                      {/* Código Show */}
-                      <td className="py-3 px-4 font-mono text-[11px] text-[#8A8577]">
-                        {show.showCode}
-                      </td>
-
-                      {/* Ação */}
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => onSelectShowForCard(show)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-[11px] bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 text-[#4FDCDE] border border-[#2FB8BA]/30 hover:border-[#4FDCDE] transition-all active:scale-95"
-                          title="Gerar Card deste Show"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                          <span>Gerar Card</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 text-[#B3AE9F]">{show.venue}</td>
+                    <td className="py-3.5 px-4 text-[#ECE5D1]">
+                      {cleanCityOnly(show.city)}
+                      {show.state ? ` - ${show.state}` : ''}
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-[#FFD60A]">
+                      {cleanDateOnly(show.date)}
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectShowForStudio(show);
+                        }}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#2FB8BA]/10 hover:bg-[#2FB8BA] text-[#4FDCDE] hover:text-[#100C1F] border border-[#2FB8BA]/30 font-bold text-xs transition-all cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Criar Card</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
         </div>
-
-        {/* Pagination Footer */}
-        {totalPages > 1 && (
-          <div className="p-4 border-t border-[#282141] flex items-center justify-between text-xs text-[#B3AE9F]">
-            <span>
-              Página {currentPage} de {totalPages} ({filteredShows.length.toLocaleString()} total)
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage <= 1}
-                className="p-1.5 rounded-lg bg-[#1E1833] hover:bg-[#282141] disabled:opacity-30 disabled:cursor-not-allowed text-[#ECE5D1] transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <span className="px-2 font-mono text-[#ECE5D1]">
-                {currentPage}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={currentPage >= totalPages}
-                className="p-1.5 rounded-lg bg-[#1E1833] hover:bg-[#282141] disabled:opacity-30 disabled:cursor-not-allowed text-[#ECE5D1] transition-colors"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

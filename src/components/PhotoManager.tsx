@@ -297,7 +297,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
               id="batch-auto-fetch-btn"
               onClick={handleBatchAutoFetchPhotos}
               disabled={isBatchAutoFetching || isProcessing}
-              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-extrabold text-sm bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] shadow-lg shadow-[#FFD60A]/20 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl font-extrabold text-sm bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/25 active:scale-95 transition-all disabled:opacity-40 cursor-pointer"
               title="Busca e atualiza fotos oficiais de artistas via API do Deezer"
             >
               {isBatchAutoFetching ? (
@@ -401,7 +401,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
             onClick={() => setFilterMode('without-photo')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
               filterMode === 'without-photo'
-                ? 'bg-[#FFD60A] text-[#100C1F] shadow-md'
+                ? 'bg-[#ECE5D1] text-[#100C1F] shadow-md'
                 : 'bg-[#1E1833] text-[#B3AE9F] hover:bg-[#282141] hover:text-[#ECE5D1]'
             }`}
           >
@@ -481,7 +481,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
                     <button
                       onClick={() => handleSingleAutoFetchPhoto(artist)}
                       disabled={singleAutoFetchingCode === artist.artistCode}
-                      className="p-1.5 rounded-xl bg-[#FFD60A] hover:bg-[#FFE14D] text-[#100C1F] transition-all shadow cursor-pointer disabled:opacity-50"
+                      className="p-1.5 rounded-xl bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] transition-all shadow-sm cursor-pointer disabled:opacity-50"
                       title="Atualizar foto oficial via Deezer"
                     >
                       {singleAutoFetchingCode === artist.artistCode ? (

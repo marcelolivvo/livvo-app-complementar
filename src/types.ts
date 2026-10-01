@@ -30,6 +30,7 @@ export type VisualMode = 'artist-photo' | 'show-poster';
 export type CardFontSize = 'small' | 'medium' | 'large';
 export type ArtistNamePosition = 'top' | 'middle' | 'bottom';
 export type CardFontFamily = 'sans' | 'impact' | 'serif' | 'mono' | 'vintage';
+export type CollectorRarity = 'classic' | 'gold' | 'platinum' | 'diamond' | 'legendary';
 
 export interface CardTemplateConfig {
   templateId: CardTemplateId;
@@ -49,6 +50,20 @@ export interface CardTemplateConfig {
   contrastOverlay: number; // 0 to 100
   customBadgeText: string; // e.g. "INGRESSO VERIFICADO" or "EU FUI"
   customLogoUrl?: string;
+  // Novel visual effects & fan features
+  photoFilter?: 'none' | 'noir' | 'duotone' | 'grain' | 'vibrant' | 'cyber';
+  stampType?: 'none' | 'verified' | 'eu-fui' | 'countdown' | 'vip' | 'saudade' | 'historico';
+  showHologram?: boolean;
+  favoriteSong?: string;
+  phoneMockup?: boolean;
+  // Category 1: Gamificação & Colecionador
+  showCollectorBadge?: boolean;
+  collectorEdition?: string; // ex: '#042'
+  collectorRarity?: CollectorRarity;
+  // Category 3: Conteúdo & Memória do Show
+  ticketSector?: string; // 'Pista Premium' | 'Grade' | 'Camarote VIP' | 'Pista' | 'Cadeira'
+  companionHandle?: string; // ex: '@mariana'
+  setlistHighlights?: string; // ex: 'Céu Azul • Zoio de Lula'
 }
 
 export interface ColumnMapping {

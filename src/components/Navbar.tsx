@@ -11,11 +11,12 @@ import {
   ChevronDown,
   Check,
   Lock,
+  Ticket,
 } from 'lucide-react';
 import { LivvoLogo } from './LivvoLogo';
 import { ShowItem, ArtistItem } from '../types';
 
-export type ActiveTab = 'studio' | 'photos' | 'shows';
+export type ActiveTab = 'studio' | 'wallet' | 'photos' | 'shows';
 
 interface NavbarProps {
   activeTab: ActiveTab;
@@ -23,6 +24,7 @@ interface NavbarProps {
   showsCount: number;
   artistsCount: number;
   photosCount: number;
+  walletCount?: number;
   shows: ShowItem[];
   artists: ArtistItem[];
   photosMap: Map<string, string>;
@@ -41,6 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   showsCount,
   artistsCount,
   photosCount,
+  walletCount = 0,
   onOpenCsvModal,
   onLoadSample,
   onClearAll,
@@ -87,11 +90,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <div>
               <h1 className="text-lg font-black tracking-tight text-[#ECE5D1] leading-none">
-                Show <span className="text-[#2FB8BA]">Card</span>
+                Virtual <span className="text-[#2FB8BA]">Poster</span>
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[11px] text-[#B3AE9F] font-medium hidden sm:inline">
-                  Lembrança oficial do show
+                  Lembrança Personalizada do Show
                 </span>
               </div>
             </div>
@@ -110,6 +113,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Layers className="w-4 h-4" />
               <span>Estúdio</span>
+            </button>
+
+            <button
+              id="tab-wallet"
+              onClick={() => setActiveTab('wallet')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+                activeTab === 'wallet'
+                  ? 'bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/20 scale-100'
+                  : 'bg-[#171226] text-[#B3AE9F] hover:text-[#ECE5D1] hover:bg-[#1E1833] border border-[#282141]'
+              }`}
+            >
+              <Ticket className="w-4 h-4" />
+              <span>Livvo Wallet</span>
+              {typeof walletCount === 'number' && walletCount > 0 && (
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${activeTab === 'wallet' ? 'bg-[#100C1F] text-[#ECE5D1]' : 'bg-[#ECE5D1]/20 text-[#ECE5D1]'}`}>
+                  {walletCount}
+                </span>
+              )}
             </button>
 
             {/* Active Context Chip for Admin (quando visualizando Fotos ou Shows) */}
