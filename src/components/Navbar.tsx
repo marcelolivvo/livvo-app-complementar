@@ -16,7 +16,7 @@ import {
 import { LivvoLogo } from './LivvoLogo';
 import { ShowItem, ArtistItem } from '../types';
 
-export type ActiveTab = 'studio' | 'wallet' | 'photos' | 'shows' | 'table';
+export type ActiveTab = 'studio' | 'wallet' | 'photos' | 'shows' | 'table' | 'b2b';
 
 export interface NavbarProps {
   activeTab?: ActiveTab;
@@ -242,6 +242,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <span className="px-3 text-[10px] font-black tracking-wider uppercase text-[#8A8577] block">
                           Visualização & Gerenciamento
                         </span>
+
+                        <button id="admin-menu-b2b-btn" onClick={() => { setActiveTab('b2b'); setIsAdminMenuOpen(false); }} className="w-full p-2.5 rounded-2xl text-left hover:bg-[#2FB8BA]/15 text-[#4FDCDE]">
+                          <span className="font-bold">Livvo B2B</span>
+                          <span className="block text-[11px] text-[#B3AE9F] mt-0.5">Páginas para parceiros do Livvo</span>
+                        </button>
 
                         {/* Botão de Fotos - Exclusivo Admin */}
                         <button

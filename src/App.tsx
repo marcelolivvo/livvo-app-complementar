@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar, ActiveTab } from './components/Navbar';
 import { CardStudio } from './components/CardStudio';
 import { ShowsTable } from './components/ShowsTable';
+import { LivvoB2B } from './components/LivvoB2B';
 import { TicketWallet } from './components/TicketWallet';
 import { PhotoManager } from './components/PhotoManager';
 import { CsvUploaderModal } from './components/CsvUploaderModal';
@@ -128,6 +129,8 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8">
+        {currentTab === 'b2b' && <LivvoB2B />}
+
         {currentTab === 'studio' && (
           <CardStudio
             shows={shows}
