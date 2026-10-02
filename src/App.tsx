@@ -134,7 +134,6 @@ export const App: React.FC = () => {
             artists={artists}
             selectedShow={selectedShow}
             selectedArtist={selectedArtist}
-            preselectedArtist={selectedArtist}
             photosMap={photosMap}
             onSelectShow={setSelectedShow}
             onSelectArtist={setSelectedArtist}

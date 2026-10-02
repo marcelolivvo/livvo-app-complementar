@@ -291,11 +291,9 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   );
 
   const setSelectedArtist = (val: React.SetStateAction<ArtistItem | null>) => {
-    setSelectedArtistState((prev) => {
-      const next = typeof val === 'function' ? val(prev) : val;
-      if (onSelectArtist) onSelectArtist(next);
-      return next;
-    });
+    const next = typeof val === 'function' ? val(selectedArtist) : val;
+    setSelectedArtistState(next);
+    if (onSelectArtist) onSelectArtist(next);
   };
 
   useEffect(() => {
@@ -317,6 +315,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Auto-photo fetching state
   const [isFetchingPhoto, setIsFetchingPhoto] = useState(false);
+  const photoRequestId = useRef(0);
   const [autoPhotoMessage, setAutoPhotoMessage] = useState<string | null>(null);
 
   // Online Media Search Modal state (Posters & Photos)
@@ -721,11 +720,13 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   // Automated background photo link for an artist without asking the user
   const triggerAutoLinkPhoto = async (artist: ArtistItem) => {
     if (!onUpdateArtistPhoto) return;
+    const requestId = ++photoRequestId.current;
     setIsFetchingPhoto(true);
     setAutoPhotoMessage(null);
 
     try {
       const result = await autoFetchArtistPhoto(artist.artistName);
+      if (requestId !== photoRequestId.current) return;
       if (result && result.photoUrl) {
         setLocalPhotos((prev) => ({
           ...prev,
@@ -753,8 +754,10 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     } catch {
       // Silent in background
     } finally {
-      setIsFetchingPhoto(false);
-      setTimeout(() => setAutoPhotoMessage(null), 4000);
+      if (requestId === photoRequestId.current) {
+        setIsFetchingPhoto(false);
+        setTimeout(() => { if (requestId === photoRequestId.current) setAutoPhotoMessage(null); }, 4000);
+      }
     }
   };
 
@@ -1160,6 +1163,9 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Handlers for modal media selection
   const handleSelectModalPhoto = async (artistCode: string, url: string) => {
+    photoRequestId.current += 1;
+    setIsFetchingPhoto(false);
+    setAutoPhotoMessage(null);
     const targetName = (selectedArtist?.artistName || selectedShow?.artistName || '').trim().toLowerCase();
     setLocalPhotos((prev) => ({
       ...prev,

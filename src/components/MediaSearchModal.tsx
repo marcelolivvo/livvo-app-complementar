@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Search, Sparkles, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { searchArtistMedia, MediaItem, ArtistMediaResult } from '../services/artistPhotoService';
@@ -32,28 +32,39 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
   const [searchQuery, setSearchQuery] = useState(resolvedName);
   const [loading, setLoading] = useState(false);
   const [mediaResult, setMediaResult] = useState<ArtistMediaResult | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const requestId = useRef(0);
 
   useEffect(() => {
     if (isOpen) {
-      const targetName = artistName || artist?.artistName || selectedShow?.artistName || '';
+      const targetName = resolvedName;
+      setSelectedItem(null);
+      setError(null);
       setSearchQuery(targetName);
       setActiveTab(initialTab);
       if (targetName) {
         loadMedia(targetName);
       }
     }
-  }, [isOpen, artist, artistName, selectedShow, initialTab]);
+    return () => { requestId.current += 1; };
+  }, [isOpen, resolvedName, initialTab]);
 
   const loadMedia = async (name: string) => {
     if (!name) return;
+    const id = ++requestId.current;
+    setSelectedItem(null);
+    setError(null);
     try {
       setLoading(true);
       const res = await searchArtistMedia(name);
-      setMediaResult(res);
+      if (id === requestId.current) setMediaResult(res);
     } catch (e) {
       console.error('Erro ao buscar mídias:', e);
+      if (id === requestId.current) setError('Não foi possível buscar as imagens. Tente novamente.');
     } finally {
-      setLoading(false);
+      if (id === requestId.current) setLoading(false);
     }
   };
 
@@ -62,6 +73,10 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
   const currentList = activeTab === 'photos' ? mediaResult?.photos || [] : mediaResult?.posters || [];
 
   const handleSelectItem = async (item: MediaItem) => {
+    if (applying) return;
+    setApplying(true);
+    setError(null);
+    try {
     if (onSelectMedia) {
       onSelectMedia(item.url, item.type);
     }
@@ -73,6 +88,11 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
       await onSelectPoster(target, item.url);
     }
     onClose();
+    } catch {
+      setError('Não foi possível aplicar a imagem. Tente novamente.');
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -152,7 +172,12 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
               {currentList.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => handleSelectItem(item)}
+                  onClick={() => setSelectedItem(item)}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Selecionar ${item.title}`}
+                  aria-pressed={selectedItem?.id === item.id}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedItem(item); } }}
                   className="group relative rounded-2xl overflow-hidden border border-[#282141] hover:border-[#2FB8BA] cursor-pointer aspect-square bg-[#100C1F] shadow-lg transition-all"
                 >
                   <img
@@ -174,15 +199,24 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
                       {item.source}
                     </span>
                   </div>
+                  {selectedItem?.id === item.id && <span className="absolute bottom-2 left-2 right-2 z-20 rounded-lg bg-[#4FDCDE] text-[#100C1F] text-xs font-bold p-2 text-center">Selecionada</span>}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2.5">
                     <span className="text-[11px] font-bold text-[#ECE5D1] leading-tight line-clamp-2">{item.title}</span>
-                    <span className="text-[9px] text-[#2FB8BA] font-semibold mt-0.5">Clique para aplicar</span>
+                    <span className="text-[9px] text-[#2FB8BA] font-semibold mt-0.5">Clique para selecionar</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+        {error && <p role="alert" className="text-sm text-[#ECE5D1]">{error}</p>}
+        <button
+          disabled={!selectedItem || loading || applying || selectedItem.type !== (activeTab === 'photos' ? 'photo' : 'poster')}
+          onClick={() => selectedItem && handleSelectItem(selectedItem)}
+          className="w-full rounded-2xl bg-[#4FDCDE] text-[#100C1F] py-3 text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {applying ? 'Aplicando...' : activeTab === 'photos' ? 'Usar foto no card' : 'Usar pôster no card'}
+        </button>
       </div>
     </div>
   );

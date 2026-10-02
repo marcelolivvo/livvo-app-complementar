@@ -278,7 +278,7 @@ app.get('/api/catalog/search', (req, res) => {
     } else if (!process.env.VERCEL) {
       const distPath = path.join(process.cwd(), 'dist');
       app.use(express.static(distPath));
-      app.get('*', (req, res) => {
+      app.get('/{*splat}', (req, res) => {
         res.sendFile(path.join(distPath, 'index.html'));
       });
     }
