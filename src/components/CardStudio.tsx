@@ -495,7 +495,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   // Fetch default featured preview once on mount to show when query is empty or < 3 chars
   useEffect(() => {
     let isCancelled = false;
-    searchCatalogApi({ limit: 12 })
+    searchCatalogApi({ limit: 50 })
       .then((res) => {
         if (!isCancelled && res.artists && res.artists.length > 0) {
           const mapped: ArtistItem[] = res.artists.map((a: ArtistItem) => ({
@@ -597,7 +597,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       }
     });
 
-    return Array.from(artistMap.values()).slice(0, 25);
+    return Array.from(artistMap.values()).slice(0, artistSearchQuery.trim() ? 25 : 50);
   }, [catalogArtists, allAvailableArtists, artistSearchQuery]);
 
   const [dbArtistShows, setDbArtistShows] = useState<ShowItem[]>([]);

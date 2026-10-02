@@ -1,6 +1,8 @@
 import { ShowItem, ArtistItem } from '../types';
+import { EXTRA_ARTISTS, EXTRA_SHOWS } from './expandedSamples';
 
 export const SAMPLE_SHOWS: ShowItem[] = [
+  ...EXTRA_SHOWS,
   {
     id: 'show_001',
     showCode: 'LIVVO_COLDPLAY_SP',
@@ -100,6 +102,7 @@ export const SAMPLE_SHOWS: ShowItem[] = [
 ];
 
 export const SAMPLE_ARTISTS_DATA: ArtistItem[] = [
+  ...EXTRA_ARTISTS,
   {
     artistCode: 'coldplay',
     artistName: 'Coldplay',
