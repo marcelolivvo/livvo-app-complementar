@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { PassportIcon } from './PassportIcon';
 import {
   Ticket,
   Trophy,
@@ -113,10 +114,8 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
 
         <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 border-b border-[#282141] pb-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#2FB8BA] via-[#4FDCDE] to-[#ECE5D1] p-0.5 shadow-xl shrink-0">
-              <div className="w-full h-full bg-[#100C1F] rounded-2xl flex items-center justify-center text-2xl font-black">
-                <LivvoTicketIcon className="w-8 h-8 text-[#2FB8BA]" />
-              </div>
+            <div className="w-[54px] h-[54px] flex items-center justify-center shrink-0 bg-transparent" title="Passaporte Oficial de Shows">
+              <PassportIcon className="w-[54px] h-[54px] text-[#2FB8BA]" aria-hidden="true" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
