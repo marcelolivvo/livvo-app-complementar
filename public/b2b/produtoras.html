@@ -158,6 +158,26 @@ h2.tit em{font-style:normal;color:var(--teal)}
 .cta p{font-size:8.9pt;margin-top:2mm;color:rgba(16,12,31,.8);max-width:76mm}
 .cta .ct{text-align:right;font-weight:700;font-size:10.4pt;line-height:1.7}
 .cta .ct span{display:block;font-weight:600}
+
+/* Apresentação web horizontal: conteúdo em fluxo, sem cortes de página A4. */
+@media screen {
+body{background:var(--preto);font-size:16px}
+.pg{width:100%;height:auto;min-height:70vh;overflow:visible;padding:48px clamp(24px,5vw,64px);margin:0 auto;max-width:1180px}
+.pg .cab,.pg .corpo,.pg .rod,.pg .aviso,.pg .legenda,.pg .cta{position:relative;inset:auto;width:auto}
+.pg .cab{margin-bottom:32px}.pg .rod{margin-top:32px}.pg .aviso,.pg .legenda{margin-top:24px}
+h2.tit{max-width:none;font-size:clamp(30px,4vw,48px)}.lead{max-width:900px;font-size:18px}
+.capa{display:grid;grid-template-columns:1fr 1fr;column-gap:48px;align-items:center}
+.capa .topo{position:relative;inset:auto;grid-column:1/-1;margin-bottom:48px}
+.capa h1{position:relative;inset:auto;width:auto;font-size:clamp(36px,4.8vw,64px);grid-column:1}
+.capa .sub{position:relative;inset:auto;width:auto;grid-column:1;margin-top:24px;font-size:18px}
+.capa .tkw{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:176/64.5;grid-column:2;grid-row:2/4}
+.capa svg.arte{width:100%;height:100%;pointer-events:none}
+.capa .fig{position:relative;inset:auto;grid-column:2;margin-top:24px}
+.capa .rodape{position:relative;inset:auto;grid-column:1/-1;margin-top:48px}
+.capa .aviso{grid-column:1/-1}
+.pg .cta{margin-top:36px}.pg .corpo{max-width:none}
+@media(max-width:760px){.capa{display:block}.capa .tkw{margin:40px 0}.duas,.grade,.cards{grid-template-columns:1fr}.etapas{grid-template-columns:1fr 1fr}.cta{flex-direction:column;align-items:flex-start}.cinco .lin{grid-template-columns:1fr}}
+}
 </style></head><body>
 
 <!-- 1 CAPA -->

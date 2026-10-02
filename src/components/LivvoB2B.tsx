@@ -23,7 +23,7 @@ export const LivvoB2B: React.FC = () => {
           </button>
         ))}
       </nav>
-      <iframe key={selected.slug} src={`/b2b/${selected.slug}.html`} title={selected.title} sandbox="" className="w-full h-[75vh] min-h-[500px] rounded-2xl border border-[#282141] bg-[#100C1F]" />
+      <iframe key={selected.slug} src={`/b2b/${selected.slug}.html`} title={selected.title} sandbox="allow-scripts" className="w-full h-[75vh] min-h-[500px] rounded-2xl border border-[#282141] bg-[#100C1F]" />
     </section>
   );
 };
