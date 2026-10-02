@@ -56,6 +56,8 @@ export interface FanMedalTier {
 
 export interface FanStats {
   totalShows: number;
+  effectiveShows: number;
+  bonusShowsFromChallenges: number;
   uniqueArtists: number;
   uniqueStates: number;
   uniqueCities: number;
@@ -224,42 +226,48 @@ export const walletService = {
       }
     });
 
+    const completedChallenges = this.getCompletedChallengeIds();
+    const bonusShowsFromChallenges = completedChallenges.length;
+    const effectiveShows = totalShows + bonusShowsFromChallenges;
+
     const medals = this.getFanMedals();
     let currentMedal = medals[0];
     let nextMedal: FanMedalTier | undefined = medals[1];
     let nextLevelProgress = 0;
 
-    if (totalShows >= 20) {
+    if (effectiveShows >= 20) {
       currentMedal = medals[4];
       nextMedal = undefined;
       nextLevelProgress = 100;
-    } else if (totalShows >= 10) {
+    } else if (effectiveShows >= 10) {
       currentMedal = medals[3];
       nextMedal = medals[4];
-      nextLevelProgress = Math.round(((totalShows - 10) / (20 - 10)) * 100);
-    } else if (totalShows >= 5) {
+      nextLevelProgress = Math.round(((effectiveShows - 10) / (20 - 10)) * 100);
+    } else if (effectiveShows >= 5) {
       currentMedal = medals[2];
       nextMedal = medals[3];
-      nextLevelProgress = Math.round(((totalShows - 5) / (10 - 5)) * 100);
-    } else if (totalShows >= 3) {
+      nextLevelProgress = Math.round(((effectiveShows - 5) / (10 - 5)) * 100);
+    } else if (effectiveShows >= 3) {
       currentMedal = medals[1];
       nextMedal = medals[2];
-      nextLevelProgress = Math.round(((totalShows - 3) / (5 - 3)) * 100);
-    } else if (totalShows >= 1) {
+      nextLevelProgress = Math.round(((effectiveShows - 3) / (5 - 3)) * 100);
+    } else if (effectiveShows >= 1) {
       currentMedal = medals[0];
       nextMedal = medals[1];
-      nextLevelProgress = Math.round(((totalShows - 1) / (3 - 1)) * 100);
+      nextLevelProgress = Math.round(((effectiveShows - 1) / (3 - 1)) * 100);
     } else {
       currentMedal = { ...medals[0], unlocked: false };
       nextMedal = medals[0];
       nextLevelProgress = 0;
     }
 
-    const level = totalShows === 0 ? 0 : currentMedal.level;
-    const levelTitle = totalShows === 0 ? 'Novo Fã' : currentMedal.name;
+    const level = effectiveShows === 0 ? 0 : currentMedal.level;
+    const levelTitle = effectiveShows === 0 ? 'Novo Fã' : currentMedal.name;
 
     return {
       totalShows,
+      effectiveShows,
+      bonusShowsFromChallenges,
       uniqueArtists: artistMap.size,
       uniqueStates: stateSet.size,
       uniqueCities: citySet.size,
@@ -272,6 +280,28 @@ export const walletService = {
       currentMedal,
       nextMedal,
     };
+  },
+
+  getCompletedChallengeIds(): string[] {
+    try {
+      const raw = localStorage.getItem('livvo_completed_challenges_v1');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  toggleChallengeCompletion(challengeId: string): boolean {
+    const ids = this.getCompletedChallengeIds();
+    const exists = ids.includes(challengeId);
+    let nextIds: string[];
+    if (exists) {
+      nextIds = ids.filter((id) => id !== challengeId);
+    } else {
+      nextIds = [...ids, challengeId];
+    }
+    localStorage.setItem('livvo_completed_challenges_v1', JSON.stringify(nextIds));
+    return !exists;
   },
 
   getBadges(): AchievementBadge[] {
@@ -346,6 +376,7 @@ export const walletService = {
   getWeeklyChallenges(): WeeklyChallenge[] {
     const tickets = this.getTickets();
     const stats = this.getStats();
+    const completedIds = new Set(this.getCompletedChallengeIds());
 
     // 1. Photos challenge (user example: 'Adicione 3 fotos de shows desse mês')
     const ticketsWithPhotos = tickets.filter((t) => t.photoUrl || t.posterUrl).length;
@@ -368,8 +399,8 @@ export const walletService = {
         title: 'Adicione 3 fotos de shows desse mês',
         description: 'Vincule fotos ao vivo do palco ou pôsteres de turnê aos seus ingressos para enriquecer o passaporte.',
         target: 3,
-        current: Math.min(3, ticketsWithPhotos),
-        completed: ticketsWithPhotos >= 3,
+        current: completedIds.has('challenge_photos') ? 3 : Math.min(3, ticketsWithPhotos),
+        completed: completedIds.has('challenge_photos') || ticketsWithPhotos >= 3,
         rewardXp: 150,
         rewardBadge: 'Fotógrafo de Palco',
         icon: '📸',
@@ -381,8 +412,8 @@ export const walletService = {
         title: 'Colecione shows de 3 artistas diferentes',
         description: 'Diversifique sua jornada musical registrando diferentes bandas e cantores ao vivo no Brasil.',
         target: 3,
-        current: Math.min(3, uniqueArtists),
-        completed: uniqueArtists >= 3,
+        current: completedIds.has('challenge_artists') ? 3 : Math.min(3, uniqueArtists),
+        completed: completedIds.has('challenge_artists') || uniqueArtists >= 3,
         rewardXp: 120,
         rewardBadge: 'Fã Eclético',
         icon: '🎸',
@@ -394,8 +425,8 @@ export const walletService = {
         title: 'Desbrave shows em 2 cidades diferentes',
         description: 'Colecione ingressos de festivais ou shows em cidades ou estados diferentes pelo país.',
         target: 2,
-        current: Math.min(2, uniqueCities),
-        completed: uniqueCities >= 2,
+        current: completedIds.has('challenge_cities') ? 2 : Math.min(2, uniqueCities),
+        completed: completedIds.has('challenge_cities') || uniqueCities >= 2,
         rewardXp: 100,
         rewardBadge: 'Passaporte na Estrada',
         icon: '📍',
@@ -407,8 +438,8 @@ export const walletService = {
         title: 'Personalize 2 cards com Selo VIP ou Música Favorita',
         description: 'Destaque a música inesquecível daquele show ou ative o carimbo oficial no CardStudio.',
         target: 2,
-        current: Math.min(2, customizedTickets),
-        completed: customizedTickets >= 2,
+        current: completedIds.has('challenge_custom') ? 2 : Math.min(2, customizedTickets),
+        completed: completedIds.has('challenge_custom') || customizedTickets >= 2,
         rewardXp: 80,
         rewardBadge: 'Colecionador Detalhista',
         icon: '✨',
@@ -420,8 +451,8 @@ export const walletService = {
         title: 'Atinja 5 shows salvos na sua Livvo Wallet',
         description: 'Complete 5 ingressos para garantir o marco de presença VIP e o título de Fã Ouro.',
         target: 5,
-        current: Math.min(5, totalShows),
-        completed: totalShows >= 5,
+        current: completedIds.has('challenge_shows') ? 5 : Math.min(5, totalShows),
+        completed: completedIds.has('challenge_shows') || totalShows >= 5,
         rewardXp: 200,
         rewardBadge: 'Rumo ao Nível Ouro 🥇',
         icon: '🎟️',

@@ -69,7 +69,7 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
   const [singleUploadTargetCode, setSingleUploadTargetCode] = useState<string | null>(null);
 
   // Consolidate artists strictly by unique artist name to eliminate duplicate entries
-  const uniqueArtists = useMemo(() => {
+  const uniqueArtists = useMemo<ArtistItem[]>(() => {
     return consolidateArtists(artists, undefined, photosMap);
   }, [artists, photosMap]);
 
@@ -733,11 +733,11 @@ export const PhotoManager: React.FC<PhotoManagerProps> = ({
           onClose={() => setSearchModalArtist(null)}
           artist={searchModalArtist}
           selectedShow={null}
-          onSelectPhoto={async (code, url) => {
+          onSelectPhoto={async (code: string, url: string) => {
             await onUpdateArtistPhoto(code, url, 'auto');
             setSearchModalArtist(null);
           }}
-          onSelectPoster={async (_codeOrId, url) => {
+          onSelectPoster={async (_codeOrId: string, url: string) => {
             await onUpdateArtistPhoto(searchModalArtist.artistCode, url, 'auto');
             onNavigateToShowCard(searchModalArtist.artistCode, url);
             setSearchModalArtist(null);

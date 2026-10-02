@@ -52,4 +52,13 @@ export const dbService = {
     custom.forEach((s) => map.set(s.id, s));
     return Array.from(map.values());
   },
+
+  async getShowsByArtist(artistCode?: string, artistName?: string): Promise<ShowItem[]> {
+    const all = this.getAllShows();
+    return all.filter((s) => {
+      const matchCode = artistCode && s.artistCode.toLowerCase() === artistCode.toLowerCase();
+      const matchName = artistName && s.artistName.toLowerCase() === artistName.toLowerCase();
+      return Boolean(matchCode || matchName);
+    });
+  },
 };

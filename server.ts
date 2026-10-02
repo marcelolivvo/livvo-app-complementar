@@ -3,31 +3,29 @@ import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog';
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
 
-  app.use(express.json());
+app.use(express.json());
 
-  // Security: Block any direct client requests to private server data, CSV, or index files
-  app.use((req, res, next) => {
-    const lowerPath = req.path.toLowerCase();
-    if (
-      lowerPath.startsWith('/data') ||
-      lowerPath.endsWith('.csv') ||
-      lowerPath.includes('shows-index') ||
-      lowerPath.includes('shows-completo')
-    ) {
-      return res.status(404).json({ error: 'Not Found' });
-    }
-    next();
-  });
+// Security: Block any direct client requests to private server data, CSV, or index files
+app.use((req, res, next) => {
+  const lowerPath = req.path.toLowerCase();
+  if (
+    lowerPath.startsWith('/data') ||
+    lowerPath.endsWith('.csv') ||
+    lowerPath.includes('shows-index') ||
+    lowerPath.includes('shows-completo')
+  ) {
+    return res.status(404).json({ error: 'Not Found' });
+  }
+  next();
+});
 
-  // Initialize in-memory catalog once on server start
-  initCatalog();
+// Initialize in-memory catalog once on server start
+initCatalog();
 
-  // API Route: Protected Catalog Search (Paginated, Rate-Limited, No mass dumping)
-  app.get('/api/catalog/search', (req, res) => {
+// API Route: Protected Catalog Search (Paginated, Rate-Limited, No mass dumping)
+app.get('/api/catalog/search', (req, res) => {
     // 1. IP-based rate limiting to prevent automated scraping
     const clientIp =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
@@ -78,28 +76,45 @@ async function startServer() {
     }
 
     try {
+      const fetchHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) LivvoApp/1.0 (https://livvo.app)',
+        'Accept': 'application/json, text/plain, */*',
+      };
+
       // 1. Search Artist portrait on Deezer
-      const artistPromise = fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=5`)
+      const artistPromise = fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=8`, {
+        headers: fetchHeaders,
+      })
         .then((r) => (r.ok ? r.json() : { data: [] }))
         .catch(() => ({ data: [] }));
 
       // 2. Search Tour / Album Posters on Deezer
-      const albumPromise = fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=6`)
+      const albumPromise = fetch(`https://api.deezer.com/search/album?q=${encodeURIComponent(query)}&limit=10`, {
+        headers: fetchHeaders,
+      })
         .then((r) => (r.ok ? r.json() : { data: [] }))
         .catch(() => ({ data: [] }));
 
       // 3. Search on iTunes as secondary high-res source
-      const itunesPromise = fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=4`)
+      const itunesPromise = fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=album&limit=10`, {
+        headers: fetchHeaders,
+      })
         .then((r) => (r.ok ? r.json() : { results: [] }))
         .catch(() => ({ results: [] }));
 
       // 4. Search on Wikipedia / Wikimedia Commons (Free public domain encyclopedia photos)
-      const wikiPromise = fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=3&prop=pageimages&format=json&pithumbsize=1000`)
+      const wikiPromise = fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages&format=json&pithumbsize=1200`,
+        { headers: fetchHeaders }
+      )
         .then((r) => (r.ok ? r.json() : {}))
         .catch(() => ({}));
 
       // 5. Search on pt.wikipedia.org for Brazilian artists
-      const ptWikiPromise = fetch(`https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=3&prop=pageimages&format=json&pithumbsize=1000`)
+      const ptWikiPromise = fetch(
+        `https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages&format=json&pithumbsize=1200`,
+        { headers: fetchHeaders }
+      )
         .then((r) => (r.ok ? r.json() : {}))
         .catch(() => ({}));
 
@@ -250,24 +265,34 @@ async function startServer() {
     res.json({ status: 'ok', service: 'show-card-api' });
   });
 
-  // Vite middleware in development or static serve in production
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+  export async function startServer() {
+    const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+    // Vite middleware in development or static serve in production
+    if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } else if (!process.env.VERCEL) {
+      const distPath = path.join(process.cwd(), 'dist');
+      app.use(express.static(distPath));
+      app.get('*', (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+      });
+    }
+
+    if (!process.env.VERCEL) {
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Show Card server running on http://0.0.0.0:${PORT}`);
+      });
+    }
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Show Card server running on http://0.0.0.0:${PORT}`);
-  });
-}
+  // Automatically start standalone server unless running in Vercel Serverless environment
+  if (!process.env.VERCEL) {
+    startServer();
+  }
 
-startServer();
+  export default app;

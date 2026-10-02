@@ -119,7 +119,7 @@ export async function parseAndProcessCsv(options: ParseCsvOptions): Promise<{
       header: true,
       skipEmptyLines: 'greedy',
       dynamicTyping: false,
-      chunk: async (results, parser) => {
+      chunk: async (results: Papa.ParseResult<Record<string, string>>, parser: Papa.Parser) => {
         parser.pause();
 
         for (const row of results.data as Record<string, string>[]) {
@@ -220,7 +220,7 @@ export async function parseAndProcessCsv(options: ParseCsvOptions): Promise<{
           artistsMap,
         });
       },
-      error: (error) => {
+      error: (error: Error) => {
         reject(error);
       },
     });
@@ -243,7 +243,7 @@ export async function parseAndLoadShowsCsv(
       header: true,
       skipEmptyLines: 'greedy',
       dynamicTyping: false,
-      complete: (results) => {
+      complete: (results: Papa.ParseResult<Record<string, string>>) => {
         try {
           const fields = results.meta.fields || [];
           const mapping = detectColumnMapping(fields);

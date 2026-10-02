@@ -9,6 +9,7 @@ export interface ShowItem {
   state: string; // Estado (UF)
   posterUrl?: string; // Pôster / Flyer oficial do evento / turnê
   tourName?: string; // Nome da Turnê (ex: 'Turnê Tardezinha', 'Numanice Tour')
+  photoUrl?: string;
 }
 
 export interface ArtistItem {
@@ -19,6 +20,8 @@ export interface ArtistItem {
   featuredPosterUrl?: string;
   showsCount: number;
   updatedAt?: number;
+  name?: string;
+  code?: string;
 }
 
 export type CardTemplateId = 'modern-stage' | 'festival-bold' | 'minimal-editorial' | 'neon-tour' | 'ticket-pass';

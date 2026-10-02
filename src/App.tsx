@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Navbar } from './components/Navbar';
+import { Navbar, ActiveTab } from './components/Navbar';
 import { CardStudio } from './components/CardStudio';
 import { ShowsTable } from './components/ShowsTable';
 import { TicketWallet } from './components/TicketWallet';
+import { PhotoManager } from './components/PhotoManager';
 import { CsvUploaderModal } from './components/CsvUploaderModal';
 import { ShowItem, ArtistItem, CardTemplateConfig } from './types';
 import { dbService } from './services/db';
 import { walletService } from './services/walletService';
 
 export const App: React.FC = () => {
-  const [currentTab, setCurrentTab] = useState<'studio' | 'table' | 'wallet'>('studio');
+  const [currentTab, setCurrentTab] = useState<ActiveTab>('studio');
   const [shows, setShows] = useState<ShowItem[]>([]);
   const [artists, setArtists] = useState<ArtistItem[]>([]);
   const [selectedShow, setSelectedShow] = useState<ShowItem | null>(null);
@@ -102,8 +103,13 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#100C1F] text-[#ECE5D1] flex flex-col font-sans">
       <Navbar
+        activeTab={currentTab}
+        setActiveTab={setCurrentTab}
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
+        showsCount={shows.length}
+        artistsCount={artists.length}
+        photosCount={photosMap.size}
         shows={shows}
         artists={artists}
         photosMap={photosMap}
@@ -114,6 +120,7 @@ export const App: React.FC = () => {
           if (firstShow) setSelectedShow(firstShow);
           setCurrentTab('studio');
         }}
+        onOpenCsvModal={() => setIsUploaderOpen(true)}
         onOpenUploader={() => setIsUploaderOpen(true)}
         onLoadSample={handleLoadSample}
         onClearAll={handleClearAll}
@@ -127,18 +134,61 @@ export const App: React.FC = () => {
             artists={artists}
             selectedShow={selectedShow}
             selectedArtist={selectedArtist}
+            preselectedArtist={selectedArtist}
+            photosMap={photosMap}
             onSelectShow={setSelectedShow}
             onSelectArtist={setSelectedArtist}
             onGoToWallet={() => setCurrentTab('wallet')}
+            onOpenPhotoManager={() => setCurrentTab('photos')}
+            onUpdateArtistPhoto={async (artistCode, photoUrl, source) => {
+              const matched = artists.find((a) => a.artistCode === artistCode);
+              if (matched) {
+                dbService.saveCustomArtist({ ...matched, photoUrl, photoSource: source, updatedAt: Date.now() });
+                setArtists(dbService.getAllArtists());
+              }
+            }}
             initialConfig={initialStudioConfig}
           />
         )}
 
-        {currentTab === 'table' && (
+        {(currentTab === 'shows' || currentTab === 'table') && (
           <ShowsTable
             shows={shows}
             onSelectShowForStudio={handleSelectShowForStudio}
             onOpenUploader={() => setIsUploaderOpen(true)}
+          />
+        )}
+
+        {currentTab === 'photos' && (
+          <PhotoManager
+            artists={artists}
+            photosMap={photosMap}
+            onUpdateArtistPhoto={async (artistCode, photoUrl, source) => {
+              const matched = artists.find((a) => a.artistCode === artistCode);
+              if (matched) {
+                dbService.saveCustomArtist({ ...matched, photoUrl, photoSource: source, updatedAt: Date.now() });
+                setArtists(dbService.getAllArtists());
+              }
+            }}
+            onBatchUpdatePhotos={async (matchedMap) => {
+              let updatedCount = 0;
+              matchedMap.forEach((photoUrl, artistCode) => {
+                const matched = artists.find((a) => a.artistCode === artistCode);
+                if (matched) {
+                  dbService.saveCustomArtist({ ...matched, photoUrl, photoSource: 'auto', updatedAt: Date.now() });
+                  updatedCount++;
+                }
+              });
+              setArtists(dbService.getAllArtists());
+              return updatedCount;
+            }}
+            onNavigateToShowCard={(artistCode) => {
+              const matchedArtist = artists.find((a) => a.artistCode === artistCode);
+              if (matchedArtist) setSelectedArtist(matchedArtist);
+              const matchedShow = shows.find((s) => s.artistCode === artistCode);
+              if (matchedShow) setSelectedShow(matchedShow);
+              setCurrentTab('studio');
+            }}
           />
         )}
 

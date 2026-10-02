@@ -16,40 +16,63 @@ import {
 import { LivvoLogo } from './LivvoLogo';
 import { ShowItem, ArtistItem } from '../types';
 
-export type ActiveTab = 'studio' | 'wallet' | 'photos' | 'shows';
+export type ActiveTab = 'studio' | 'wallet' | 'photos' | 'shows' | 'table';
 
-interface NavbarProps {
-  activeTab: ActiveTab;
-  setActiveTab: (tab: ActiveTab) => void;
-  showsCount: number;
-  artistsCount: number;
-  photosCount: number;
+export interface NavbarProps {
+  activeTab?: ActiveTab;
+  setActiveTab?: (tab: ActiveTab) => void;
+  currentTab?: ActiveTab;
+  onSelectTab?: (tab: ActiveTab) => void;
+  showsCount?: number;
+  artistsCount?: number;
+  photosCount?: number;
   walletCount?: number;
-  shows: ShowItem[];
-  artists: ArtistItem[];
-  photosMap: Map<string, string>;
-  onSelectArtist: (artist: ArtistItem) => void;
-  onSelectShow: (show: ShowItem) => void;
-  onOpenCsvModal: () => void;
-  onLoadSample: () => void;
-  onClearAll: () => void;
+  shows?: ShowItem[];
+  artists?: ArtistItem[];
+  photosMap?: Map<string, string>;
+  onSelectArtist?: (artist: ArtistItem) => void;
+  onSelectShow?: (show: ShowItem) => void;
+  onOpenCsvModal?: () => void;
+  onOpenUploader?: () => void;
+  onLoadSample?: () => void;
+  onClearAll?: () => void;
   isAdmin?: boolean;
   onToggleAdmin?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
-  setActiveTab,
-  showsCount,
-  artistsCount,
-  photosCount,
+  activeTab: propActiveTab,
+  setActiveTab: propSetActiveTab,
+  currentTab,
+  onSelectTab,
+  showsCount: propShowsCount,
+  artistsCount: propArtistsCount,
+  photosCount: propPhotosCount,
   walletCount = 0,
+  shows = [],
+  artists = [],
+  photosMap = new Map(),
+  onSelectArtist,
+  onSelectShow,
   onOpenCsvModal,
+  onOpenUploader,
   onLoadSample,
   onClearAll,
   isAdmin = true,
   onToggleAdmin,
 }) => {
+  const activeTab = (propActiveTab || currentTab || 'studio') as ActiveTab;
+  const setActiveTab = (tab: ActiveTab) => {
+    if (propSetActiveTab) propSetActiveTab(tab);
+    if (onSelectTab) onSelectTab(tab);
+  };
+  const handleOpenCsv = () => {
+    if (onOpenCsvModal) onOpenCsvModal();
+    else if (onOpenUploader) onOpenUploader();
+  };
+  const showsCount = propShowsCount ?? shows.length;
+  const artistsCount = propArtistsCount ?? artists.length;
+  const photosCount = propPhotosCount ?? photosMap.size;
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -299,7 +322,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <button
                           id="admin-menu-csv-btn"
                           onClick={() => {
-                            onOpenCsvModal();
+                            handleOpenCsv();
                             setIsAdminMenuOpen(false);
                           }}
                           className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-left hover:bg-[#1E1833] text-[#ECE5D1] transition-all cursor-pointer"
@@ -319,7 +342,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <button
                           id="admin-menu-demo-btn"
                           onClick={() => {
-                            onLoadSample();
+                            if (onLoadSample) onLoadSample();
                             setIsAdminMenuOpen(false);
                           }}
                           className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-left hover:bg-[#1E1833] text-[#ECE5D1] transition-all cursor-pointer"
@@ -340,7 +363,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <button
                             id="admin-menu-clear-btn"
                             onClick={() => {
-                              onClearAll();
+                              if (onClearAll) onClearAll();
                               setIsAdminMenuOpen(false);
                             }}
                             className="w-full flex items-center gap-3 p-2.5 rounded-2xl text-left hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 transition-all cursor-pointer"

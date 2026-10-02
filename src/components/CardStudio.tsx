@@ -23,8 +23,6 @@ import {
   Palette,
   Layers,
   Share2,
-  Instagram,
-  Facebook,
   MessageCircle,
   Wand2,
   Copy,
@@ -58,9 +56,9 @@ interface CardStudioProps {
   artists: ArtistItem[];
   selectedShow: ShowItem | null;
   onSelectShow: (show: ShowItem | null) => void;
-  photosMap: Map<string, string>;
-  onOpenPhotoManager: (artistCode?: string) => void;
-  onOpenBatchExport: () => void;
+  photosMap?: Map<string, string>;
+  onOpenPhotoManager?: (artistCode?: string) => void;
+  onOpenBatchExport?: () => void;
   onUpdateArtistPhoto?: (
     artistCode: string,
     photoUrl: string,
@@ -69,9 +67,12 @@ interface CardStudioProps {
   ) => Promise<void>;
   onUpdateShowPoster?: (showIdOrCode: string, posterUrl: string) => Promise<void>;
   preselectedArtist?: ArtistItem | null;
+  selectedArtist?: ArtistItem | null;
+  onSelectArtist?: (artist: ArtistItem | null) => void;
   onClearPreselectedArtist?: () => void;
   onWalletUpdated?: () => void;
   onGoToWallet?: () => void;
+  initialConfig?: CardTemplateConfig;
 }
 
 const ACCENT_COLORS = [
@@ -262,15 +263,18 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   artists,
   selectedShow,
   onSelectShow,
-  photosMap,
+  photosMap = new Map(),
   onOpenPhotoManager,
   onOpenBatchExport,
   onUpdateArtistPhoto,
   onUpdateShowPoster,
   preselectedArtist,
+  selectedArtist: propSelectedArtist,
+  onSelectArtist,
   onClearPreselectedArtist,
   onWalletUpdated,
   onGoToWallet,
+  initialConfig,
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -278,9 +282,28 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   // Search & Filter State
-  const [artistSearchQuery, setArtistSearchQuery] = useState('');
+  const [artistSearchQuery, setArtistSearchQuery] = useState(
+    propSelectedArtist?.artistName || preselectedArtist?.artistName || ''
+  );
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [selectedArtist, setSelectedArtist] = useState<ArtistItem | null>(null);
+  const [selectedArtist, setSelectedArtistState] = useState<ArtistItem | null>(
+    propSelectedArtist || preselectedArtist || null
+  );
+
+  const setSelectedArtist = (val: React.SetStateAction<ArtistItem | null>) => {
+    setSelectedArtistState((prev) => {
+      const next = typeof val === 'function' ? val(prev) : val;
+      if (onSelectArtist) onSelectArtist(next);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (propSelectedArtist) {
+      setSelectedArtistState(propSelectedArtist);
+      setArtistSearchQuery(propSelectedArtist.artistName);
+    }
+  }, [propSelectedArtist]);
   const [isSearchingCatalog, setIsSearchingCatalog] = useState(false);
   const [catalogArtists, setCatalogArtists] = useState<ArtistItem[]>([]);
   const [defaultPreviewArtists, setDefaultPreviewArtists] = useState<ArtistItem[]>([]);
@@ -322,7 +345,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   };
 
   // Template configuration state
-  const [config, setConfig] = useState<CardTemplateConfig>({
+  const [config, setConfig] = useState<CardTemplateConfig>(() => ({
     templateId: 'modern-stage',
     aspectRatio: '9:16',
     visualMode: 'artist-photo',
@@ -349,7 +372,14 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     ticketSector: '',
     companionHandle: '',
     setlistHighlights: '',
-  });
+    ...(initialConfig || {}),
+  }));
+
+  useEffect(() => {
+    if (initialConfig) {
+      setConfig((prev) => ({ ...prev, ...initialConfig }));
+    }
+  }, [initialConfig]);
 
   // Dropdown menu state for Personalizar Card topics (null = all controls hidden by default until clicked)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
@@ -440,11 +470,11 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
     // 3. Guarantee all sample artists are available (including Hiatus Kaiyote)
     SAMPLE_ARTISTS_DATA.forEach((s) => {
-      const key = normalizeArtistKey(s.name);
+      const key = normalizeArtistKey(s.artistName);
       if (!artistMap.has(key)) {
         artistMap.set(key, {
-          artistCode: s.code,
-          artistName: s.name,
+          artistCode: s.artistCode,
+          artistName: s.artistName,
           photoUrl: s.photoUrl,
           featuredPosterUrl: s.featuredPosterUrl,
           photoSource: 'sample',
@@ -469,7 +499,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     searchCatalogApi({ limit: 12 })
       .then((res) => {
         if (!isCancelled && res.artists && res.artists.length > 0) {
-          const mapped: ArtistItem[] = res.artists.map((a) => ({
+          const mapped: ArtistItem[] = res.artists.map((a: ArtistItem) => ({
             artistCode: a.artistCode,
             artistName: a.artistName,
             photoUrl: a.photoUrl,
@@ -517,7 +547,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         );
 
         if (!isCancelled) {
-          const mapped: ArtistItem[] = res.artists.map((a) => ({
+          const mapped: ArtistItem[] = res.artists.map((a: ArtistItem) => ({
             artistCode: a.artistCode,
             artistName: a.artistName,
             photoUrl: a.photoUrl,
@@ -583,12 +613,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     let isCancelled = false;
     dbService
       .getShowsByArtist(selectedArtist.artistCode, selectedArtist.artistName)
-      .then((results) => {
+      .then((results: ShowItem[]) => {
         if (!isCancelled && results && results.length > 0) {
           setDbArtistShows(results);
         }
       })
-      .catch((err) => console.error('Erro ao buscar shows do artista no banco:', err));
+      .catch((err: any) => console.error('Erro ao buscar shows do artista no banco:', err));
 
     return () => {
       isCancelled = true;
@@ -757,7 +787,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     // Fetch shows for this artist from the protected server API (with in-memory cache)
     searchCatalogApi({ artist: artist.artistName, limit: 25 })
       .then((catalogRes) => {
-        let allShows: ShowItem[] = (catalogRes.shows || []).map((s) => ({
+        let allShows: ShowItem[] = (catalogRes.shows || []).map((s: ShowItem) => ({
           id: s.id,
           showCode: s.showCode,
           artistCode: s.artistCode,
@@ -768,7 +798,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
           city: s.city,
           state: s.state,
           posterUrl: s.posterUrl,
-          photoUrl: s.photoUrl,
+          photoUrl: (s as any).photoUrl,
         }));
 
         // Also check if any local shows exist in state for this artist
@@ -1117,8 +1147,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     // 6. Check SAMPLE_ARTISTS_DATA
     const foundInSample = SAMPLE_ARTISTS_DATA.find(
       (s) =>
-        (targetName && s.name.trim().toLowerCase() === targetName) ||
-        (targetCode && s.code === targetCode)
+        (targetName && s.artistName.trim().toLowerCase() === targetName) ||
+        (targetCode && s.artistCode === targetCode)
     );
     if (foundInSample?.photoUrl) return foundInSample.photoUrl;
 
@@ -1651,7 +1681,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
             <button
               type="button"
-              onClick={() => onOpenPhotoManager(selectedArtist?.artistCode)}
+              onClick={() => onOpenPhotoManager?.(selectedArtist?.artistCode)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#ECE5D1] bg-[#1E1833] hover:bg-[#282141] border border-[#282141] transition-all cursor-pointer"
               title="Gerenciar fotos do artista"
             >

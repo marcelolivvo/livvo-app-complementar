@@ -362,7 +362,12 @@ export function buildCatalogIndex(): CatalogIndexData {
 }
 
 // When executed directly via node or tsx
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isDirectRun =
+  typeof process !== 'undefined' &&
+  process.argv[1] &&
+  (process.argv[1].endsWith('build-catalog.ts') || process.argv[1].endsWith('build-catalog.js'));
+
+if (isDirectRun) {
   try {
     buildCatalogIndex();
   } catch (err) {

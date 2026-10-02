@@ -4,16 +4,21 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tsx server.ts",
     "build": "tsc -b && vite build",
     "lint": "tsc -b",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "tsx server.ts"
   },
   "dependencies": {
+    "@types/papaparse": "^5.5.2",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "express": "^5.2.1",
     "html-to-image": "^1.11.11",
+    "jszip": "^3.10.2",
     "lucide-react": "^1.16.0",
+    "papaparse": "^5.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^3.0.2"
@@ -21,11 +26,13 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
     "@types/canvas-confetti": "^1.9.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.13.0",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.23.15",
     "typescript": "~5.7.2",
     "vite": "^6.1.0"
   }

@@ -1,35 +1,48 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Sparkles, Check, RefreshCw, Image as ImageIcon } from 'lucide-react';
+import { X, Search, Sparkles, RefreshCw, Image as ImageIcon } from 'lucide-react';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { searchArtistMedia, MediaItem, ArtistMediaResult } from '../services/artistPhotoService';
+import { ArtistItem, ShowItem } from '../types';
 
-interface MediaSearchModalProps {
+export interface MediaSearchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  artistName: string;
+  artist?: ArtistItem | null;
+  artistName?: string;
+  selectedShow?: ShowItem | null;
   initialTab?: 'photos' | 'posters';
-  onSelectMedia: (url: string, type: 'photo' | 'poster') => void;
+  onSelectPhoto?: (artistCode: string, url: string) => Promise<void> | void;
+  onSelectPoster?: (showIdOrCode: string, url: string) => Promise<void> | void;
+  onSelectMedia?: (url: string, type: 'photo' | 'poster') => void;
 }
 
 export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
   isOpen,
   onClose,
+  artist,
   artistName,
+  selectedShow,
   initialTab = 'photos',
+  onSelectPhoto,
+  onSelectPoster,
   onSelectMedia,
 }) => {
   const [activeTab, setActiveTab] = useState<'photos' | 'posters'>(initialTab);
-  const [searchQuery, setSearchQuery] = useState(artistName);
+  const resolvedName = artistName || artist?.artistName || selectedShow?.artistName || '';
+  const [searchQuery, setSearchQuery] = useState(resolvedName);
   const [loading, setLoading] = useState(false);
   const [mediaResult, setMediaResult] = useState<ArtistMediaResult | null>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setSearchQuery(artistName);
+      const targetName = artistName || artist?.artistName || selectedShow?.artistName || '';
+      setSearchQuery(targetName);
       setActiveTab(initialTab);
-      loadMedia(artistName);
+      if (targetName) {
+        loadMedia(targetName);
+      }
     }
-  }, [isOpen, artistName, initialTab]);
+  }, [isOpen, artist, artistName, selectedShow, initialTab]);
 
   const loadMedia = async (name: string) => {
     if (!name) return;
@@ -47,6 +60,20 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
   if (!isOpen) return null;
 
   const currentList = activeTab === 'photos' ? mediaResult?.photos || [] : mediaResult?.posters || [];
+
+  const handleSelectItem = async (item: MediaItem) => {
+    if (onSelectMedia) {
+      onSelectMedia(item.url, item.type);
+    }
+    if (item.type === 'photo' && onSelectPhoto) {
+      const code = artist?.artistCode || selectedShow?.artistCode || '';
+      await onSelectPhoto(code, item.url);
+    } else if (item.type === 'poster' && onSelectPoster) {
+      const target = selectedShow?.id || selectedShow?.showCode || artist?.artistCode || '';
+      await onSelectPoster(target, item.url);
+    }
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn">
@@ -125,19 +152,31 @@ export const MediaSearchModal: React.FC<MediaSearchModalProps> = ({
               {currentList.map((item) => (
                 <div
                   key={item.id}
-                  onClick={() => {
-                    onSelectMedia(item.url, item.type);
-                    onClose();
-                  }}
+                  onClick={() => handleSelectItem(item)}
                   className="group relative rounded-2xl overflow-hidden border border-[#282141] hover:border-[#2FB8BA] cursor-pointer aspect-square bg-[#100C1F] shadow-lg transition-all"
                 >
                   <img
-                    src={item.url}
+                    src={item.thumbUrl || item.url}
                     alt={item.title}
+                    loading="lazy"
+                    onError={(e) => {
+                      // If thumb failed, fallback to url or hide card gracefully
+                      const target = e.currentTarget;
+                      if (target.src !== item.url) {
+                        target.src = item.url;
+                      }
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2.5">
-                    <span className="text-[10px] font-bold text-[#ECE5D1] truncate">{item.title}</span>
+                  {/* Source Badge */}
+                  <div className="absolute top-2 left-2 z-10">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-[#100C1F]/80 text-[#22E3E6] border border-white/10 backdrop-blur-sm shadow">
+                      {item.source}
+                    </span>
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-2.5">
+                    <span className="text-[11px] font-bold text-[#ECE5D1] leading-tight line-clamp-2">{item.title}</span>
+                    <span className="text-[9px] text-[#2FB8BA] font-semibold mt-0.5">Clique para aplicar</span>
                   </div>
                 </div>
               ))}
