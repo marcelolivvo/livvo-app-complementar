@@ -1,0 +1,477 @@
+{
+  "produtoras": {
+    "name": "Produtoras",
+    "title": "Cada evento ensina.<br>O próximo pode ser melhor.",
+    "intro": "Reúna avaliações, organize as melhorias e acompanhe a contribuição de cada parceiro. O fã conta a experiência; a equipe transforma a escuta em ação.",
+    "metrics": [
+      [
+        "Avaliações do evento",
+        "120",
+        "Exemplo fictício · pessoas únicas"
+      ],
+      [
+        "Ações propostas",
+        "3",
+        "Exemplo fictício · após análise"
+      ],
+      [
+        "Parceiros na campanha",
+        "4",
+        "Exemplo fictício · papéis distintos"
+      ]
+    ],
+    "panel": "Nota do Show e Nota da Organização",
+    "ratings": [
+      4.5,
+      3.7
+    ],
+    "action": [
+      "Próxima ação sugerida",
+      "Revisar a experiência de entrada",
+      "Um exemplo de tema operacional que pede investigação conjunta com a casa. A Nota da Organização não identifica a causa sozinha.",
+      "Criar ação de melhoria"
+    ],
+    "features": [
+      [
+        "Relatório pós-show",
+        "Reviews agregadas, distribuição e temas autorizados para apoiar decisões.",
+        "Avaliações · Nota do Show e Nota da Organização",
+        "Piloto"
+      ],
+      [
+        "Plano de melhoria",
+        "Responsável, prazo, evidência e devolutiva para cada ação.",
+        "Evento · parceiro · experiência",
+        "Piloto"
+      ],
+      [
+        "Campanhas compartilhadas",
+        "Artista, casa, clube e creator em uma campanha com origens distintas.",
+        "Convites · cards · participação",
+        "Piloto"
+      ],
+      [
+        "Comparação entre eventos",
+        "Recortes comparáveis com período, amostra e canal de coleta.",
+        "Histórico · avaliações",
+        "Após piloto"
+      ],
+      [
+        "Radar de interesse",
+        "Interesse declarado por cidade separado de presença passada.",
+        "Bucket list · cidade declarada",
+        "Após densidade"
+      ],
+      [
+        "Ofertas em teste",
+        "Escuta curta sobre formatos, horários e serviços desejados.",
+        "Pesquisa opcional · retorno",
+        "Após piloto"
+      ]
+    ],
+    "steps": [
+      [
+        "Preparar o evento",
+        "Vincular casa, artista e parceiros; escolher o escopo da coleta."
+      ],
+      [
+        "Ouvir a experiência",
+        "Preservar o registro do fã e incluir perguntas opcionais quando úteis."
+      ],
+      [
+        "Escolher melhorias",
+        "Revisar o relatório e atribuir ações a responsáveis."
+      ],
+      [
+        "Dar retorno",
+        "Comunicar o que mudou e acompanhar o próximo evento."
+      ]
+    ]
+  },
+  "artistas": {
+    "name": "Artistas",
+    "title": "Quem vive seus shows<br>tem histórias para contar.",
+    "intro": "Conheça vínculos ao vivo, agradeça memórias e descubra onde existe interesse. Cada sinal oferece uma leitura diferente da relação com os fãs.",
+    "metrics": [
+      [
+        "Pessoas com registro",
+        "84",
+        "Exemplo fictício · base do artista"
+      ],
+      [
+        "Com 2+ shows registrados",
+        "26",
+        "Exemplo fictício · não são vendas"
+      ],
+      [
+        "Memórias autorizadas",
+        "18",
+        "Exemplo fictício · seleção voluntária"
+      ]
+    ],
+    "panel": "Três relações para conhecer",
+    "rows": [
+      [
+        "Primeira experiência registrada",
+        "Acolhimento para quem começa a contar sua história."
+      ],
+      [
+        "Participação recorrente",
+        "Reconhecer a trajetória de quem registrou outros shows."
+      ],
+      [
+        "Interesse em assistir",
+        "Convites relevantes para quem declarou vontade de ir."
+      ]
+    ],
+    "action": [
+      "Uma coleção para começar",
+      "Memórias do primeiro show",
+      "Reúna histórias que os fãs escolheram compartilhar. Cada destaque precisa de autorização do autor.",
+      "Preparar coleção"
+    ],
+    "features": [
+      [
+        "Página verificada",
+        "Equipe reivindica a representação do artista existente no catálogo.",
+        "Artista · representação",
+        "Base"
+      ],
+      [
+        "Jornada do fã",
+        "Interesse, primeira experiência registrada e recorrência em segmentos explicáveis.",
+        "Histórico · bucket list",
+        "Piloto"
+      ],
+      [
+        "Memória da turnê",
+        "Coleção autorizada e agradecimentos da equipe ou do artista.",
+        "Memórias · cards",
+        "Piloto curado"
+      ],
+      [
+        "Leitura da experiência",
+        "Nota do Show e avaliações opcionais de Performance, Setlist e Produção de Palco.",
+        "Avaliações · eventos",
+        "Piloto"
+      ],
+      [
+        "Missões de memória",
+        "Contribuições úteis sem exigir nota positiva ou gasto.",
+        "Conquistas · registro",
+        "Após regras"
+      ],
+      [
+        "Interesse por cidade",
+        "Onde investigar oportunidades, sem chamar interesse de demanda garantida.",
+        "Bucket list · cidade declarada",
+        "Após densidade"
+      ]
+    ],
+    "steps": [
+      [
+        "Representar o artista",
+        "Reivindicar a página e definir a equipe autorizada."
+      ],
+      [
+        "Conhecer as relações",
+        "Ler os segmentos e a qualidade dos dados disponíveis."
+      ],
+      [
+        "Convidar uma memória",
+        "Abrir coleção e selecionar apenas contribuições autorizadas."
+      ],
+      [
+        "Reconhecer a participação",
+        "Agradecer e oferecer continuidade escolhida pelo fã."
+      ]
+    ]
+  },
+  "casas": {
+    "name": "Casas de Show",
+    "title": "A experiência continua<br>depois que o show acaba.",
+    "intro": "Entenda o que o público percebeu, acompanhe melhorias e mostre o que mudou. Cada evento ajuda a construir a próxima visita.",
+    "metrics": [
+      [
+        "Avaliações do evento",
+        "120",
+        "Exemplo fictício · pessoas únicas"
+      ],
+      [
+        "Temas em investigação",
+        "3",
+        "Exemplo fictício · revisão humana"
+      ],
+      [
+        "Devolutivas publicadas",
+        "1",
+        "Exemplo fictício · nenhuma publicação real"
+      ]
+    ],
+    "panel": "Nota do Show e Nota da Organização",
+    "ratings": [
+      4.5,
+      3.7
+    ],
+    "action": [
+      "Da escuta à ação",
+      "Melhorar a sinalização de acesso",
+      "Hipótese operacional de demonstração. Antes de agir, verificar comentários, configuração e responsabilidade.",
+      "Registrar melhoria"
+    ],
+    "features": [
+      [
+        "Página prática da casa",
+        "Acesso, serviços, configuração e informações verificadas.",
+        "Venue · catálogo",
+        "Base"
+      ],
+      [
+        "Painel da experiência",
+        "Cinco dimensões com volume, distribuição e origem.",
+        "Avaliações · evento",
+        "Piloto"
+      ],
+      [
+        "Perguntas operacionais",
+        "Até duas perguntas opcionais para entender um ponto específico.",
+        "Review · escuta curta",
+        "Piloto"
+      ],
+      [
+        "Você contou, nós melhoramos",
+        "Ações com evidência e uma devolutiva pública revisada.",
+        "Memória · confiança · retorno",
+        "Piloto"
+      ],
+      [
+        "Recorrência registrada",
+        "Novos e recorrentes dentro da base observável, com período claro.",
+        "Histórico · visitas",
+        "Após observação"
+      ],
+      [
+        "Passaporte da casa",
+        "Descoberta de gêneros e visitas com regras e benefícios explícitos.",
+        "Conquistas · eventos",
+        "Futuro"
+      ]
+    ],
+    "steps": [
+      [
+        "Preparar a página",
+        "Conferir informações práticas e vínculo com o evento."
+      ],
+      [
+        "Investigar a experiência",
+        "Ler avaliações e uma questão operacional por vez."
+      ],
+      [
+        "Executar uma melhoria",
+        "Definir responsável, prazo e evidência."
+      ],
+      [
+        "Fechar o ciclo",
+        "Publicar devolutiva e acompanhar a próxima coleta."
+      ]
+    ]
+  },
+  "clubes": {
+    "name": "Fã Clubes",
+    "title": "Uma comunidade.<br>Muitas histórias ao vivo.",
+    "intro": "Acolha novos fãs, organize o acervo e crie missões coletivas. Quem está chegando também deve encontrar uma forma de participar.",
+    "metrics": [
+      [
+        "Contribuições autorizadas",
+        "36",
+        "Exemplo fictício · memórias e histórias"
+      ],
+      [
+        "Primeiras contribuições",
+        "12",
+        "Exemplo fictício · participantes novos"
+      ],
+      [
+        "Missão coletiva",
+        "60%",
+        "Exemplo fictício · 36 de 60 contribuições"
+      ]
+    ],
+    "panel": "O que dá vida à comunidade",
+    "rows": [
+      [
+        "Acolher quem chegou",
+        "Boas-vindas e orientações para a primeira participação."
+      ],
+      [
+        "Guardar nossa história",
+        "Coleções por show, turnê e momento da comunidade."
+      ],
+      [
+        "Participar juntos",
+        "Missões cooperativas com critérios claros e sem disputa por gasto."
+      ]
+    ],
+    "action": [
+      "Missão em preparação",
+      "Nossa primeira memória ao vivo",
+      "Uma semana para reunir histórias autorizadas. Fãs sem presença registrada podem participar com expectativas.",
+      "Preparar missão"
+    ],
+    "features": [
+      [
+        "Página de comunidade",
+        "Regras, administração e vínculo oficial ou independente visíveis.",
+        "Perfil · comunidade",
+        "Base"
+      ],
+      [
+        "Acervo coletivo",
+        "Memórias voluntárias organizadas por evento.",
+        "Histórico · cards",
+        "Piloto"
+      ],
+      [
+        "Missões cooperativas",
+        "Metas compartilhadas que valorizam contribuições distintas.",
+        "Gamificação · participação",
+        "Piloto manual"
+      ],
+      [
+        "Boas-vindas",
+        "Percurso para novo membro e primeira contribuição.",
+        "Registro · bucket list",
+        "Piloto"
+      ],
+      [
+        "Agenda e enquetes",
+        "Escuta sobre pautas e encontros com organizador identificado.",
+        "Interesse · comunidade",
+        "Após piloto"
+      ],
+      [
+        "Participação e moderação",
+        "Acompanhar retorno e manter um espaço com regras claras.",
+        "Comunidade · preferências",
+        "Após piloto"
+      ]
+    ],
+    "steps": [
+      [
+        "Definir a comunidade",
+        "Identificar responsáveis, regras e relação com o artista."
+      ],
+      [
+        "Escolher uma atividade",
+        "Uma coleção de memórias ou missão cooperativa."
+      ],
+      [
+        "Convidar contribuições",
+        "Participação voluntária e moderação das publicações."
+      ],
+      [
+        "Celebrar e aprender",
+        "Reconhecer diferentes contribuições e decidir a próxima atividade."
+      ]
+    ]
+  },
+  "plus": {
+    "name": "Plus · Influenciadores",
+    "title": "Sua curadoria inspira.<br>A participação mostra o valor.",
+    "intro": "Transforme repertório em coleções, mobilize sua audiência e acompanhe o que ela faz dentro do Livvo. O Plus conecta conteúdo à experiência do fã.",
+    "metrics": [
+      [
+        "Cadastros atribuídos",
+        "80",
+        "Exemplo fictício · origem deduplicada"
+      ],
+      [
+        "Primeiro registro em 7 dias",
+        "32",
+        "Exemplo fictício · 40% dos 80"
+      ],
+      [
+        "Retorno no dia 30",
+        "8",
+        "Exemplo fictício · 25% dos 32; coorte madura"
+      ]
+    ],
+    "panel": "Da descoberta à participação",
+    "rows": [
+      [
+        "Coleção editorial",
+        "Uma seleção de shows com sua leitura e sua história."
+      ],
+      [
+        "Convite para registrar",
+        "Uma origem por campanha; limites do beta preservados."
+      ],
+      [
+        "Resultado no Livvo",
+        "Cadastro, primeiro registro e retorno são métricas distintas."
+      ]
+    ],
+    "action": [
+      "Sua próxima coleção",
+      "Shows que marcaram minha história",
+      "Uma seleção autoral para convidar pessoas a reconstruir a própria trajetória.",
+      "Criar rascunho de coleção"
+    ],
+    "features": [
+      [
+        "Perfil Plus",
+        "Temas, cidades, apresentação e histórico público escolhido.",
+        "Perfil · identidade musical",
+        "Base"
+      ],
+      [
+        "Coleções editoriais",
+        "Narrativa autoral conectada a shows do catálogo.",
+        "Catálogo · cards · memória",
+        "Piloto"
+      ],
+      [
+        "Campanha de registro",
+        "Link próprio para convidar a audiência a contar sua história.",
+        "Convites · primeiro registro",
+        "Piloto"
+      ],
+      [
+        "Resultados de participação",
+        "Ativação e retorno com origem, período e definição visíveis.",
+        "Uso do diário · recorrência",
+        "Piloto"
+      ],
+      [
+        "Kit de conteúdo",
+        "Ativos oficiais e textos de apoio, com direitos de uso claros.",
+        "Identidade · compartilhamento",
+        "Piloto curado"
+      ],
+      [
+        "Oportunidades e briefings",
+        "Afinidade entre creator e parceiro, entregas e acordos explícitos.",
+        "Eventos · campanhas",
+        "Futuro"
+      ]
+    ],
+    "steps": [
+      [
+        "Escolher uma pauta",
+        "Criar uma coleção com shows e história autoral."
+      ],
+      [
+        "Preparar a campanha",
+        "Definir objetivo, link e elegibilidade de acesso."
+      ],
+      [
+        "Convidar a audiência",
+        "Mobilizar para uma ação útil no diário."
+      ],
+      [
+        "Ler o resultado",
+        "Acompanhar participação e retorno; vendas só se confirmadas."
+      ]
+    ]
+  }
+}
