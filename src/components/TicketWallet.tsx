@@ -138,65 +138,6 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
           </div>
 
           <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap w-full lg:w-auto justify-end">
-            {/* Campo de Nível separado: elemento div com label 'Nível' / 'Nível de Fã' acima do box, e número + nome centralizados e destacados no box idêntico ao botão Livvo Wallet */}
-            <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0 min-w-[170px]">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A8577]">
-                Nível de Fã
-              </span>
-              <div
-                className="w-full px-3.5 py-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-2 shadow-sm text-center relative overflow-hidden"
-                style={{
-                  backgroundColor: `${stats?.currentMedal?.metalColor || '#2FB8BA'}15`,
-                  color: stats?.currentMedal?.metalColor || '#4FDCDE',
-                  borderColor: `${stats?.currentMedal?.metalColor || '#2FB8BA'}40`,
-                }}
-              >
-                {/* Subtle shimmer sweep on header level box */}
-                {stats && stats.level > 0 && (
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
-                    <div className="w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
-                  </div>
-                )}
-                <span className={`relative z-10 ${stats && stats.level === 5 ? 'animate-legend-glow' : ''}`}>
-                  {stats?.currentMedal?.icon || '🥉'}
-                </span>
-                <span className="font-mono font-black text-sm relative z-10">{stats?.level ?? 0}</span>
-                <span className="opacity-50 relative z-10">-</span>
-                <span className="truncate relative z-10">{stats?.levelTitle ?? 'Novo Fã'}</span>
-              </div>
-
-              {/* Barra de progresso visual abaixo dos níveis de fã */}
-              {stats && (
-                <div className="w-full space-y-1 pt-0.5">
-                  <div className="w-full bg-[#100C1F] h-1.5 rounded-full overflow-hidden border border-[#282141]">
-                    <div
-                      className="bg-gradient-to-r from-[#2FB8BA] via-[#4FDCDE] to-[#FFD60A] h-full transition-all duration-500 rounded-full"
-                      style={{ width: `${stats.nextMedal ? stats.nextLevelProgress : 100}%` }}
-                    />
-                  </div>
-                  <div className="text-[10px] font-mono text-right">
-                    {stats.nextMedal ? (
-                      <span className="text-[#8A8577]">
-                        Faltam{' '}
-                        <strong className="text-[#FFD60A] font-bold">
-                          {Math.max(0, stats.nextMedal.minShows - stats.effectiveShows)}
-                        </strong>{' '}
-                        {Math.max(0, stats.nextMedal.minShows - stats.effectiveShows) === 1 ? 'show' : 'shows'} para o Nível{' '}
-                        <strong className="text-[#ECE5D1] font-bold">
-                          {stats.nextMedal.name.replace(/^Fã\s+/, '')}
-                        </strong>
-                        {stats.bonusShowsFromChallenges > 0 && (
-                          <span className="text-[#2FB8BA] font-bold"> (+{stats.bonusShowsFromChallenges} bônus)</span>
-                        )}
-                      </span>
-                    ) : (
-                      <span className="text-[#FFD60A] font-bold">Lenda Viva Atingida! 👑</span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Action buttons: Gerar Meu Wrapped and + Novo below it */}
             <div className="flex flex-col gap-2 w-full sm:w-auto sm:min-w-[170px]">
               <button
@@ -261,12 +202,26 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
               </div>
             </div>
 
-            <div className="bg-[#100C1F]/60 border border-[#282141] p-4 rounded-2xl">
-              <div className="flex items-center justify-between">
+            <div
+              className="bg-[#100C1F]/60 border p-4 rounded-2xl relative overflow-hidden"
+              style={{ borderColor: `${stats.currentMedal?.metalColor || '#FFD60A'}40` }}
+            >
+              {/* Brilho (shimmer) do nível atual — transferido do antigo box do cabeçalho */}
+              {stats.level > 0 && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+                  <div className="w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer-sweep" />
+                </div>
+              )}
+              <div className="flex items-center justify-between relative z-10">
                 <span className="text-[11px] font-bold text-[#8A8577] uppercase">Nível & Medalha</span>
-                <Trophy className="w-4 h-4 text-[#FFD60A]" />
               </div>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-2 mt-1 relative z-10">
+                <FanMedalIllustration
+                  medalId={stats.currentMedal?.id}
+                  level={stats.level}
+                  unlocked={true}
+                  className={`w-9 h-9 shrink-0 ${stats.level === 5 ? 'animate-legend-glow' : ''}`}
+                />
                 <span className="text-2xl font-black text-[#ECE5D1]">
                   Nv {stats.level}
                 </span>
@@ -282,13 +237,13 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 </span>
               </div>
               {/* Progress bar */}
-              <div className="w-full bg-[#1E1833] h-1.5 rounded-full overflow-hidden mt-2">
+              <div className="w-full bg-[#1E1833] h-1.5 rounded-full overflow-hidden mt-2 relative z-10">
                 <div
                   className="bg-gradient-to-r from-[#2FB8BA] via-[#4FDCDE] to-[#FFD60A] h-full transition-all duration-500"
                   style={{ width: `${stats.nextLevelProgress}%` }}
                 />
               </div>
-              <div className="flex justify-between items-center text-[9px] font-mono mt-1 gap-1">
+              <div className="flex justify-between items-center text-[9px] font-mono mt-1 gap-1 relative z-10">
                 <span className="text-[#8A8577] truncate">
                   {stats.nextMedal
                     ? `Faltam ${Math.max(0, stats.nextMedal.minShows - stats.effectiveShows)} ${
