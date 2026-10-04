@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog';
-import { registerIntegrationRoutes } from './serverIntegrations';
 
 export const app = express();
 
@@ -260,9 +259,6 @@ app.get('/api/catalog/search', (req, res) => {
       return res.status(500).json({ error: 'Falha ao buscar mídias do artista' });
     }
   });
-
-  // API Routes: Setlist.fm & Bandsintown (chaves somente no servidor)
-  registerIntegrationRoutes(app);
 
   // API Route: Health check
   app.get('/api/health', (req, res) => {
