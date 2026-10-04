@@ -23,6 +23,9 @@ export interface StickerState extends StickerDef {
   status: 'unlocked' | 'locked' | 'soon';
   current: number;
   target: number;
+  /** Data do show que desbloqueou o sticker (dd/MM/yyyy) e a ordem da conquista */
+  unlockedOn?: string;
+  unlockOrder?: number;
 }
 
 export const STICKERS: StickerDef[] = STICKERS_RAW as StickerDef[];
@@ -169,13 +172,48 @@ const RULES: Record<string, [number, Measure]> = {
 };
 
 export function evaluateStickers(tickets: CollectedTicket[]): StickerState[] {
+  // Ordem cronológica dos shows (data do show; sem data, a ordem em que foi salvo)
+  const ordered = [...tickets].sort((a, b) => {
+    const da = parseDate(a.date)?.getTime() ?? a.collectedAt ?? 0;
+    const db = parseDate(b.date)?.getTime() ?? b.collectedAt ?? 0;
+    return da - db;
+  });
+
   return STICKERS.map((s) => {
     const rule = RULES[s.slug];
     const image = `/stickers/${s.slug}.webp`;
-    if (!rule) return { ...s, image, status: 'soon', current: 0, target: 0 };
+    if (!rule) return { ...s, image, status: 'soon' as const, current: 0, target: 0 };
     const [target, measure] = rule;
     const current = Math.min(target, measure(tickets));
-    return { ...s, image, status: current >= target ? 'unlocked' : 'locked', current, target };
+    if (current < target) return { ...s, image, status: 'locked' as const, current, target };
+    // Primeiro show da linha do tempo em que o critério foi atingido
+    let unlockOrder = ordered.length - 1;
+    for (let i = 0; i < ordered.length; i++) {
+      if (measure(ordered.slice(0, i + 1)) >= target) {
+        unlockOrder = i;
+        break;
+      }
+    }
+    return {
+      ...s,
+      image,
+      status: 'unlocked' as const,
+      current,
+      target,
+      unlockOrder,
+      unlockedOn: ordered[unlockOrder]?.date,
+    };
+  });
+}
+
+/** Colados em ordem de conquista; a conquistar do mais perto ao mais longe; em breve no fim. */
+export function sortStickers(states: StickerState[]): StickerState[] {
+  const rank = { unlocked: 0, locked: 1, soon: 2 } as const;
+  return [...states].sort((a, b) => {
+    if (a.status !== b.status) return rank[a.status] - rank[b.status];
+    if (a.status === 'unlocked') return (a.unlockOrder ?? 0) - (b.unlockOrder ?? 0);
+    if (a.status === 'locked') return a.target - a.current - (b.target - b.current) || a.target - b.target;
+    return 0;
   });
 }
 

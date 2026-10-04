@@ -33,7 +33,7 @@ import { TransparentTicketItem } from './TransparentTicketItem';
 import { FanMedalIllustration } from './MedalIllustrations';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly } from '../utils/stateUtils';
-import { evaluateStickers, nextStickerFor, takeNewlyUnlocked, STICKER_FAMILIES, StickerState } from '../services/stickerService';
+import { evaluateStickers, nextStickerFor, takeNewlyUnlocked, sortStickers, StickerState } from '../services/stickerService';
 
 interface TicketWalletProps {
   onSelectTicketForStudio: (show: ShowItem, config: CardTemplateConfig) => void;
@@ -96,7 +96,7 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     };
     reader.readAsDataURL(file);
   };
-  const [stickerFilter, setStickerFilter] = useState<'all' | 'unlocked' | 'locked' | 'soon'>('all');
+  const [stickerFilter, setStickerFilter] = useState<'all' | 'unlocked' | 'locked' | 'soon'>('unlocked');
 
   const refreshWallet = () => {
     const list = walletService.getTickets();
@@ -632,10 +632,10 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 <div className="lv-seg mt-3" role="group" aria-label="Filtrar stickers">
                   {(
                     [
-                      ['all', 'Todos'],
                       ['unlocked', 'Colados'],
                       ['locked', 'A conquistar'],
                       ['soon', 'Em breve'],
+                      ['all', 'Todos'],
                     ] as const
                   ).map(([id, label]) => (
                     <button
@@ -650,37 +650,38 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                   ))}
                 </div>
               </div>
-              {STICKER_FAMILIES.map((fam) => {
-                const all = stickers.filter((x) => x.family === fam.id);
-                const items = all.filter((x) => stickerFilter === 'all' || x.status === stickerFilter);
-                if (items.length === 0) return null;
+              {(() => {
+                const list = sortStickers(stickers).filter((x) => stickerFilter === 'all' || x.status === stickerFilter);
+                if (list.length === 0) {
+                  return (
+                    <p className="text-[13px] text-[#8A8577] py-8">
+                      {stickerFilter === 'unlocked'
+                        ? 'Nenhum sticker colado ainda. Salve um show no Estúdio para ganhar o primeiro.'
+                        : 'Nenhum sticker nesta seleção.'}
+                    </p>
+                  );
+                }
                 return (
-                  <div key={fam.id}>
-                    <div className="lv-group">
-                      {fam.label}
-                      <span className="lv-mono text-[#8A8577] normal-case tracking-normal">
-                        {all.filter((x) => x.status === 'unlocked').length}/{all.length}
-                      </span>
-                    </div>
-                    <div className="lv-album">
-                      {items.map((st) => (
-                        <div key={st.slug} className="lv-sticker" data-status={st.status}>
-                          <img src={st.image} alt={st.name} loading="lazy" />
-                          <span className="lv-sticker-name">{st.name}</span>
-                          <span className="lv-sticker-crit">{st.criterion}</span>
-                          <span className="lv-sticker-state">
-                            {st.status === 'unlocked'
-                              ? 'colado'
-                              : st.status === 'soon'
-                                ? 'em breve'
-                                : `${st.current}/${st.target}`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
+                  <div className="lv-album mt-5">
+                    {list.map((st) => (
+                      <div key={st.slug} className="lv-sticker" data-status={st.status}>
+                        <img src={st.image} alt={st.name} loading="lazy" />
+                        <span className="lv-sticker-name">{st.name}</span>
+                        <span className="lv-sticker-crit">{st.criterion}</span>
+                        <span className="lv-sticker-state">
+                          {st.status === 'unlocked'
+                            ? st.unlockedOn
+                              ? `colado em ${st.unlockedOn}`
+                              : 'colado'
+                            : st.status === 'soon'
+                              ? 'em breve'
+                              : `${st.current}/${st.target}`}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 );
-              })}
+              })()}
             </div>
           )}
         </div>
