@@ -1785,9 +1785,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         {/* Canhoto */}
         <div className="p-5 sm:p-7">
           {/* Passaporte de fã */}
-          <div className="space-y-4">
+          <div className="lv-passport space-y-4">
             <div className="flex items-center justify-between gap-3">
-              <span className="lv-eyebrow">Passaporte de fã</span>
+              <h3 className="lv-display text-[22px] text-[#ECE5D1] flex items-center gap-2.5">
+                <PassportIcon className="w-6 h-6 text-[#4FDCDE]" />
+                Passaporte de Fã
+              </h3>
               {onGoToWallet && (
                 <button type="button" onClick={onGoToWallet} className="lv-link" title="Abrir Livvo Wallet">
                   <span>Livvo Wallet</span>
@@ -1796,23 +1799,24 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-4">
-              <FanMedalIllustration
-                medalId={fanStats.currentMedal?.id}
-                level={fanStats.level}
-                unlocked={fanStats.level > 0}
-                className="w-14 h-14 shrink-0"
-              />
+            <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
-                <div className="flex items-baseline gap-3 min-w-0">
-                  <span className="lv-num text-[46px] text-[#4FDCDE]">{fanStats.level}</span>
-                  <span className="lv-display text-[21px] text-[#ECE5D1] truncate">{fanStats.levelTitle}</span>
+                <span className="lv-eyebrow">Nível de fã</span>
+                <div className="flex items-baseline gap-3 min-w-0 mt-1">
+                  <span className="lv-num text-[52px] text-[#4FDCDE]">{fanStats.level}</span>
+                  <span className="lv-display text-[22px] text-[#ECE5D1] truncate">{fanStats.levelTitle}</span>
                 </div>
                 <p className="lv-mono text-[11px] text-[#8A8577] mt-1.5">
                   {fanStats.totalShows} {fanStats.totalShows === 1 ? 'ingresso' : 'ingressos'} · {fanStats.uniqueArtists}{' '}
                   {fanStats.uniqueArtists === 1 ? 'artista' : 'artistas'}
                 </p>
               </div>
+              <FanMedalIllustration
+                medalId={fanStats.currentMedal?.id}
+                level={fanStats.level}
+                unlocked={fanStats.level > 0}
+                className="w-[72px] h-[72px] shrink-0"
+              />
             </div>
 
             <div className="space-y-2">
@@ -1850,7 +1854,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             <div className="grid grid-cols-2 gap-2">
               <button id="save-to-wallet-btn" type="button" onClick={handleSaveToWallet} className="lv-ghost">
                 <LivvoTicketIcon className="w-4 h-4" />
-                <span>{savedToWalletSuccess ? 'Salvo na Wallet' : 'Salvar no passaporte'}</span>
+                <span>{savedToWalletSuccess ? 'Ingresso salvo' : 'Salvar ingresso'}</span>
               </button>
               <button
                 id="quick-copy-image-btn"
@@ -1887,8 +1891,25 @@ export const CardStudio: React.FC<CardStudioProps> = ({
           </div>
 
           {/* Personalizar */}
-          <div className="mt-9">
-            <h3 className="lv-display text-[24px] text-[#ECE5D1] border-b border-[#282141] pb-3">Personalizar</h3>
+          <div className="mt-7">
+            <button
+              type="button"
+              id="toggle-personalizar-card-btn"
+              onClick={() => setIsPersonalizarOpen((prev) => !prev)}
+              aria-expanded={isPersonalizarOpen}
+              className="lv-drop-head"
+            >
+              <span className="flex items-center gap-3">
+                <Sliders className="w-5 h-5 text-[#4FDCDE]" />
+                <span className="lv-display text-[22px] text-[#ECE5D1]">Personalizar</span>
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="hidden sm:inline lv-mono text-[11px] text-[#8A8577] whitespace-nowrap">{isPersonalizarOpen ? 'Fechar' : 'Fonte, cor e selos'}</span>
+                <ChevronDown className={`w-5 h-5 text-[#4FDCDE] transition-transform duration-200 ${isPersonalizarOpen ? 'rotate-180' : ''}`} />
+              </span>
+            </button>
+            {isPersonalizarOpen && (
+            <div className="lv-drop-body">
             <div className="lv-group">Colecionador</div>
                 <div className="lv-row" data-open={activeDropdown === 'collector'}>
                   <button
@@ -2837,10 +2858,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 )}
               </div>
 
+            </div>
+            )}
           </div>
 
           {/* Exportar */}
-          <div className="grid grid-cols-2 gap-3 mt-9">
+          <div className="grid grid-cols-2 gap-3 mt-7">
             <button
               id="download-card-png-btn"
               type="button"

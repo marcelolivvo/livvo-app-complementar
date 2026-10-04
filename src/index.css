@@ -583,3 +583,62 @@ select.lv-input optgroup {
     transition: none !important;
   }
 }
+
+/* Passaporte de Fã em destaque: canhoto com borda ciano e recortes */
+.lv-passport {
+  position: relative;
+  padding: 20px 20px 18px;
+  border: 1.5px solid var(--lv-cyan);
+  border-radius: 8px;
+  background: rgba(79, 220, 222, 0.05);
+}
+.lv-passport::before,
+.lv-passport::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  margin-top: -8px;
+  border-radius: 50%;
+  background: var(--lv-paper);
+  border: 1.5px solid var(--lv-cyan);
+}
+.lv-passport::before {
+  left: -9px;
+  clip-path: inset(0 0 0 50%);
+}
+.lv-passport::after {
+  right: -9px;
+  clip-path: inset(0 50% 0 0);
+}
+
+/* Personalizar como dropdown */
+.lv-drop-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--lv-line);
+  border-bottom: 1px solid var(--lv-line);
+  text-align: left;
+  cursor: pointer;
+}
+.lv-drop-head:hover .lv-display {
+  color: var(--lv-cyan);
+}
+.lv-drop-body {
+  animation: lvDropIn 0.18s ease-out;
+}
+@keyframes lvDropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
