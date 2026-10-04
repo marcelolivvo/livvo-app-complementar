@@ -592,25 +592,30 @@ select.lv-input optgroup {
   border-radius: 8px;
   background: rgba(79, 220, 222, 0.05);
 }
+/* Furos laterais: preenchidos com a cor do papel (cobrem a borda) e só o arco interno em ciano */
 .lv-passport::before,
 .lv-passport::after {
   content: '';
   position: absolute;
   top: 50%;
-  width: 16px;
-  height: 16px;
-  margin-top: -8px;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
   border-radius: 50%;
   background: var(--lv-paper);
-  border: 1.5px solid var(--lv-cyan);
+  border: 1.5px solid transparent;
 }
 .lv-passport::before {
-  left: -9px;
-  clip-path: inset(0 0 0 50%);
+  left: -10px;
+  border-top-color: var(--lv-cyan);
+  border-right-color: var(--lv-cyan);
+  transform: rotate(45deg);
 }
 .lv-passport::after {
-  right: -9px;
-  clip-path: inset(0 50% 0 0);
+  right: -10px;
+  border-bottom-color: var(--lv-cyan);
+  border-left-color: var(--lv-cyan);
+  transform: rotate(45deg);
 }
 
 /* Personalizar como dropdown */
@@ -706,7 +711,9 @@ select.lv-input optgroup {
   padding: 22px 18px;
   border: 1.5px solid var(--lv-cyan);
   border-radius: 8px;
-  background: rgba(79, 220, 222, 0.05);
+  background-color: var(--lv-paper);
+  background-image: radial-gradient(rgba(79, 220, 222, 0.11) 1px, transparent 1.5px);
+  background-size: 10px 10px;
   text-align: center;
 }
 
@@ -1090,4 +1097,18 @@ select.lv-input optgroup {
 }
 .lv-tally > div:first-child strong {
   color: var(--lv-cyan);
+}
+
+/* Botão secundário em Teal (Salvar ingresso no Estúdio) */
+.lv-ghost--teal {
+  background: var(--lv-teal);
+  border-color: var(--lv-teal);
+  color: var(--lv-ink);
+}
+.lv-ghost--teal svg {
+  color: var(--lv-ink);
+}
+.lv-ghost--teal:hover:not(:disabled) {
+  background: var(--lv-cyan-hi);
+  border-color: var(--lv-cyan-hi);
 }

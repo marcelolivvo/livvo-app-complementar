@@ -1086,7 +1086,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     if (onWalletUpdated) onWalletUpdated();
 
     setSavedToWalletSuccess(true);
-    setToastMessage('🎟️ Salvo no seu Passaporte de Shows! Veja na aba "Livvo Wallet"');
+    setToastMessage('Ingresso salvo no seu passaporte. Veja no Livvo Wallet.');
     setTimeout(() => {
       setSavedToWalletSuccess(false);
       setToastMessage(null);
@@ -1786,18 +1786,10 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         <div className="p-5 sm:p-7">
           {/* Passaporte de fã */}
           <div className="lv-passport space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="lv-display text-[22px] text-[#ECE5D1] flex items-center gap-2.5">
-                <PassportIcon className="w-6 h-6 text-[#4FDCDE]" />
-                Passaporte de Fã
-              </h3>
-              {onGoToWallet && (
-                <button type="button" onClick={onGoToWallet} className="lv-link" title="Abrir Livvo Wallet">
-                  <span>Livvo Wallet</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <h3 className="lv-display text-[22px] text-[#ECE5D1] flex items-center gap-2.5">
+              <PassportIcon className="w-6 h-6 text-[#4FDCDE]" />
+              Passaporte de Fã
+            </h3>
 
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
@@ -1852,7 +1844,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <button id="save-to-wallet-btn" type="button" onClick={handleSaveToWallet} className="lv-ghost">
+              <button id="save-to-wallet-btn" type="button" onClick={handleSaveToWallet} className="lv-ghost lv-ghost--teal">
                 <LivvoTicketIcon className="w-4 h-4" />
                 <span>{savedToWalletSuccess ? 'Ingresso salvo' : 'Salvar ingresso'}</span>
               </button>
@@ -1889,6 +1881,14 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               </label>
             </div>
           </div>
+          {onGoToWallet && (
+            <div className="flex justify-end mt-3">
+              <button type="button" onClick={onGoToWallet} className="lv-link" title="Abrir Livvo Wallet">
+                <span>Ver no Livvo Wallet</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* Personalizar */}
           <div className="mt-7">

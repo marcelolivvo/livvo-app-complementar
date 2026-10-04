@@ -357,8 +357,8 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
       {/* CARTEIRA (ingressos) · PICOTE · CANHOTO (medalhas, desafios, conquistas)   */}
       {/* ========================================================================= */}
       <section className="lv-ticket lg:grid lg:grid-cols-[minmax(0,1fr)_28px_minmax(0,460px)]">
-        {/* Carteira de ingressos */}
-        <div className="px-2 py-5 sm:p-7 min-w-0">
+        {/* Carteira de ingressos (fundo pontilhado igual ao palco do Estúdio) */}
+        <div className="lv-stage px-2 py-5 sm:p-7 min-w-0">
           <div className="flex items-end justify-between gap-3 border-b border-[#282141] pb-3 mb-5 mx-3 sm:mx-0">
             <h3 className="lv-display text-[24px] text-[#ECE5D1]">
               Carteira de ingressos <span className="lv-num text-[#4FDCDE] text-[24px] ml-1">{tickets.length}</span>

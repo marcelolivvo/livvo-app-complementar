@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Calendar, MapPin, Building2, Pencil, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Building2, Trash2 } from 'lucide-react';
 import { CollectedTicket } from '../services/walletService';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly } from '../utils/stateUtils';
@@ -149,7 +149,7 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-[21px] sm:text-[23px] font-black text-[#ECE5D1] truncate leading-tight tracking-tight">
+              <h4 className="text-[27px] sm:text-[30px] font-black text-[#ECE5D1] truncate leading-tight tracking-tight">
                 {ticket.artistName}
               </h4>
               {ticket.stampType && ticket.stampType !== 'none' && ticket.stampType !== 'eu-fui' && (
@@ -205,11 +205,10 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
                 e.stopPropagation();
                 onOpenInStudio(ticket);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95"
               title="Editar este ingresso no Estúdio"
             >
               <span>Editar</span>
-              <Pencil className="w-3 h-3 text-[#100C1F]" />
             </button>
 
             <button
