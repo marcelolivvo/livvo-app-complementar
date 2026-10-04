@@ -220,7 +220,7 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             <div className="flex items-start gap-4">
               <PassportIcon className="w-11 h-11 text-[#4FDCDE] shrink-0 mt-1" aria-hidden="true" />
               <div className="min-w-0">
-                <h2 className="lv-display text-[clamp(24px,5vw,38px)] text-[#ECE5D1]">Passaporte Oficial de Shows</h2>
+                <h2 className="lv-display text-[clamp(24px,5vw,38px)] text-[#2FB8BA]">Passaporte Oficial de Shows</h2>
                 <p className="text-[14px] text-[#B3AE9F] mt-1.5">
                   Cada show que você salva no Estúdio vira um carimbo aqui.
                 </p>
@@ -331,9 +331,12 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 unlocked={stats.level > 0}
                 className={`w-[112px] h-[112px] ${stats.level === 5 ? 'animate-legend-glow' : ''}`}
               />
-              <div className="flex items-baseline gap-3">
-                <span className="lv-num text-[56px] text-[#4FDCDE]">{stats.level}</span>
-                <span className="lv-display text-[24px] text-[#ECE5D1]">{stats.levelTitle}</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="lv-display text-[26px] text-[#ECE5D1]">{stats.levelTitle}</span>
+                <span className="lv-mono text-[12px] text-[#B3AE9F]">
+                  <strong className="lv-num text-[22px] text-[#4FDCDE] align-middle mr-1.5">{stats.totalShows}</strong>
+                  {stats.totalShows === 1 ? 'show' : 'shows'}
+                </span>
               </div>
               <button type="button" onClick={() => setIsMedalShareOpen(true)} className="lv-link">
                 <Share2 className="w-3.5 h-3.5" />
