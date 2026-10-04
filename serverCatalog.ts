@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { buildCatalogIndex, CompactShowRow, CompactArtistRow, CatalogIndexData } from './scripts/build-catalog';
+import { buildCatalogIndex, CompactShowRow, CompactArtistRow, CatalogIndexData } from './scripts/build-catalog.js';
 
 export interface CatalogShow {
   id: string;

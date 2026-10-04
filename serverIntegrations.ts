@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from 'express';
-import { checkRateLimit } from './serverCatalog';
+import { checkRateLimit } from './serverCatalog.js';
 
 /**
  * Integrações externas de dados ao vivo: Setlist.fm e Bandsintown.

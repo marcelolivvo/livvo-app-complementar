@@ -1,8 +1,8 @@
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
-import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog';
-import { registerIntegrationRoutes } from './serverIntegrations';
+import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog.js';
+import { registerIntegrationRoutes } from './serverIntegrations.js';
 
 export const app = express();
 
