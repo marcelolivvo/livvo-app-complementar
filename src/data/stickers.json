@@ -1,0 +1,308 @@
+[
+ {
+  "slug": "eu-tava-la",
+  "name": "Eu Tava Lá",
+  "family": "entrada-descoberta",
+  "criterion": "Primeiro show"
+ },
+ {
+  "slug": "soltei-a-voz",
+  "name": "Soltei a Voz",
+  "family": "entrada-descoberta",
+  "criterion": "Primeira review"
+ },
+ {
+  "slug": "prazer-proximo-show",
+  "name": "Prazer, Próximo Show",
+  "family": "entrada-descoberta",
+  "criterion": "5 artistas diferentes"
+ },
+ {
+  "slug": "segui-o-som",
+  "name": "Segui o Som",
+  "family": "entrada-descoberta",
+  "criterion": "Mesmo artista em 3 cidades"
+ },
+ {
+  "slug": "pegou-o-ritmo",
+  "name": "Pegou o Ritmo",
+  "family": "quantidade-total",
+  "criterion": "10 shows no total"
+ },
+ {
+  "slug": "agenda-lotada",
+  "name": "Agenda Lotada",
+  "family": "quantidade-total",
+  "criterion": "25 shows no total"
+ },
+ {
+  "slug": "patrimonio-da-plateia",
+  "name": "Patrimônio da Plateia",
+  "family": "quantidade-total",
+  "criterion": "50 shows no total"
+ },
+ {
+  "slug": "lenda-do-ao-vivo",
+  "name": "Lenda do Ao Vivo",
+  "family": "quantidade-total",
+  "criterion": "100 shows no total"
+ },
+ {
+  "slug": "figurinha-carimbada",
+  "name": "Figurinha Carimbada",
+  "family": "mesmo-artista",
+  "criterion": "5 shows do mesmo artista"
+ },
+ {
+  "slug": "sei-ate-as-pausas",
+  "name": "Sei Até as Pausas",
+  "family": "mesmo-artista",
+  "criterion": "10 shows do mesmo artista"
+ },
+ {
+  "slug": "bis-por-favor",
+  "name": "Bis, Por Favor",
+  "family": "mesmo-artista",
+  "criterion": "25 shows do mesmo artista"
+ },
+ {
+  "slug": "ja-sou-da-mobilia",
+  "name": "Já Sou da Mobília",
+  "family": "mesmo-artista",
+  "criterion": "50 shows do mesmo artista"
+ },
+ {
+  "slug": "pode-me-por-no-release",
+  "name": "Pode Me Pôr no Release",
+  "family": "mesmo-artista",
+  "criterion": "100 shows do mesmo artista"
+ },
+ {
+  "slug": "na-veia",
+  "name": "Na Veia",
+  "family": "mesmo-genero",
+  "criterion": "5 shows do mesmo gênero"
+ },
+ {
+  "slug": "e-minha-praia",
+  "name": "É Minha Praia",
+  "family": "mesmo-genero",
+  "criterion": "10 shows do mesmo gênero"
+ },
+ {
+  "slug": "deu-liga",
+  "name": "Deu Liga",
+  "family": "mesmo-genero",
+  "criterion": "25 shows do mesmo gênero"
+ },
+ {
+  "slug": "enciclopedia-do-role",
+  "name": "Enciclopédia do Rolê",
+  "family": "mesmo-genero",
+  "criterion": "50 shows do mesmo gênero"
+ },
+ {
+  "slug": "alma-do-genero",
+  "name": "Alma do Gênero",
+  "family": "mesmo-genero",
+  "criterion": "100 shows do mesmo gênero"
+ },
+ {
+  "slug": "role-de-casa",
+  "name": "Rolê de Casa",
+  "family": "mesma-cidade",
+  "criterion": "10 shows na mesma cidade"
+ },
+ {
+  "slug": "nome-na-praca",
+  "name": "Nome na Praça",
+  "family": "mesma-cidade",
+  "criterion": "25 shows na mesma cidade"
+ },
+ {
+  "slug": "de-carteirinha",
+  "name": "De Carteirinha",
+  "family": "mesma-cidade",
+  "criterion": "50 shows na mesma cidade"
+ },
+ {
+  "slug": "patrimonio-do-role",
+  "name": "Patrimônio do Rolê",
+  "family": "mesma-cidade",
+  "criterion": "100 shows na mesma cidade"
+ },
+ {
+  "slug": "na-minha-area",
+  "name": "Na Minha Área",
+  "family": "mesmo-estado",
+  "criterion": "10 shows no mesmo estado"
+ },
+ {
+  "slug": "circuito-de-casa",
+  "name": "Circuito de Casa",
+  "family": "mesmo-estado",
+  "criterion": "25 shows no mesmo estado"
+ },
+ {
+  "slug": "de-canto-a-canto",
+  "name": "De Canto a Canto",
+  "family": "mesmo-estado",
+  "criterion": "50 shows no mesmo estado"
+ },
+ {
+  "slug": "lenda-do-circuito",
+  "name": "Lenda do Circuito",
+  "family": "mesmo-estado",
+  "criterion": "100 shows no mesmo estado"
+ },
+ {
+  "slug": "proxima-parada-show",
+  "name": "Próxima Parada: Show",
+  "family": "cidades-diferentes",
+  "criterion": "3 cidades diferentes"
+ },
+ {
+  "slug": "mala-de-role",
+  "name": "Mala de Rolê",
+  "family": "cidades-diferentes",
+  "criterion": "5 cidades diferentes"
+ },
+ {
+  "slug": "gps-do-bis",
+  "name": "GPS do Bis",
+  "family": "cidades-diferentes",
+  "criterion": "10 cidades diferentes"
+ },
+ {
+  "slug": "meu-cep-e-o-show",
+  "name": "Meu CEP É o Show",
+  "family": "cidades-diferentes",
+  "criterion": "25 cidades diferentes"
+ },
+ {
+  "slug": "mini-turne-pessoal",
+  "name": "Mini Turnê Pessoal",
+  "family": "cidades-mesmo-mes",
+  "criterion": "3 cidades diferentes no mesmo mês"
+ },
+ {
+  "slug": "em-turne-so-que-fa",
+  "name": "Em Turnê Só que Fã",
+  "family": "cidades-mesmo-mes",
+  "criterion": "5 cidades diferentes no mesmo mês"
+ },
+ {
+  "slug": "cruzei-a-divisa",
+  "name": "Cruzei a Divisa",
+  "family": "estados-diferentes",
+  "criterion": "3 estados diferentes"
+ },
+ {
+  "slug": "rota-do-bis",
+  "name": "Rota do Bis",
+  "family": "estados-diferentes",
+  "criterion": "5 estados diferentes"
+ },
+ {
+  "slug": "turne-sem-contrato",
+  "name": "Turnê Sem Contrato",
+  "family": "estados-diferentes",
+  "criterion": "10 estados diferentes"
+ },
+ {
+  "slug": "brasil-em-frequencia",
+  "name": "Brasil em Frequência",
+  "family": "regioes-brasil",
+  "criterion": "3 regiões do Brasil"
+ },
+ {
+  "slug": "do-oiapoque-ao-bis",
+  "name": "Do Oiapoque ao Bis",
+  "family": "regioes-brasil",
+  "criterion": "5 regiões do Brasil"
+ },
+ {
+  "slug": "zerei-o-mapa-quero-bis",
+  "name": "Zerei o Mapa Quero Bis",
+  "family": "regioes-brasil",
+  "criterion": "Brasil inteiro: 26 estados e Distrito Federal"
+ },
+ {
+  "slug": "semana-em-alto-volume",
+  "name": "Semana em Alto Volume",
+  "family": "frequencia-diversidade",
+  "criterion": "3 shows na mesma semana"
+ },
+ {
+  "slug": "ouvido-sem-cerca",
+  "name": "Ouvido sem Cerca",
+  "family": "frequencia-diversidade",
+  "criterion": "3 estilos diferentes"
+ },
+ {
+  "slug": "meu-tipo-e-musica",
+  "name": "Meu Tipo É Música",
+  "family": "frequencia-diversidade",
+  "criterion": "5 estilos diferentes"
+ },
+ {
+  "slug": "vim-contar",
+  "name": "Vim Contar",
+  "family": "reviews-total",
+  "criterion": "5 reviews de shows"
+ },
+ {
+  "slug": "depois-do-bis",
+  "name": "Depois do Bis",
+  "family": "reviews-total",
+  "criterion": "10 reviews de shows"
+ },
+ {
+  "slug": "relator-do-role",
+  "name": "Relator do Rolê",
+  "family": "reviews-total",
+  "criterion": "25 reviews de shows"
+ },
+ {
+  "slug": "cronicas-da-plateia",
+  "name": "Crônicas da Plateia",
+  "family": "reviews-total",
+  "criterion": "50 reviews de shows"
+ },
+ {
+  "slug": "memoria-do-ao-vivo",
+  "name": "Memória do Ao Vivo",
+  "family": "reviews-total",
+  "criterion": "100 reviews de shows"
+ },
+ {
+  "slug": "papo-afinado",
+  "name": "Papo Afinado",
+  "family": "reviews-mesmo-genero",
+  "criterion": "5 reviews do mesmo gênero"
+ },
+ {
+  "slug": "tenho-repertorio",
+  "name": "Tenho Repertório",
+  "family": "reviews-mesmo-genero",
+  "criterion": "10 reviews do mesmo gênero"
+ },
+ {
+  "slug": "ouvido-apurado",
+  "name": "Ouvido Apurado",
+  "family": "reviews-mesmo-genero",
+  "criterion": "25 reviews do mesmo gênero"
+ },
+ {
+  "slug": "colunista-da-cena",
+  "name": "Colunista da Cena",
+  "family": "reviews-mesmo-genero",
+  "criterion": "50 reviews do mesmo gênero"
+ },
+ {
+  "slug": "voz-da-cena",
+  "name": "Voz da Cena",
+  "family": "reviews-mesmo-genero",
+  "criterion": "100 reviews do mesmo gênero"
+ }
+]

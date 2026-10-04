@@ -924,3 +924,90 @@ select.lv-input optgroup {
   font-size: 9px;
   letter-spacing: 0.16em;
 }
+
+/* Álbum de Livvo Stickers: só o círculo do sticker, sem caixa em volta */
+.lv-album {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px 12px;
+  padding-top: 14px;
+}
+@media (max-width: 380px) {
+  .lv-album {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.lv-sticker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+  min-width: 0;
+}
+.lv-sticker img {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  margin-bottom: 6px;
+  transition: transform 0.2s ease;
+}
+.lv-sticker[data-status='unlocked'] img:hover {
+  transform: rotate(-4deg) scale(1.04);
+}
+.lv-sticker[data-status='locked'] img {
+  filter: grayscale(1);
+  opacity: 0.32;
+}
+.lv-sticker[data-status='soon'] img {
+  filter: grayscale(1);
+  opacity: 0.14;
+}
+.lv-sticker-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--lv-cream);
+}
+.lv-sticker[data-status='soon'] .lv-sticker-name {
+  color: var(--lv-dim);
+}
+.lv-sticker-crit {
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--lv-dim);
+}
+.lv-sticker-state {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--lv-dim);
+  margin-top: 2px;
+}
+.lv-sticker[data-status='unlocked'] .lv-sticker-state,
+.lv-sticker[data-status='locked'] .lv-sticker-state {
+  color: var(--lv-cyan);
+}
+
+/* Desafio -> sticker que ele aproxima */
+.lv-sticker-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--lv-muted);
+  text-align: left;
+  cursor: pointer;
+}
+.lv-sticker-link strong {
+  color: var(--lv-cream);
+}
+.lv-sticker-link .lv-mono {
+  font-size: 11px;
+  color: var(--lv-cyan);
+  margin-left: auto;
+}
+.lv-sticker-link:hover strong {
+  color: var(--lv-cyan);
+}

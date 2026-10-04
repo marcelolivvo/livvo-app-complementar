@@ -32,6 +32,7 @@ import { TransparentTicketItem } from './TransparentTicketItem';
 import { FanMedalIllustration } from './MedalIllustrations';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly } from '../utils/stateUtils';
+import { evaluateStickers, nextStickerFor, takeNewlyUnlocked, STICKER_FAMILIES, StickerState } from '../services/stickerService';
 
 interface TicketWalletProps {
   onSelectTicketForStudio: (show: ShowItem, config: CardTemplateConfig) => void;
@@ -55,6 +56,9 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [isMedalShareOpen, setIsMedalShareOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [stickers, setStickers] = useState<StickerState[]>([]);
+  const [toastSticker, setToastSticker] = useState<StickerState | null>(null);
+  const [stickerFilter, setStickerFilter] = useState<'all' | 'unlocked' | 'locked' | 'soon'>('all');
 
   const refreshWallet = () => {
     const list = walletService.getTickets();
@@ -63,6 +67,21 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     setBadges(walletService.getBadges());
     setMedals(walletService.getFanMedals());
     setChallenges(walletService.getWeeklyChallenges());
+    const st = evaluateStickers(list);
+    setStickers(st);
+    const fresh = takeNewlyUnlocked(st);
+    if (fresh.length > 0) {
+      setToastSticker(fresh[0]);
+      setToastMessage(
+        fresh.length === 1
+          ? `Sticker desbloqueado: ${fresh[0].name}`
+          : `${fresh.length} stickers desbloqueados, entre eles ${fresh[0].name}`
+      );
+      setTimeout(() => {
+        setToastMessage(null);
+        setToastSticker(null);
+      }, 4500);
+    }
   };
 
   useEffect(() => {
@@ -108,7 +127,14 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
   // ---- Dados derivados para a página de identificação do passaporte ----
   const unlockedMedals = medals.filter((m) => m.unlocked).length;
   const doneChallenges = challenges.filter((c) => c.completed).length;
-  const unlockedBadges = badges.filter((b) => b.unlocked).length;
+  const unlockedStickers = stickers.filter((x) => x.status === 'unlocked').length;
+  const soonStickers = stickers.filter((x) => x.status === 'soon').length;
+  // Desafio do mês -> família de stickers que ele aproxima
+  const CHALLENGE_FAMILIES: Record<string, string[]> = {
+    shows: ['eu-tava-la', 'pegou-o-ritmo', 'agenda-lotada', 'patrimonio-da-plateia', 'lenda-do-ao-vivo'],
+    artists: ['prazer-proximo-show', 'segui-o-som', 'figurinha-carimbada', 'sei-ate-as-pausas'],
+    cities: ['proxima-parada-show', 'mala-de-role', 'mini-turne-pessoal', 'cruzei-a-divisa', 'gps-do-bis', 'rota-do-bis'],
+  };
   const missingNext = stats?.nextMedal ? Math.max(0, stats.nextMedal.minShows - stats.effectiveShows) : 0;
   const challengePct = Math.round((doneChallenges / Math.max(1, challenges.length)) * 100);
 
@@ -339,9 +365,9 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
               data-on={activeTabRight === 'badges'}
               onClick={() => setActiveTabRight('badges')}
             >
-              Conquistas{' '}
+              Stickers{' '}
               <span className="lv-mono">
-                {unlockedBadges}/{badges.length}
+                {unlockedStickers}/{stickers.length}
               </span>
             </button>
           </div>
@@ -482,6 +508,27 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                           </span>
                         </div>
                         <p className="text-[12px] text-[#8A8577] mt-0.5 leading-snug">{ch.description}</p>
+                        {(() => {
+                          const fams = CHALLENGE_FAMILIES[ch.category];
+                          const nx = fams ? nextStickerFor(stickers, fams) : undefined;
+                          if (!nx) return null;
+                          return (
+                            <button
+                              type="button"
+                              className="lv-sticker-link"
+                              onClick={() => setActiveTabRight('badges')}
+                              title="Ver no álbum de stickers"
+                            >
+                              <img src={nx.image} alt="" className="w-8 h-8" loading="lazy" />
+                              <span>
+                                Aproxima do sticker <strong>{nx.name}</strong>
+                              </span>
+                              <span className="lv-mono">
+                                {nx.current}/{nx.target}
+                              </span>
+                            </button>
+                          );
+                        })()}
                         <div className="lv-ticks lv-ticks--thin mt-2.5" aria-hidden="true">
                           {ticks(pct)}
                         </div>
@@ -504,35 +551,76 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             </div>
           )}
 
-          {/* CONQUISTAS */}
+          {/* ÁLBUM DE STICKERS (coleção de teste, ainda não aprovada) */}
           {activeTabRight === 'badges' && (
-            <div className="pt-4">
-              {badges.map((badge) => (
-                <div key={badge.id} className="lv-badge-row" data-on={badge.unlocked}>
-                  {badge.unlocked ? (
-                    <Award className="w-5 h-5 text-[#4FDCDE] shrink-0" />
-                  ) : (
-                    <Lock className="w-5 h-5 text-[#3A3159] shrink-0" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <h5 className="text-[13.5px] font-bold text-[#ECE5D1] truncate">{badge.title}</h5>
-                      <span className="lv-mono text-[11px] shrink-0 text-[#8A8577]">
-                        {badge.unlocked ? <span className="text-[#4FDCDE]">desbloqueada</span> : 'bloqueada'}
+            <div className="pt-6">
+              <div className="space-y-1.5">
+                <h4 className="lv-display text-[20px] text-[#ECE5D1]">Álbum de stickers</h4>
+                <p className="lv-mono text-[11px] text-[#8A8577]">
+                  {unlockedStickers} {unlockedStickers === 1 ? 'colado' : 'colados'} ·{' '}
+                  {stickers.length - unlockedStickers - soonStickers} a conquistar · {soonStickers} em breve
+                </p>
+                <div className="lv-seg mt-3" role="group" aria-label="Filtrar stickers">
+                  {(
+                    [
+                      ['all', 'Todos'],
+                      ['unlocked', 'Colados'],
+                      ['locked', 'A conquistar'],
+                      ['soon', 'Em breve'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      data-on={stickerFilter === id}
+                      aria-pressed={stickerFilter === id}
+                      onClick={() => setStickerFilter(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {STICKER_FAMILIES.map((fam) => {
+                const all = stickers.filter((x) => x.family === fam.id);
+                const items = all.filter((x) => stickerFilter === 'all' || x.status === stickerFilter);
+                if (items.length === 0) return null;
+                return (
+                  <div key={fam.id}>
+                    <div className="lv-group">
+                      {fam.label}
+                      <span className="lv-mono text-[#8A8577] normal-case tracking-normal">
+                        {all.filter((x) => x.status === 'unlocked').length}/{all.length}
                       </span>
                     </div>
-                    <p className="text-[12px] text-[#8A8577] mt-0.5">{badge.description}</p>
+                    <div className="lv-album">
+                      {items.map((st) => (
+                        <div key={st.slug} className="lv-sticker" data-status={st.status}>
+                          <img src={st.image} alt={st.name} loading="lazy" />
+                          <span className="lv-sticker-name">{st.name}</span>
+                          <span className="lv-sticker-crit">{st.criterion}</span>
+                          <span className="lv-sticker-state">
+                            {st.status === 'unlocked'
+                              ? 'colado'
+                              : st.status === 'soon'
+                                ? 'em breve'
+                                : `${st.current}/${st.target}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       </section>
 
       {toastMessage && (
-        <div className="lv-toast" role="status" aria-live="polite">
-          {toastMessage}
+        <div className="lv-toast flex items-center gap-3" role="status" aria-live="polite">
+          {toastSticker && <img src={toastSticker.image} alt="" className="w-10 h-10 shrink-0" />}
+          <span>{toastMessage}</span>
         </div>
       )}
 
