@@ -22,6 +22,7 @@ import {
   Flame,
   Clock,
   Check,
+  Camera,
 } from 'lucide-react';
 import { walletService, CollectedTicket, FanStats, AchievementBadge, FanMedalTier, WeeklyChallenge } from '../services/walletService';
 import { ShowItem, CardTemplateConfig } from '../types';
@@ -58,6 +59,43 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [stickers, setStickers] = useState<StickerState[]>([]);
   const [toastSticker, setToastSticker] = useState<StickerState | null>(null);
+  const [userPhoto, setUserPhoto] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('livvo_user_photo_v1');
+    } catch {
+      return null;
+    }
+  });
+  const photoInputRef = React.useRef<HTMLInputElement>(null);
+  const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        // Recorte quadrado central em 256 px para caber no armazenamento local
+        const size = 256;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const side = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+        const url = canvas.toDataURL('image/jpeg', 0.85);
+        setUserPhoto(url);
+        try {
+          localStorage.setItem('livvo_user_photo_v1', url);
+        } catch {
+          /* sem armazenamento: a foto vale só nesta sessão */
+        }
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
   const [stickerFilter, setStickerFilter] = useState<'all' | 'unlocked' | 'locked' | 'soon'>('all');
 
   const refreshWallet = () => {
@@ -189,6 +227,28 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
               </div>
             </div>
 
+            {/* Titular: foto + @usuario */}
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                className="lv-avatar"
+                data-empty={!userPhoto}
+                title={userPhoto ? 'Trocar foto' : 'Adicionar sua foto'}
+                aria-label={userPhoto ? 'Trocar foto do titular' : 'Adicionar foto do titular'}
+              >
+                {userPhoto ? <img src={userPhoto} alt="" /> : <Camera className="w-5 h-5" />}
+              </button>
+              <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoPick} />
+              <div className="min-w-0">
+                <span className="lv-eyebrow">Titular</span>
+                <div className="lv-display text-[24px] text-[#ECE5D1] truncate">{userHandle || '@fa'}</div>
+                <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link text-[12px]">
+                  {userPhoto ? 'Trocar foto' : 'Adicionar foto'}
+                </button>
+              </div>
+            </div>
+
             {stats && (
               <dl className="lv-fields">
                 <div>
@@ -249,12 +309,12 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 type="button"
                 onClick={() => setIsWrappedOpen(true)}
                 disabled={tickets.length === 0}
-                className="lv-btn lv-btn--cream"
+                className="lv-btn lv-btn--stub lv-btn--cream"
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Gerar meu Wrapped</span>
               </button>
-              <button type="button" onClick={onGoToStudio} className="lv-btn lv-btn--cyan">
+              <button type="button" onClick={onGoToStudio} className="lv-btn lv-btn--stub lv-btn--cyan">
                 <Plus className="w-4 h-4" />
                 <span>Novo show</span>
               </button>
@@ -555,11 +615,17 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
           {activeTabRight === 'badges' && (
             <div className="pt-6">
               <div className="space-y-1.5">
-                <h4 className="lv-display text-[20px] text-[#ECE5D1]">Álbum de stickers</h4>
-                <p className="lv-mono text-[11px] text-[#8A8577]">
-                  {unlockedStickers} {unlockedStickers === 1 ? 'colado' : 'colados'} ·{' '}
-                  {stickers.length - unlockedStickers - soonStickers} a conquistar · {soonStickers} em breve
-                </p>
+                <h4 className="lv-display text-[22px] text-[#ECE5D1]">Álbum de stickers</h4>
+                <div className="lv-tally">
+                  <div>
+                    <span>Colados</span>
+                    <strong className="lv-num">{unlockedStickers}</strong>
+                  </div>
+                  <div>
+                    <span>A conquistar</span>
+                    <strong className="lv-num">{stickers.length - unlockedStickers - soonStickers}</strong>
+                  </div>
+                </div>
                 <div className="lv-seg mt-3" role="group" aria-label="Filtrar stickers">
                   {(
                     [
