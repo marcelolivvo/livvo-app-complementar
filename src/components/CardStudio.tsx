@@ -38,6 +38,7 @@ import { ShowItem, ArtistItem, CardTemplateConfig, CardTemplateId, AspectRatio, 
 import { EventCard } from './EventCard';
 import { autoFetchArtistPhoto } from '../services/artistPhotoService';
 import { MediaSearchModal } from './MediaSearchModal';
+import { getIntegrationStatus, findSetlistForShow } from '../services/liveDataService';
 import { ShareModal } from './ShareModal';
 import { TourWrappedModal } from './TourWrappedModal';
 import { cleanDateOnly } from '../utils/dateUtils';
@@ -333,6 +334,42 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
   // Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Integração Setlist.fm: o botão só aparece quando a chave estiver configurada no servidor
+  const [setlistFmEnabled, setSetlistFmEnabled] = useState(false);
+  const [isImportingSetlist, setIsImportingSetlist] = useState(false);
+  useEffect(() => {
+    getIntegrationStatus().then((s) => setSetlistFmEnabled(s.setlistfm));
+  }, []);
+
+  const handleImportSetlist = async () => {
+    if (!selectedShow) {
+      setToastMessage('Escolha um show na busca acima para importar o setlist.');
+      setTimeout(() => setToastMessage(null), 3500);
+      return;
+    }
+    setIsImportingSetlist(true);
+    try {
+      const setlist = await findSetlistForShow({
+        id: selectedShow.id,
+        artistName: selectedShow.artistName,
+        date: selectedShow.date,
+        city: selectedShow.city,
+      });
+      const songs = (setlist?.songs || []).filter((song) => !song.tape).map((song) => song.name);
+      if (!songs.length) {
+        setToastMessage('Esse show ainda não tem setlist publicado no Setlist.fm.');
+      } else {
+        setConfig((prev) => ({ ...prev, setlistHighlights: songs.slice(0, 5).join(' • ') }));
+        setToastMessage(`Setlist importado: ${songs.length} músicas. As 5 primeiras foram adicionadas — edite à vontade.`);
+      }
+    } catch (err: any) {
+      setToastMessage(err?.message || 'Não foi possível consultar o Setlist.fm agora.');
+    } finally {
+      setIsImportingSetlist(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
   const [isExtractingColor, setIsExtractingColor] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [savedToWalletSuccess, setSavedToWalletSuccess] = useState(false);
@@ -2337,7 +2374,18 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
                           <span>Destaques da Turnê / Setlist:</span>
-                          <span className="text-[10px] text-[#8A8577]">Músicas marcantes separadas por ponto</span>
+                          {setlistFmEnabled ? (
+                            <button
+                              type="button"
+                              onClick={handleImportSetlist}
+                              disabled={isImportingSetlist}
+                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-[#2FB8BA]/50 text-[#4FDCDE] hover:bg-[#2FB8BA]/10 disabled:opacity-50 transition-colors cursor-pointer"
+                            >
+                              {isImportingSetlist ? 'Buscando…' : 'Importar do Setlist.fm'}
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-[#8A8577]">Músicas marcantes separadas por ponto</span>
+                          )}
                         </label>
                         <input
                           type="text"
