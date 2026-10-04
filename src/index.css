@@ -642,3 +642,285 @@ select.lv-input optgroup {
     transform: none;
   }
 }
+
+/* ==========================================================================
+   LIVVO WALLET — passaporte (mesmo sistema "Bilheteria" do Estúdio)
+   ========================================================================== */
+
+/* Campos da página de identificação: rótulo DM Mono + número RAYDIS,
+   separados por linhas de picote verticais (sem cards) */
+.lv-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 620px;
+}
+.lv-fields > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 2px 18px;
+  border-left: 1.5px dashed var(--lv-line-2);
+}
+.lv-fields > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.lv-fields dt {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lv-dim);
+}
+.lv-fields dd {
+  margin: 0;
+  font-size: 52px;
+  color: var(--lv-cream);
+}
+.lv-fields > div > span {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--lv-cyan);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 480px) {
+  .lv-fields > div {
+    padding: 2px 10px;
+  }
+  .lv-fields dd {
+    font-size: 40px;
+  }
+}
+
+/* Bloco da medalha (como a foto do titular no passaporte) */
+.lv-holder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px 18px;
+  border: 1.5px solid var(--lv-cyan);
+  border-radius: 8px;
+  background: rgba(79, 220, 222, 0.05);
+  text-align: center;
+}
+
+/* Zona de leitura mecânica do passaporte */
+.lv-mrz {
+  padding: 14px 20px 16px;
+  border-top: 1px dashed var(--lv-line);
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: clamp(9px, 1.55vw, 15px);
+  letter-spacing: 0.22em;
+  line-height: 1.6;
+  color: var(--lv-dim);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Abas em texto com sublinhado (sem pílulas) */
+.lv-tabs {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--lv-line);
+  overflow-x: auto;
+}
+.lv-tabs button {
+  position: relative;
+  padding: 4px 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--lv-muted);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.lv-tabs button .lv-mono {
+  font-size: 11px;
+  color: var(--lv-dim);
+  margin-left: 4px;
+}
+.lv-tabs button:hover {
+  color: var(--lv-cream);
+}
+.lv-tabs button[data-on='true'] {
+  color: var(--lv-cream);
+}
+.lv-tabs button[data-on='true']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--lv-cyan);
+}
+.lv-tabs button[data-on='true'] .lv-mono {
+  color: var(--lv-cyan);
+}
+
+/* Página de carimbos (trilha das 5 medalhas) */
+.lv-stamps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.lv-stamp {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  min-width: 0;
+}
+.lv-stamp-ring {
+  width: 64px;
+  height: 64px;
+  max-width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px dashed var(--lv-line-2);
+}
+.lv-stamp[data-on='false'] .lv-stamp-ring > * {
+  opacity: 0.35;
+}
+.lv-stamp[data-on='true'] .lv-stamp-ring {
+  border-style: solid;
+  border-color: rgba(79, 220, 222, 0.45);
+}
+.lv-stamp[data-current='true'] .lv-stamp-ring {
+  border: 2px solid var(--lv-cyan);
+  box-shadow: 0 0 0 4px var(--lv-paper), 0 0 0 5.5px rgba(79, 220, 222, 0.5);
+}
+.lv-stamp-name {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lv-muted);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lv-stamp[data-current='true'] .lv-stamp-name {
+  color: var(--lv-cyan);
+}
+.lv-stamp-req {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 9.5px;
+  color: var(--lv-dim);
+}
+
+/* Linhas de medalha, desafio e conquista (lista com picote, sem caixas) */
+.lv-medal-row,
+.lv-challenge,
+.lv-badge-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px dashed var(--lv-line);
+}
+.lv-medal-row {
+  align-items: center;
+}
+.lv-medal-row[data-on='false'] h5 {
+  color: var(--lv-muted);
+}
+.lv-badge-row {
+  align-items: center;
+}
+.lv-badge-row[data-on='false'] {
+  opacity: 0.6;
+}
+.lv-ticks--thin {
+  height: 6px;
+  gap: 2px;
+}
+
+/* Caixa de marcar do desafio */
+.lv-box {
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--lv-line-2);
+  border-radius: 4px;
+  color: var(--lv-ink);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.lv-box:hover {
+  border-color: var(--lv-cyan);
+}
+.lv-challenge[data-on='true'] .lv-box {
+  background: var(--lv-cyan);
+  border-color: var(--lv-cyan);
+}
+.lv-challenge[data-on='true'] h5 {
+  color: var(--lv-muted);
+}
+
+/* Estado vazio da carteira */
+.lv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 44px 20px;
+  text-align: center;
+  border: 1.5px dashed var(--lv-line-2);
+  border-radius: 8px;
+}
+
+/* Card exportável de medalhas (página do passaporte) */
+.lv-share-card {
+  padding: 22px;
+  background: var(--lv-ink);
+  border: 1.5px solid var(--lv-cyan);
+  border-radius: 10px;
+}
+.lv-fields--card {
+  max-width: none;
+  border-top: 1px dashed var(--lv-line);
+  border-bottom: 1px dashed var(--lv-line);
+  padding: 12px 0;
+}
+.lv-fields--card dd {
+  font-size: 34px;
+}
+.lv-fields--card > div {
+  align-items: center;
+  text-align: center;
+}
+.lv-fields--card > div:first-child {
+  padding-left: 18px;
+}
+.lv-stamps--card .lv-stamp-ring {
+  width: 44px;
+  height: 44px;
+}
+.lv-stamps--card .lv-stamp[data-current='true'] .lv-stamp-ring {
+  box-shadow: 0 0 0 3px var(--lv-ink), 0 0 0 4.5px rgba(79, 220, 222, 0.5);
+}
+.lv-stamps--card .lv-stamp-name {
+  font-size: 8.5px;
+}
+.lv-mrz--card {
+  padding: 10px 0 0;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+}
