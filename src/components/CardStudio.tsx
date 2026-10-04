@@ -1870,6 +1870,9 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Tour Wrapped 9:16</span>
               </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
               <label className="inline-flex items-center gap-2 text-[12.5px] font-bold text-[#B3AE9F] cursor-pointer select-none">
                 <input
                   type="checkbox"
@@ -1879,16 +1882,15 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 />
                 <span className={config.showCollectorBadge ? 'text-[#ECE5D1]' : ''}>Selo no card</span>
               </label>
+              {onGoToWallet && (
+                <button type="button" onClick={onGoToWallet} className="lv-link" title="Abrir Livvo Wallet">
+                  <span>Ver no Livvo Wallet</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
+
             </div>
           </div>
-          {onGoToWallet && (
-            <div className="flex justify-end mt-3">
-              <button type="button" onClick={onGoToWallet} className="lv-link" title="Abrir Livvo Wallet">
-                <span>Ver no Livvo Wallet</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
 
           {/* Personalizar */}
           <div className="mt-7">
