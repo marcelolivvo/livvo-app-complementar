@@ -1,6 +1,5 @@
 import express from 'express';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog.js';
 import { registerIntegrationRoutes } from './serverIntegrations.js';
 
@@ -274,6 +273,8 @@ app.get('/api/catalog/search', (req, res) => {
 
     // Vite middleware in development or static serve in production
     if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+      // Vite é carregado só em desenvolvimento (no Vercel ele quebra a função serverless)
+      const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
