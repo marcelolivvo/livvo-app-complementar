@@ -52,7 +52,7 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
   const [medals, setMedals] = useState<FanMedalTier[]>([]);
   const [challenges, setChallenges] = useState<WeeklyChallenge[]>([]);
   const [activeTabRight, setActiveTabRight] = useState<'medals' | 'challenges' | 'badges'>('medals');
-  const [medalsFilter, setMedalsFilter] = useState<'all' | 'unlocked' | 'locked'>('all');
+  const [medalsFilter, setMedalsFilter] = useState<'all' | 'unlocked' | 'locked'>('unlocked');
   const [activeTicketIndex, setActiveTicketIndex] = useState<number | null>(0);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
   const [isMedalShareOpen, setIsMedalShareOpen] = useState(false);
@@ -459,9 +459,9 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 <div className="lv-seg" role="group" aria-label="Filtrar medalhas">
                   {(
                     [
-                      ['all', `Todas`],
                       ['unlocked', `Carimbadas`],
                       ['locked', `A conquistar`],
+                      ['all', `Todas`],
                     ] as const
                   ).map(([id, label]) => (
                     <button
