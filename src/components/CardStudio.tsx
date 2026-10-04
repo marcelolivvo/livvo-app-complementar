@@ -1311,11 +1311,11 @@ export const CardStudio: React.FC<CardStudioProps> = ({
         </div>
 
         <div className="p-5 sm:p-7 space-y-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
-            <h2 className="lv-display text-[28px] sm:text-[34px] text-[#ECE5D1]">Monte seu Virtual Poster</h2>
-            <p className="text-[13px] text-[#B3AE9F] md:max-w-[360px] md:text-right">
-              Escolha o artista e o show que você viu. O card fica pronto para baixar e compartilhar.
-            </p>
+          <div className="space-y-1.5">
+            <h2 className="lv-display whitespace-nowrap text-[clamp(18px,5.6vw,36px)] text-[#ECE5D1]">
+              Monte seu Poster Virtual
+            </h2>
+            <p className="text-[14px] text-[#B3AE9F]">Escolha o artista e o show que você viu.</p>
           </div>
 
           {/* Campos: Artista | UF | Cidade | Local | Data */}

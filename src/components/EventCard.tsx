@@ -488,23 +488,23 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
             {/* Top Bar: Livvo Squircle Brand Logo & User Handle / Status */}
             <div className="flex items-start justify-between gap-3">
               {/* Left side: Livvo Teal Squircle Logo (+50% larger) + Tagline / @nomedousuario */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-2.5">
+              <div className="flex items-start gap-2.5">
+                {/* Logo com o @usuario centralizado logo abaixo */}
+                <div className="flex flex-col items-center gap-1.5">
                   <LivvoLogo className="w-12 h-12 sm:w-14 sm:h-14 drop-shadow-lg" />
-                  {tagline && (
-                    <span
-                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md bg-[#100C1F]/70 border border-white/10"
-                      style={{ color: accentColor }}
-                    >
-                      <Sparkles className="w-2.5 h-2.5" />
-                      <span>{tagline}</span>
+                  {showUserHandle && (
+                    <span className="text-[11px] tracking-wider text-[#4FDCDE] font-mono font-bold text-center whitespace-nowrap">
+                      {userHandle || '@toboi'}
                     </span>
                   )}
                 </div>
-
-                {showUserHandle && (
-                  <span className="text-[11px] tracking-wider text-[#4FDCDE] font-mono font-bold pl-0.5">
-                    {userHandle || '@toboi'}
+                {tagline && (
+                  <span
+                    className="mt-3.5 sm:mt-[18px] inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md bg-[#100C1F]/70 border border-white/10"
+                    style={{ color: accentColor }}
+                  >
+                    <Sparkles className="w-2.5 h-2.5" />
+                    <span>{tagline}</span>
                   </span>
                 )}
               </div>
