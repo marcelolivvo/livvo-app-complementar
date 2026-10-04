@@ -81,51 +81,51 @@ export const FAN_MEDAL_TIERS: Omit<FanMedalTier, 'unlocked' | 'unlockedAt'>[] = 
     metalColor: '#CD7F32',
     gradient: 'from-amber-700 via-amber-600 to-amber-900',
     borderGlow: 'border-amber-600/50 shadow-amber-700/20',
-    description: '1º show registrado no passaporte de shows',
+    description: 'Até 10 shows registrados no passaporte de shows',
   },
   {
     level: 2,
     id: 'fan-prata',
     name: 'Fã Prata',
-    minShows: 3,
+    minShows: 11,
     icon: '🥈',
     metalColor: '#C0C0C0',
     gradient: 'from-slate-400 via-slate-200 to-zinc-500',
     borderGlow: 'border-slate-300/50 shadow-slate-300/20',
-    description: '3 ou mais shows colecionados na sua trajetória',
+    description: 'De 11 a 25 shows colecionados na sua trajetória',
   },
   {
     level: 3,
     id: 'fan-ouro',
     name: 'Fã Ouro',
-    minShows: 5,
+    minShows: 26,
     icon: '🥇',
     metalColor: '#FFD60A',
     gradient: 'from-amber-500 via-yellow-300 to-yellow-600',
     borderGlow: 'border-yellow-400/50 shadow-yellow-500/20',
-    description: '5 shows salvos: presença VIP nos maiores palcos',
+    description: 'De 26 a 50 shows: presença VIP nos maiores palcos',
   },
   {
     level: 4,
     id: 'fan-platina',
     name: 'Fã Platina',
-    minShows: 10,
+    minShows: 51,
     icon: '💎',
     metalColor: '#4FDCDE',
     gradient: 'from-cyan-500 via-teal-300 to-blue-600',
     borderGlow: 'border-cyan-400/50 shadow-cyan-500/20',
-    description: '10 shows colecionados: autoridade de pista e festivais',
+    description: 'De 51 a 100 shows: autoridade de pista e festivais',
   },
   {
     level: 5,
     id: 'fan-lenda',
     name: 'Lenda Viva',
-    minShows: 20,
+    minShows: 101,
     icon: '👑',
     metalColor: '#FFD60A',
     gradient: 'from-yellow-400 via-amber-300 to-purple-600',
     borderGlow: 'border-yellow-400 shadow-yellow-400/40 ring-2 ring-yellow-400/50',
-    description: 'Nível Máximo: 20+ shows, verdadeira lenda dos espetáculos',
+    description: 'Nível máximo: 101 shows ou mais, verdadeira lenda dos espetáculos',
   },
 ];
 
@@ -235,30 +235,21 @@ export const walletService = {
     let nextMedal: FanMedalTier | undefined = medals[1];
     let nextLevelProgress = 0;
 
-    if (effectiveShows >= 20) {
-      currentMedal = medals[4];
-      nextMedal = undefined;
-      nextLevelProgress = 100;
-    } else if (effectiveShows >= 10) {
-      currentMedal = medals[3];
-      nextMedal = medals[4];
-      nextLevelProgress = Math.round(((effectiveShows - 10) / (20 - 10)) * 100);
-    } else if (effectiveShows >= 5) {
-      currentMedal = medals[2];
-      nextMedal = medals[3];
-      nextLevelProgress = Math.round(((effectiveShows - 5) / (10 - 5)) * 100);
-    } else if (effectiveShows >= 3) {
-      currentMedal = medals[1];
-      nextMedal = medals[2];
-      nextLevelProgress = Math.round(((effectiveShows - 3) / (5 - 3)) * 100);
-    } else if (effectiveShows >= 1) {
-      currentMedal = medals[0];
-      nextMedal = medals[1];
-      nextLevelProgress = Math.round(((effectiveShows - 1) / (3 - 1)) * 100);
-    } else {
+    // Faixas: Bronze 1–10, Prata 11–25, Ouro 26–50, Platina 51–100, Lenda Viva 101+
+    if (effectiveShows === 0) {
       currentMedal = { ...medals[0], unlocked: false };
       nextMedal = medals[0];
       nextLevelProgress = 0;
+    } else {
+      let idx = 0;
+      medals.forEach((m, i) => {
+        if (effectiveShows >= m.minShows) idx = i;
+      });
+      currentMedal = medals[idx];
+      nextMedal = medals[idx + 1];
+      nextLevelProgress = nextMedal
+        ? Math.round(((effectiveShows - currentMedal.minShows) / (nextMedal.minShows - currentMedal.minShows)) * 100)
+        : 100;
     }
 
     const level = effectiveShows === 0 ? 0 : currentMedal.level;
