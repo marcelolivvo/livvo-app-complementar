@@ -1319,9 +1319,9 @@ export const CardStudio: React.FC<CardStudioProps> = ({
           </div>
 
           {/* Campos: Artista | UF | Cidade | Local | Data */}
-          <div className="grid grid-cols-2 md:grid-cols-12 gap-x-6 gap-y-5">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-12 gap-x-6 gap-y-5">
             {/* Artista */}
-            <div className="col-span-2 md:col-span-4 relative">
+            <div className="col-span-2 sm:col-span-4 lg:col-span-4 relative">
               <label htmlFor="artist-search-input" className="lv-eyebrow block">
                 Artista
               </label>
@@ -1461,7 +1461,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
 
             {/* UF */}
-            <div className="col-span-1 md:col-span-1">
+            <div className="col-span-1 lg:col-span-1">
               <label htmlFor="filter-state-select" className="lv-eyebrow block">
                 UF
               </label>
@@ -1499,7 +1499,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
 
             {/* Cidade */}
-            <div className="col-span-1 md:col-span-2">
+            <div className="col-span-1 lg:col-span-2">
               <label htmlFor="filter-city-select" className="lv-eyebrow block">
                 Cidade
               </label>
@@ -1539,7 +1539,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
 
             {/* Local */}
-            <div className="col-span-1 md:col-span-3">
+            <div className="col-span-1 lg:col-span-3">
               <label htmlFor="filter-venue-select" className="lv-eyebrow block">
                 Local
               </label>
@@ -1579,7 +1579,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             </div>
 
             {/* Data */}
-            <div className="col-span-1 md:col-span-2">
+            <div className="col-span-1 lg:col-span-2">
               <label htmlFor="filter-date-select" className="lv-eyebrow block">
                 Data
               </label>
