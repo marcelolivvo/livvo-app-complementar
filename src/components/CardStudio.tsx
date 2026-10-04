@@ -51,6 +51,7 @@ import { SAMPLE_ARTISTS_DATA, generateSampleDataset } from '../services/sampleDa
 import { searchCatalogApi } from '../services/catalogService';
 import { extractDominantColor } from '../services/colorExtractor';
 import { walletService } from '../services/walletService';
+import { FanMedalIllustration } from './MedalIllustrations';
 
 interface CardStudioProps {
   shows: ShowItem[];
@@ -1291,525 +1292,473 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="lv-studio space-y-5">
       {/* ========================================================================= */}
-      {/* TOP SECTION: ARTIST SEARCH & GUIDED FILTERS (CITY, VENUE, DATE)          */}
+      {/* BILHETE DE BUSCA: artista e show (campos de preenchimento de ingresso)    */}
       {/* ========================================================================= */}
-      <div className="bg-[#171226] border border-[#282141] rounded-3xl p-5 sm:p-6 shadow-xl space-y-4">
-        {/* Step Indicator & Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#282141] pb-3.5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#2FB8BA]/10 text-[#4FDCDE] border border-[#2FB8BA]/20 flex items-center justify-center font-bold text-sm">
-              1
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-[#ECE5D1]">
-                Crie seu Livvo Virtual Poster
-              </h2>
-              <p className="text-xs text-[#B3AE9F]">
-                Busque o artista e filtre por cidade, casa de show e data para gerar o card oficial.
-              </p>
-            </div>
-          </div>
+      <section className="lv-ticket">
+        <div className="lv-strip">
+          <span>Livvo · Estúdio</span>
+          <span>
+            {selectedShow ? (
+              <>
+                Nº <b>{selectedShow.showCode}</b>
+              </>
+            ) : (
+              'Nº ———'
+            )}
+          </span>
         </div>
 
-        {/* Filters Grid: Artist | Estado | Cidade | Local | Data */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-          {/* 1. Artist Search Field (Col 3) */}
-          <div className="md:col-span-3 relative">
-            <label className="text-xs font-bold text-[#ECE5D1] flex items-center gap-1.5 mb-1.5">
-              <Music className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Nome do Artista</span>
-            </label>
+        <div className="p-5 sm:p-7 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-2">
+            <h2 className="lv-display text-[28px] sm:text-[34px] text-[#ECE5D1]">Monte seu Virtual Poster</h2>
+            <p className="text-[13px] text-[#B3AE9F] md:max-w-[360px] md:text-right">
+              Escolha o artista e o show que você viu. O card fica pronto para baixar e compartilhar.
+            </p>
+          </div>
 
-            <div className="relative">
-              <input
-                ref={searchInputRef}
-                type="text"
-                id="artist-search-input"
-                value={artistSearchQuery}
-                onChange={(e) => {
-                  setArtistSearchQuery(e.target.value);
-                  setIsSearchOpen(true);
-                }}
-                onFocus={() => setIsSearchOpen(true)}
-                placeholder="Pesquisar artista..."
-                className="w-full bg-[#100C1F] border border-[#282141] rounded-2xl pl-9 pr-8 py-2.5 text-xs text-[#ECE5D1] placeholder-[#8A8577] focus:outline-none focus:border-[#2FB8BA] transition-colors"
-              />
-              <Search className="w-4 h-4 text-[#8A8577] absolute left-3 top-3 pointer-events-none" />
+          {/* Campos: Artista | UF | Cidade | Local | Data */}
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-x-6 gap-y-5">
+            {/* Artista */}
+            <div className="col-span-2 md:col-span-4 relative">
+              <label htmlFor="artist-search-input" className="lv-eyebrow block">
+                Artista
+              </label>
 
-              {isSearchingCatalog ? (
-                <div className="absolute right-3 top-3 pointer-events-none">
-                  <RefreshCw className="w-3.5 h-3.5 text-[#2FB8BA] animate-spin" />
-                </div>
-              ) : artistSearchQuery ? (
-                <button
-                  onClick={() => {
-                    setArtistSearchQuery('');
-                    setSelectedArtist(null);
-                    setSelectedState('');
+              <div className="relative">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  id="artist-search-input"
+                  value={artistSearchQuery}
+                  onChange={(e) => {
+                    setArtistSearchQuery(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  onFocus={() => setIsSearchOpen(true)}
+                  placeholder="Busque uma banda ou artista"
+                  autoComplete="off"
+                  className="lv-input pl-6 pr-7"
+                />
+                <Search className="w-4 h-4 text-[#8A8577] absolute left-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                {isSearchingCatalog ? (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <RefreshCw className="w-3.5 h-3.5 text-[#4FDCDE] animate-spin" />
+                  </div>
+                ) : artistSearchQuery ? (
+                  <button
+                    type="button"
+                    aria-label="Limpar busca"
+                    onClick={() => {
+                      setArtistSearchQuery('');
+                      setSelectedArtist(null);
+                      setSelectedState('');
+                      setSelectedCity('');
+                      setSelectedVenue('');
+                      setSelectedDate('');
+                      onSelectShow(null);
+                      searchInputRef.current?.focus();
+                    }}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-[#8A8577] hover:text-[#ECE5D1] p-1 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : null}
+              </div>
+
+              {/* Resultados da busca de artistas */}
+              {isSearchOpen && (
+                <>
+                  <div className="fixed inset-0 z-20" onClick={() => setIsSearchOpen(false)} />
+                  <div className="absolute z-30 top-full mt-2 inset-x-0 bg-[#171226] border border-[#3A3159] rounded-md shadow-[0_18px_40px_rgba(0,0,0,0.5)] max-h-72 overflow-y-auto">
+                    {artistSearchQuery.trim().length > 0 && artistSearchQuery.trim().length < 3 && (
+                      <div className="px-3.5 py-2 border-b border-dashed border-[#282141] flex items-center justify-between text-[11px] text-[#B3AE9F]">
+                        <span>Digite pelo menos 3 letras para buscar</span>
+                        <span className="lv-eyebrow text-[#4FDCDE]">Destaques</span>
+                      </div>
+                    )}
+                    {isSearchingCatalog ? (
+                      <div className="p-4 space-y-3">
+                        {[0, 1].map((i) => (
+                          <div key={i} className="flex items-center gap-3 animate-pulse">
+                            <div className="w-8 h-8 rounded-full bg-[#282141]" />
+                            <div className="flex-1 space-y-1.5">
+                              <div className="h-3 bg-[#282141] rounded-sm w-3/4" />
+                              <div className="h-2.5 bg-[#282141] rounded-sm w-1/2" />
+                            </div>
+                          </div>
+                        ))}
+                        <div className="lv-mono flex items-center justify-center gap-2 pt-1 text-[11px] text-[#4FDCDE]">
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                          <span>Buscando no catálogo…</span>
+                        </div>
+                      </div>
+                    ) : filteredArtists.length === 0 ? (
+                      <div className="p-4 text-center text-xs space-y-3">
+                        <p className="text-[#B3AE9F]">Nenhum artista no catálogo com &quot;{artistSearchQuery}&quot;.</p>
+                        {artistSearchQuery.trim() && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newArtist: ArtistItem = {
+                                artistCode: `ART-${Date.now()}`,
+                                artistName: artistSearchQuery.trim(),
+                                showsCount: 1,
+                              };
+                              handleSelectArtist(newArtist);
+                            }}
+                            className="lv-ghost"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Usar &quot;{artistSearchQuery.trim()}&quot; e buscar foto online</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      filteredArtists.map((artist) => {
+                        const photo =
+                          localPhotos[artist.artistCode] ||
+                          localPhotos[artist.artistName.trim().toLowerCase()] ||
+                          photosMap.get(artist.artistCode) ||
+                          photosMap.get(artist.artistName.trim().toLowerCase()) ||
+                          artist.photoUrl;
+                        const isChosen =
+                          selectedArtist?.artistName.trim().toLowerCase() === artist.artistName.trim().toLowerCase();
+
+                        return (
+                          <div
+                            key={artist.artistCode}
+                            role="option"
+                            aria-selected={isChosen}
+                            onClick={() => handleSelectArtist(artist)}
+                            className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer border-b border-dashed border-[#282141] last:border-b-0 hover:bg-[#4FDCDE]/[0.05] transition-colors ${
+                              isChosen ? 'bg-[#4FDCDE]/[0.07]' : ''
+                            }`}
+                          >
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-[#100C1F] shrink-0 flex items-center justify-center">
+                              {photo ? (
+                                <img src={photo} alt={artist.artistName} className="w-full h-full object-cover" />
+                              ) : (
+                                <Music className="w-4 h-4 text-[#8A8577]" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[13px] font-bold text-[#ECE5D1] truncate">{artist.artistName}</div>
+                              <div className="lv-mono text-[10.5px] text-[#8A8577]">
+                                {artist.showsCount} {artist.showsCount === 1 ? 'show' : 'shows'} no catálogo
+                              </div>
+                            </div>
+                            {isChosen && <Check className="w-4 h-4 text-[#4FDCDE] shrink-0" />}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* UF */}
+            <div className="col-span-1 md:col-span-1">
+              <label htmlFor="filter-state-select" className="lv-eyebrow block">
+                UF
+              </label>
+              <div className="relative">
+                <select
+                  id="filter-state-select"
+                  disabled={!selectedArtist}
+                  value={selectedState}
+                  onChange={(e) => {
+                    const stateVal = e.target.value;
+                    setSelectedState(stateVal);
                     setSelectedCity('');
                     setSelectedVenue('');
                     setSelectedDate('');
-                    onSelectShow(null);
-                    searchInputRef.current?.focus();
+
+                    // Se só um show bate com artista + estado, aplica direto
+                    const matches = artistShows.filter((s) => !stateVal || isSameState(s.state, stateVal));
+                    if (matches.length === 1) {
+                      handleApplyShow(matches[0]);
+                    } else {
+                      onSelectShow(null);
+                    }
                   }}
-                  className="absolute right-2.5 top-2.5 text-[#8A8577] hover:text-[#ECE5D1] p-1 rounded"
+                  className="lv-input"
                 >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              ) : null}
+                  <option value="">{!selectedArtist ? '—' : 'Todos'}</option>
+                  {availableStates.map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
-            {/* Dropdown list of matching artists */}
-            {isSearchOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-20"
-                  onClick={() => setIsSearchOpen(false)}
-                />
-                <div className="absolute z-30 top-full mt-1.5 inset-x-0 bg-[#171226] border border-[#282141] rounded-2xl shadow-2xl max-h-64 overflow-y-auto divide-y divide-[#282141]">
-                  {artistSearchQuery.trim().length > 0 && artistSearchQuery.trim().length < 3 && (
-                    <div className="px-3.5 py-2 bg-[#201838] border-b border-[#282141] flex items-center justify-between text-[11px] text-[#A69F8D]">
-                      <span>Digite pelo menos 3 caracteres para buscar</span>
-                      <span className="text-[10px] text-[#2FB8BA] font-semibold uppercase tracking-wider">
-                        Destaques
-                      </span>
-                    </div>
-                  )}
-                  {isSearchingCatalog ? (
-                    <div className="p-4 space-y-3">
-                      <div className="flex items-center gap-3 animate-pulse">
-                        <div className="w-8 h-8 rounded-full bg-[#282141]" />
-                        <div className="flex-1 space-y-1.5">
-                          <div className="h-3 bg-[#282141] rounded w-3/4" />
-                          <div className="h-2.5 bg-[#282141] rounded w-1/2" />
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 animate-pulse">
-                        <div className="w-8 h-8 rounded-full bg-[#282141]" />
-                        <div className="flex-1 space-y-1.5">
-                          <div className="h-3 bg-[#282141] rounded w-2/3" />
-                          <div className="h-2.5 bg-[#282141] rounded w-1/3" />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 pt-1 text-[11px] text-[#2FB8BA]">
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                        <span>Buscando no catálogo seguro...</span>
-                      </div>
-                    </div>
-                  ) : filteredArtists.length === 0 ? (
-                    <div className="p-4 text-center text-xs space-y-2">
-                      <p className="text-[#8A8577]">
-                        Nenhum artista na base com &quot;{artistSearchQuery}&quot;
-                      </p>
-                      {artistSearchQuery.trim() && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newArtist: ArtistItem = {
-                              artistCode: `ART-${Date.now()}`,
-                              artistName: artistSearchQuery.trim(),
-                              showsCount: 1,
-                            };
-                            handleSelectArtist(newArtist);
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] transition-colors cursor-pointer shadow-sm"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>Buscar Online & Auto-vincular</span>
-                        </button>
-                      )}
-                    </div>
-                  ) : (
-                    filteredArtists.map((artist) => {
-                      const photo =
-                        localPhotos[artist.artistCode] ||
-                        localPhotos[artist.artistName.trim().toLowerCase()] ||
-                        photosMap.get(artist.artistCode) ||
-                        photosMap.get(artist.artistName.trim().toLowerCase()) ||
-                        artist.photoUrl;
-                      const isChosen =
-                        selectedArtist?.artistName.trim().toLowerCase() ===
-                        artist.artistName.trim().toLowerCase();
+            {/* Cidade */}
+            <div className="col-span-1 md:col-span-2">
+              <label htmlFor="filter-city-select" className="lv-eyebrow block">
+                Cidade
+              </label>
+              <div className="relative">
+                <select
+                  id="filter-city-select"
+                  disabled={!selectedArtist}
+                  value={selectedCity}
+                  onChange={(e) => {
+                    const city = e.target.value;
+                    setSelectedCity(city);
+                    setSelectedVenue('');
+                    setSelectedDate('');
 
-                      return (
-                        <div
-                          key={artist.artistCode}
-                          onClick={() => handleSelectArtist(artist)}
-                          className={`flex items-center gap-3 p-2.5 cursor-pointer hover:bg-[#1E1833] transition-colors ${
-                            isChosen ? 'bg-[#2FB8BA]/10' : ''
-                          }`}
-                        >
-                          <div className="w-8 h-8 rounded-full overflow-hidden bg-[#100C1F] border border-[#282141] shrink-0 flex items-center justify-center">
-                            {photo ? (
-                              <img
-                                src={photo}
-                                alt={artist.artistName}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Music className="w-4 h-4 text-[#8A8577]" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-bold text-[#ECE5D1] truncate">
-                              {artist.artistName}
-                            </div>
-                            <div className="text-[10px] text-[#B3AE9F] flex items-center gap-1.5">
-                              <span>
-                                {artist.showsCount}{' '}
-                                {artist.showsCount === 1 ? 'show cadastrado' : 'shows cadastrados'}
-                              </span>
-                            </div>
-                          </div>
-                          {isChosen && (
-                            <Check className="w-4 h-4 text-[#2FB8BA] shrink-0" />
-                          )}
-                        </div>
-                      );
-                    })
+                    const matches = artistShows.filter(
+                      (s) => (!selectedState || isSameState(s.state, selectedState)) && (!city || s.city === city)
+                    );
+                    if (matches.length === 1) {
+                      handleApplyShow(matches[0]);
+                    } else {
+                      onSelectShow(null);
+                    }
+                  }}
+                  className="lv-input"
+                >
+                  <option value="">
+                    {!selectedArtist ? '—' : selectedState ? `Cidades de ${selectedState}` : 'Todas'}
+                  </option>
+                  {availableCities.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Local */}
+            <div className="col-span-1 md:col-span-3">
+              <label htmlFor="filter-venue-select" className="lv-eyebrow block">
+                Local
+              </label>
+              <div className="relative">
+                <select
+                  id="filter-venue-select"
+                  disabled={!selectedArtist}
+                  value={selectedVenue}
+                  onChange={(e) => {
+                    const venue = e.target.value;
+                    setSelectedVenue(venue);
+                    setSelectedDate('');
+
+                    const matches = artistShows.filter(
+                      (s) =>
+                        (!selectedState || isSameState(s.state, selectedState)) &&
+                        (!selectedCity || s.city === selectedCity) &&
+                        (!venue || s.venue === venue)
+                    );
+                    if (matches.length === 1) {
+                      handleApplyShow(matches[0]);
+                    } else {
+                      onSelectShow(null);
+                    }
+                  }}
+                  className="lv-input"
+                >
+                  <option value="">{!selectedArtist ? '—' : 'Todos'}</option>
+                  {availableVenues.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Data */}
+            <div className="col-span-1 md:col-span-2">
+              <label htmlFor="filter-date-select" className="lv-eyebrow block">
+                Data
+              </label>
+              <div className="relative">
+                <select
+                  id="filter-date-select"
+                  disabled={!selectedArtist}
+                  value={selectedDate}
+                  onChange={(e) => {
+                    const date = e.target.value;
+                    setSelectedDate(date);
+
+                    const match = artistShows.find(
+                      (s) =>
+                        (!selectedState || (s.state && s.state.toUpperCase() === selectedState.toUpperCase())) &&
+                        (!selectedCity || s.city === selectedCity) &&
+                        (!selectedVenue || s.venue === selectedVenue) &&
+                        s.date === date
+                    );
+                    if (match) {
+                      handleApplyShow(match);
+                    } else {
+                      onSelectShow(null);
+                    }
+                  }}
+                  className="lv-input lv-mono"
+                >
+                  <option value="">{!selectedArtist ? '—' : 'Todas'}</option>
+                  {availableDates.map((d) => (
+                    <option key={d} value={d}>
+                      {cleanDateOnly(d)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Artista escolhido + mídia */}
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 pt-1">
+            {selectedArtist ? (
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-[#100C1F] shrink-0 flex items-center justify-center">
+                  {currentPhoto ? (
+                    <img src={currentPhoto} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Music className="w-4 h-4 text-[#8A8577]" />
                   )}
                 </div>
-              </>
-            )}
-          </div>
-
-          {/* 2. State / UF Filter Dropdown (Col 2) */}
-          <div className="md:col-span-2">
-            <label className="text-xs font-bold text-[#ECE5D1] flex items-center gap-1.5 mb-1.5">
-              <MapPin className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Estado (UF)</span>
-            </label>
-            <div className="relative">
-              <select
-                id="filter-state-select"
-                disabled={!selectedArtist}
-                value={selectedState}
-                onChange={(e) => {
-                  const stateVal = e.target.value;
-                  setSelectedState(stateVal);
-                  setSelectedCity('');
-                  setSelectedVenue('');
-                  setSelectedDate('');
-
-                  // If only one show matches this artist + state, apply it
-                  const matches = artistShows.filter(
-                    (s) => !stateVal || isSameState(s.state, stateVal)
-                  );
-                  if (matches.length === 1) {
-                    handleApplyShow(matches[0]);
-                  } else {
-                    onSelectShow(null);
-                  }
-                }}
-                className="w-full bg-[#100C1F] border border-[#282141] rounded-2xl px-3 py-2.5 text-xs text-[#ECE5D1] disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:border-[#2FB8BA] appearance-none cursor-pointer"
-              >
-                <option value="">
-                  {!selectedArtist ? 'Estado' : 'Todos os Estados'}
-                </option>
-                {availableStates.map((st) => (
-                  <option key={st} value={st}>
-                    {st}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-3 top-3 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* 3. City Filter Dropdown (Col 3 - filtered by selectedState) */}
-          <div className="md:col-span-3">
-            <label className="text-xs font-bold text-[#ECE5D1] flex items-center gap-1.5 mb-1.5">
-              <MapPin className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Cidade</span>
-            </label>
-            <div className="relative">
-              <select
-                id="filter-city-select"
-                disabled={!selectedArtist}
-                value={selectedCity}
-                onChange={(e) => {
-                  const city = e.target.value;
-                  setSelectedCity(city);
-                  setSelectedVenue('');
-                  setSelectedDate('');
-
-                  // If only one show matches, apply it
-                  const matches = artistShows.filter(
-                    (s) =>
-                      (!selectedState || isSameState(s.state, selectedState)) &&
-                      (!city || s.city === city)
-                  );
-                  if (matches.length === 1) {
-                    handleApplyShow(matches[0]);
-                  } else {
-                    onSelectShow(null);
-                  }
-                }}
-                className="w-full bg-[#100C1F] border border-[#282141] rounded-2xl px-3 py-2.5 text-xs text-[#ECE5D1] disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:border-[#2FB8BA] appearance-none cursor-pointer"
-              >
-                <option value="">
-                  {!selectedArtist
-                    ? 'Cidade'
-                    : selectedState
-                    ? `Cidades de ${selectedState}`
-                    : 'Todas as Cidades'}
-                </option>
-                {availableCities.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-3 top-3 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* 4. Venue / Espaço Filter Dropdown (Col 2) */}
-          <div className="md:col-span-2">
-            <label className="text-xs font-bold text-[#ECE5D1] flex items-center gap-1.5 mb-1.5">
-              <Building2 className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Local</span>
-            </label>
-            <div className="relative">
-              <select
-                id="filter-venue-select"
-                disabled={!selectedArtist}
-                value={selectedVenue}
-                onChange={(e) => {
-                  const venue = e.target.value;
-                  setSelectedVenue(venue);
-                  setSelectedDate('');
-
-                  const matches = artistShows.filter(
-                    (s) =>
-                      (!selectedState || isSameState(s.state, selectedState)) &&
-                      (!selectedCity || s.city === selectedCity) &&
-                      (!venue || s.venue === venue)
-                  );
-                  if (matches.length === 1) {
-                    handleApplyShow(matches[0]);
-                  } else {
-                    onSelectShow(null);
-                  }
-                }}
-                className="w-full bg-[#100C1F] border border-[#282141] rounded-2xl px-3 py-2.5 text-xs text-[#ECE5D1] disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:border-[#2FB8BA] appearance-none cursor-pointer"
-              >
-                <option value="">
-                  {!selectedArtist ? 'Local' : 'Todos os Locais'}
-                </option>
-                {availableVenues.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-3 top-3 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* 5. Date Filter Dropdown (Col 2) */}
-          <div className="md:col-span-2">
-            <label className="text-xs font-bold text-[#ECE5D1] flex items-center gap-1.5 mb-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Data</span>
-            </label>
-            <div className="relative">
-              <select
-                id="filter-date-select"
-                disabled={!selectedArtist}
-                value={selectedDate}
-                onChange={(e) => {
-                  const date = e.target.value;
-                  setSelectedDate(date);
-
-                  const match = artistShows.find(
-                    (s) =>
-                      (!selectedState ||
-                        (s.state && s.state.toUpperCase() === selectedState.toUpperCase())) &&
-                      (!selectedCity || s.city === selectedCity) &&
-                      (!selectedVenue || s.venue === selectedVenue) &&
-                      s.date === date
-                  );
-                  if (match) {
-                    handleApplyShow(match);
-                  } else {
-                    onSelectShow(null);
-                  }
-                }}
-                className="w-full bg-[#100C1F] border border-[#282141] rounded-2xl px-3 py-2.5 text-xs text-[#ECE5D1] disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:border-[#2FB8BA] appearance-none cursor-pointer"
-              >
-                <option value="">
-                  {!selectedArtist ? 'Data' : 'Todas'}
-                </option>
-                {availableDates.map((d) => (
-                  <option key={d} value={d}>
-                    {cleanDateOnly(d)}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-4 h-4 text-[#8A8577] absolute right-3 top-3 pointer-events-none" />
-            </div>
-          </div>
-        </div>
-
-        {/* Selected Artist Details & Photo Status Bar */}
-        <div className="pt-2 border-t border-[#282141] flex flex-wrap items-center justify-between gap-3">
-          {selectedArtist ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-[#100C1F] border border-[#282141] shrink-0 flex items-center justify-center shadow">
-                {currentPhoto ? (
-                  <img src={currentPhoto} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <Music className="w-4 h-4 text-[#8A8577]" />
-                )}
+                <div className="min-w-0">
+                  <div className="text-[14px] font-bold text-[#ECE5D1] truncate">{selectedArtist.artistName}</div>
+                  <div className="lv-mono text-[10.5px] text-[#8A8577] flex items-center gap-1.5">
+                    {currentPhoto ? (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 text-[#4FDCDE]" />
+                        <span>foto vinculada</span>
+                      </>
+                    ) : (
+                      <span>
+                        {artistShows.length} {artistShows.length === 1 ? 'show no catálogo' : 'shows no catálogo'}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <span className="text-xs font-bold text-[#ECE5D1]">
-                {selectedArtist.artistName}
-              </span>
-              {currentPhoto ? (
-                <span className="inline-flex items-center gap-1 text-[11px] text-[#2FB8BA] bg-[#2FB8BA]/10 px-2.5 py-0.5 rounded-full border border-[#2FB8BA]/30 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                  Foto vinculada
-                </span>
-              ) : (
-                <span className="text-xs text-[#B3AE9F]">
-                  ({artistShows.length} {artistShows.length === 1 ? 'show no catálogo' : 'shows no catálogo'})
-                </span>
-              )}
-            </div>
-          ) : (
-            <div className="text-xs text-[#8A8577] flex items-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Selecione uma banda ou artista para montar seu poster virtual</span>
-            </div>
-          )}
+            ) : (
+              <p className="text-[13px] text-[#8A8577]">Comece pelo nome do artista. Os outros campos se ajustam a ele.</p>
+            )}
 
-          {/* Quick actions for artist media */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Opção Foto / Pôster ao lado de Gerenciar Foto */}
-            <div className="flex items-center bg-[#100C1F] p-0.5 rounded-xl border border-[#282141]">
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="lv-seg" role="group" aria-label="Imagem do card">
+                <button
+                  type="button"
+                  data-on={config.visualMode !== 'show-poster'}
+                  aria-pressed={config.visualMode !== 'show-poster'}
+                  onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
+                  title="Usar a foto do artista no card"
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  <span>Foto</span>
+                </button>
+                <button
+                  type="button"
+                  data-on={config.visualMode === 'show-poster'}
+                  aria-pressed={config.visualMode === 'show-poster'}
+                  onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
+                  title="Usar o pôster da turnê no card"
+                >
+                  <LivvoTicketIcon className="w-3.5 h-3.5" />
+                  <span>Pôster</span>
+                  {selectedShow?.posterUrl && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                </button>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  config.visualMode !== 'show-poster'
-                    ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
-                    : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
-                }`}
-                title="Exibir foto do artista"
+                onClick={() => onOpenPhotoManager?.(selectedArtist?.artistCode)}
+                className="lv-ghost"
+                title="Trocar ou enviar foto do artista"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
-                <span>Foto</span>
+                <span>Gerenciar foto</span>
               </button>
 
               <button
                 type="button"
-                onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  config.visualMode === 'show-poster'
-                    ? 'bg-[#2FB8BA] text-[#100C1F] shadow'
-                    : 'text-[#B3AE9F] hover:text-[#ECE5D1]'
-                }`}
-                title="Exibir pôster da turnê"
+                onClick={() => {
+                  setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
+                  setIsMediaModalOpen(true);
+                }}
+                className="lv-ghost"
+                title="Buscar pôsteres e fotos em alta resolução"
               >
-                <LivvoTicketIcon className="w-3.5 h-3.5" />
-                <span>Pôster</span>
-                {selectedShow?.posterUrl && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6]" />
-                )}
+                <Search className="w-3.5 h-3.5" />
+                <span>Buscar mídias online</span>
               </button>
-            </div>
 
-            <button
-              type="button"
-              onClick={() => onOpenPhotoManager?.(selectedArtist?.artistCode)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[#ECE5D1] bg-[#1E1833] hover:bg-[#282141] border border-[#282141] transition-all cursor-pointer"
-              title="Gerenciar fotos do artista"
-            >
-              <ImageIcon className="w-3.5 h-3.5 text-[#2FB8BA]" />
-              <span>Gerenciar Foto</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
-                setIsMediaModalOpen(true);
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-sm transition-all cursor-pointer"
-              title="Abrir galeria online de pôsteres e fotos em alta resolução"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#100C1F]" />
-              <span>Buscar Mídias Online</span>
-            </button>
-
-            {selectedArtist && !currentPhoto && (
-              <button
-                type="button"
-                id="auto-fetch-photo-btn"
-                onClick={handleAutoFetchPhoto}
-                disabled={isFetchingPhoto}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#282141] hover:bg-[#1E1833] text-[#4FDCDE] border border-[#2FB8BA]/30 transition-all disabled:opacity-50 cursor-pointer"
-                title="Conecta o nome do artista com a foto oficial via API pública do Deezer"
-              >
-                {isFetchingPhoto ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#4FDCDE]" />
-                ) : (
-                  <Sparkles className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                )}
-                <span>Auto-vincular</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Feedback message for auto-photo */}
-        {autoPhotoMessage && (
-          <div className="p-2.5 rounded-xl bg-[#2FB8BA]/10 border border-[#2FB8BA]/30 text-xs text-[#4FDCDE] flex items-center gap-2">
-            <Sparkles className="w-4 h-4 shrink-0 text-[#FFD60A]" />
-            <span>{autoPhotoMessage}</span>
-          </div>
-        )}
-
-        {/* Quick show pills when artist is chosen but show is not yet finalized */}
-        {selectedArtist && !selectedShow && filteredShows.length > 0 && (
-          <div className="p-3 bg-[#100C1F] rounded-2xl border border-[#282141] space-y-2">
-            <div className="flex items-center justify-between text-xs text-[#B3AE9F]">
-              <span className="font-bold text-[#ECE5D1]">
-                Escolha um dos shows abaixo para montar o card:
-              </span>
-              <span>{filteredShows.length} shows encontrados</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {filteredShows.map((sh) => (
+              {selectedArtist && !currentPhoto && (
                 <button
-                  key={sh.id}
-                  onClick={() => handleApplyShow(sh)}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1E1833] hover:bg-[#282141] border border-[#282141] hover:border-[#2FB8BA] text-left transition-all group"
+                  type="button"
+                  id="auto-fetch-photo-btn"
+                  onClick={handleAutoFetchPhoto}
+                  disabled={isFetchingPhoto}
+                  className="lv-link"
+                  title="Busca a foto oficial do artista pelo nome"
                 >
-                  <Ticket className="w-3.5 h-3.5 text-[#2FB8BA] group-hover:scale-110 transition-transform" />
-                  <div className="text-xs">
-                    <span className="font-bold text-[#ECE5D1] block">{sh.city} ({sh.state})</span>
-                    <span className="text-[10px] text-[#B3AE9F]">{sh.venue} • {cleanDateOnly(sh.date)}</span>
-                  </div>
+                  {isFetchingPhoto ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  <span>Vincular foto automaticamente</span>
                 </button>
-              ))}
+              )}
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Retorno da busca automática de foto */}
+          {autoPhotoMessage && (
+            <p className="lv-mono text-[11.5px] text-[#4FDCDE] border-l-2 border-[#4FDCDE] pl-3">{autoPhotoMessage}</p>
+          )}
+
+          {/* Shows do artista quando o show ainda não foi escolhido */}
+          {selectedArtist && !selectedShow && filteredShows.length > 0 && (
+            <div>
+              <div className="flex items-baseline justify-between border-b border-[#282141] pb-2">
+                <span className="lv-eyebrow text-[#4FDCDE]">Escolha o show</span>
+                <span className="lv-mono text-[11px] text-[#8A8577]">
+                  {filteredShows.length} {filteredShows.length === 1 ? 'show' : 'shows'}
+                </span>
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {filteredShows.map((sh) => (
+                  <button key={sh.id} type="button" onClick={() => handleApplyShow(sh)} className="lv-show">
+                    <span className="lv-mono text-[12px] text-[#4FDCDE]">{cleanDateOnly(sh.date)}</span>
+                    <span className="min-w-0">
+                      <span className="block text-[13px] font-bold text-[#ECE5D1] truncate">
+                        {sh.city} ({sh.state})
+                      </span>
+                      <span className="block text-[11.5px] text-[#8A8577] truncate">{sh.venue}</span>
+                    </span>
+                    <ChevronRight className="lv-show-go w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* ========================================================================= */}
-      {/* MAIN STUDIO AREA: VISUAL STAGE AND CUSTOMIZATION CONTROLS                  */}
+      {/* INGRESSO PRINCIPAL: palco (card) · picote · canhoto (controles)           */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Visual Card Preview Stage */}
-        <div className="lg:col-span-7 flex flex-col items-center gap-4">
-          {/* Card Stage Container - Restored generous size (max-w-[460px], min-h-[580px]) */}
-          <div className="w-full flex justify-center items-center p-4 sm:p-8 bg-[#100C1F] rounded-3xl border border-[#282141] shadow-2xl relative min-h-[580px]">
-            <div className="relative shadow-2xl rounded-2xl ring-1 ring-[#282141] transition-all flex justify-center items-center w-full max-w-[460px]">
+      <section className="lv-ticket lg:grid lg:grid-cols-[minmax(0,1fr)_28px_minmax(0,440px)]">
+        {/* Palco */}
+        <div className="lv-stage">
+          <div className="p-5 sm:p-10 flex flex-col items-center gap-4 lg:sticky lg:top-4">
+            <div className="relative shadow-[0_24px_60px_rgba(0,0,0,0.55)] flex justify-center items-center w-full max-w-[440px]">
               <EventCard
                 ref={cardRef}
                 show={selectedShow}
@@ -1820,300 +1769,154 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 isExporting={isExporting}
               />
             </div>
-          </div>
-
-          {/* Card Status Indicator */}
-          <div className="w-full flex items-center justify-center gap-2 text-xs text-[#B3AE9F] pt-1">
-            <span className={`w-2 h-2 rounded-full ${selectedShow || selectedArtist ? 'bg-[#22E3E6] animate-pulse' : 'bg-[#8A8577]'}`} />
-            <span>
+            <p className="lv-mono text-[11px] text-[#8A8577] flex items-center gap-2">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${selectedShow || selectedArtist ? 'bg-[#4FDCDE]' : 'bg-[#8A8577]'}`}
+              />
               {selectedShow || selectedArtist
-                ? 'Card oficial em alta resolução (300 DPI) pronto para exportação'
-                : 'Aguardando seleção de banda ou artista para montagem do card'}
-            </span>
+                ? 'Alta resolução · 300 DPI · pronto para baixar'
+                : 'Escolha um artista para montar o card'}
+            </p>
           </div>
         </div>
 
-          {/* Right Column: Customization & Template Settings */}
-          <div className="lg:col-span-5 flex flex-col gap-4">
-            {/* ========================================================================= */}
-            {/* CARD DE GAMIFICAÇÃO DE COLECIONADOR & PASSAPORTE DE FÃ                    */}
-            {/* ========================================================================= */}
-            <div className="bg-gradient-to-br from-[#171226] via-[#1A142D] to-[#120E22] rounded-3xl border border-[#FFD60A]/30 p-5 shadow-2xl relative overflow-hidden space-y-4">
-              {/* Ambient Glow */}
-              <div className="absolute top-0 right-0 w-36 h-36 bg-[#FFD60A]/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-36 h-36 bg-[#2FB8BA]/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="lv-perf" aria-hidden="true" />
 
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#282141] pb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 flex items-center justify-center shrink-0 bg-transparent" title="Passaporte Oficial do Colecionador">
-                    <PassportIcon className="w-9 h-9 text-[#2FB8BA]" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-[#ECE5D1] uppercase tracking-wide">
-                      Passaporte do Colecionador
-                    </h3>
-                    <p className="text-[11px] text-[#B3AE9F]">
-                      {fanStats.totalShows} {fanStats.totalShows === 1 ? 'ingresso colecionado' : 'ingressos colecionados'} • {fanStats.uniqueArtists} artistas
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0">
-                  {/* Palavra Nível / Nível de Fã acima do box */}
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A8577]">
-                    Nível de Fã
-                  </span>
-
-                  {/* Box quadrado idêntico ao botão Livvo Wallet, com número e título centralizados e destacados */}
-                  <div className="w-full min-w-[140px] px-3 py-1.5 rounded-xl text-xs font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 border border-[#2FB8BA]/30 flex items-center justify-center gap-1.5 shadow-sm text-center">
-                    <span className="text-sm">{fanStats.currentMedal?.icon || '🥉'}</span>
-                    <span className="font-mono font-black text-sm">{fanStats.level}</span>
-                    <span className="text-[#4FDCDE]/60">-</span>
-                    <span className="truncate">{fanStats.levelTitle}</span>
-                  </div>
-
-                  {/* Botão Livvo Wallet logo abaixo desse box */}
-                  {onGoToWallet && (
-                    <button
-                      onClick={onGoToWallet}
-                      className="w-full min-w-[140px] px-3 py-1.5 rounded-xl text-xs font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 hover:bg-[#2FB8BA]/20 border border-[#2FB8BA]/30 transition-all flex items-center justify-center gap-1 cursor-pointer shrink-0"
-                      title="Abrir Livvo Wallet"
-                    >
-                      <span>Livvo Wallet</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Level Progress */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[10px] font-mono text-[#8A8577]">
-                  <span>
-                    {fanStats.nextMedal ? (
-                      <span>
-                        Faltam <strong className="text-[#FFD60A]">{Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows)}</strong>{' '}
-                        {Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows) === 1 ? 'show' : 'shows'} para o Nível {fanStats.nextMedal.name.replace(/^Fã\s+/, '')}
-                      </span>
-                    ) : (
-                      <span className="text-[#FFD60A]">Nível Máximo de Fã Atingido (Lenda) 👑</span>
-                    )}
-                  </span>
-                  <span className="text-[#FFD60A] font-bold">{fanStats.nextLevelProgress}%</span>
-                </div>
-                <div className="w-full bg-[#100C1F] h-1.5 rounded-full overflow-hidden border border-[#282141]">
-                  <div
-                    className="bg-gradient-to-r from-[#2FB8BA] via-[#4FDCDE] to-[#FFD60A] h-full transition-all duration-500 rounded-full"
-                    style={{ width: `${fanStats.nextLevelProgress}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Quick Action Grid */}
-              <div className="grid grid-cols-2 gap-2.5">
-                {/* 1. Salvar no Passaporte (Gamificação) */}
-                <button
-                  id="save-to-wallet-btn"
-                  onClick={handleSaveToWallet}
-                  className="inline-flex items-center justify-center gap-2 p-2.5 rounded-2xl font-bold text-xs bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/20 active:scale-95 transition-all cursor-pointer"
-                >
-                  <LivvoTicketIcon className="w-4 h-4 text-[#100C1F]" />
-                  <span>{savedToWalletSuccess ? 'Salvo na Livvo Wallet!' : 'Salvar o Passaporte'}</span>
+        {/* Canhoto */}
+        <div className="p-5 sm:p-7">
+          {/* Passaporte de fã */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="lv-eyebrow">Passaporte de fã</span>
+              {onGoToWallet && (
+                <button type="button" onClick={onGoToWallet} className="lv-link" title="Abrir Livvo Wallet">
+                  <span>Livvo Wallet</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
                 </button>
+              )}
+            </div>
 
-                {/* 2. Copiar Imagem (Clipboard) */}
-                <button
-                  id="quick-copy-image-btn"
-                  onClick={handleCopyImage}
-                  disabled={isExporting || (!selectedShow && !selectedArtist)}
-                  className="inline-flex items-center justify-center gap-2 p-2.5 rounded-2xl font-bold text-xs bg-[#1E1833] hover:bg-[#282141] text-[#ECE5D1] border border-[#282141] hover:border-[#2FB8BA] active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                  title="Copiar direto para área de transferência para colar no WhatsApp ou Stories"
-                >
-                  {copySuccess ? (
+            <div className="flex items-center gap-4">
+              <FanMedalIllustration
+                medalId={fanStats.currentMedal?.id}
+                level={fanStats.level}
+                unlocked={fanStats.level > 0}
+                className="w-14 h-14 shrink-0"
+              />
+              <div className="min-w-0">
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="lv-num text-[46px] text-[#4FDCDE]">{fanStats.level}</span>
+                  <span className="lv-display text-[21px] text-[#ECE5D1] truncate">{fanStats.levelTitle}</span>
+                </div>
+                <p className="lv-mono text-[11px] text-[#8A8577] mt-1.5">
+                  {fanStats.totalShows} {fanStats.totalShows === 1 ? 'ingresso' : 'ingressos'} · {fanStats.uniqueArtists}{' '}
+                  {fanStats.uniqueArtists === 1 ? 'artista' : 'artistas'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div
+                className="lv-ticks"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={fanStats.nextLevelProgress}
+                aria-label="Progresso até o próximo nível"
+              >
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <span key={i} data-on={i < Math.round((fanStats.nextLevelProgress / 100) * 24)} />
+                ))}
+              </div>
+              <div className="flex items-center justify-between gap-3 text-[11.5px]">
+                <span className="text-[#B3AE9F]">
+                  {fanStats.nextMedal ? (
                     <>
-                      <Check className="w-4 h-4 text-[#2FB8BA]" />
-                      <span className="text-[#2FB8BA]">Copiado!</span>
+                      Falta{Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows) === 1 ? '' : 'm'}{' '}
+                      <strong className="text-[#ECE5D1]">
+                        {Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows)}
+                      </strong>{' '}
+                      {Math.max(0, fanStats.nextMedal.minShows - fanStats.totalShows) === 1 ? 'show' : 'shows'} para o nível{' '}
+                      {fanStats.nextMedal.name.replace(/^Fã\s+/, '')}
                     </>
                   ) : (
-                    <>
-                      <Copy className="w-4 h-4 text-[#4FDCDE]" />
-                      <span>Copiar Imagem</span>
-                    </>
+                    'Nível máximo: Lenda Viva'
                   )}
-                </button>
-              </div>
-
-              {/* Quick Features Row: Surpreenda-me & Gerar Tour Wrapped & Toggle Selo no Card */}
-              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#282141]/60">
-                <button
-                  id="quick-surprise-me-btn"
-                  onClick={handleSurpriseMe}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#100C1F] hover:bg-[#1E1833] text-[#4FDCDE] border border-[#282141] hover:border-[#2FB8BA]/40 transition-all cursor-pointer"
-                >
-                  <Dice5 className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                  <span>Surpreenda-me</span>
-                </button>
-
-                <button
-                  onClick={() => setIsTourWrappedOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold bg-[#100C1F] hover:bg-[#1E1833] text-[#FFD60A] border border-[#282141] hover:border-[#FFD60A]/40 transition-all cursor-pointer"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#FFD60A]" />
-                  <span>Tour Wrapped 9:16</span>
-                </button>
-
-                {/* Toggle Selo de Colecionador no Card */}
-                <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#ECE5D1] cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(config.showCollectorBadge)}
-                    onChange={(e) => setConfig((prev) => ({ ...prev, showCollectorBadge: e.target.checked }))}
-                    className="w-4 h-4 rounded text-[#FFD60A] focus:ring-0 bg-[#100C1F] border-[#282141] cursor-pointer"
-                  />
-                  <span className={config.showCollectorBadge ? 'text-[#FFD60A]' : 'text-[#8A8577]'}>
-                    Selo no Card
-                  </span>
-                </label>
+                </span>
+                <span className="lv-mono text-[#4FDCDE] shrink-0">{fanStats.nextLevelProgress}%</span>
               </div>
             </div>
 
-            {/* Personalizar Card - Single line with Dropdown option */}
-            <div className="bg-[#171226] rounded-3xl border border-[#282141] shadow-xl overflow-hidden transition-all">
-              <button
-                type="button"
-                id="toggle-personalizar-card-btn"
-                onClick={() => setIsPersonalizarOpen((prev) => !prev)}
-                className="w-full flex items-center justify-between p-4 sm:p-5 text-left hover:bg-[#1E1833] transition-colors cursor-pointer select-none"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-xl bg-[#2FB8BA]/10 text-[#2FB8BA] shrink-0">
-                    <Sliders className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-base font-bold text-[#ECE5D1] truncate">Personalizar Card</h2>
-                    <p className="text-xs text-[#B3AE9F] truncate">
-                      {isPersonalizarOpen ? 'Clique para recolher opções' : 'Clique para abrir opções'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#2FB8BA]/10 text-[#4FDCDE] font-mono text-[11px] border border-[#2FB8BA]/25 select-none">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#22E3E6] animate-pulse" />
-                    <span>5 Categorias</span>
-                  </span>
-                  <div className={`p-1.5 rounded-lg bg-[#282141] text-[#2FB8BA] transition-transform duration-200 ${isPersonalizarOpen ? 'rotate-180' : ''}`}>
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
-                </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button id="save-to-wallet-btn" type="button" onClick={handleSaveToWallet} className="lv-ghost">
+                <LivvoTicketIcon className="w-4 h-4" />
+                <span>{savedToWalletSuccess ? 'Salvo na Wallet' : 'Salvar no passaporte'}</span>
               </button>
-
-              {/* All Customization Lines & Boxes Shown Inside Dropdown */}
-              {isPersonalizarOpen && (
-                <div className="p-5 sm:p-6 pt-2 border-t border-[#282141] space-y-4 animate-in fade-in">
-                  {/* Top Dropdown Quick Selector */}
-            <div className="space-y-2">
-              <label htmlFor="customization-quick-select" className="text-[11px] font-bold uppercase tracking-wider text-[#4FDCDE] flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Sliders className="w-3.5 h-3.5 text-[#2FB8BA]" />
-                  Menu Dropdown de Personalização
-                </span>
-                <span className="text-[10px] font-normal text-[#8A8577]">
-                  {activeDropdown ? '1 tópico aberto' : 'Selecione ou clique nos boxes abaixo'}
-                </span>
-              </label>
-
-              <div className="relative">
-                <select
-                  id="customization-quick-select"
-                  value={activeDropdown || ''}
-                  onChange={(e) => setActiveDropdown(e.target.value || null)}
-                  className="w-full bg-[#100C1F] border border-[#282141] hover:border-[#2FB8BA]/60 text-[#ECE5D1] text-xs font-bold rounded-xl px-3.5 py-2.5 appearance-none cursor-pointer focus:outline-none focus:border-[#2FB8BA] transition-all"
-                >
-                  <option value="">-- Escolha um tópico das 5 Categorias --</option>
-                  <optgroup label="1. Gamificação & Colecionador">
-                    <option value="collector">🏆 Selo de Colecionador & Raridade</option>
-                    <option value="stamp">🏷️ Carimbos de Presença (EU FUI, VIP Pass...)</option>
-                  </optgroup>
-                  <optgroup label="2. Vibes & Presets 1-Clique">
-                    <option value="vibes">⚡ Vibes & Presets de Estilo</option>
-                  </optgroup>
-                  <optgroup label="3. Memória & Conteúdo do Show">
-                    <option value="music">🎵 Faixa Marcante, Setor & Companhia</option>
-                  </optgroup>
-                  <optgroup label="4. Filtros Fotográficos & Efeitos">
-                    <option value="effects">✨ Filtros de Foto & Efeito Holográfico</option>
-                    <option value="art">🎨 Arte do Card (Foto ou Pôster)</option>
-                    <option value="fontSize">🔤 Tamanho da Fonte (Pequeno, Médio, Grande)</option>
-                    <option value="fontFamily">✒️ Tipo de Fonte (5 Famílias)</option>
-                    <option value="artistPos">↕️ Posição do Nome da Banda (Em Cima, No Meio, Embaixo)</option>
-                    <option value="color">🎨 Cor de Destaque Oficial</option>
-                    <option value="ratio">📐 Formato & Proporção (Story, Feed...)</option>
-                    <option value="template">🎭 Estilo Visual (Tema)</option>
-                  </optgroup>
-                  <optgroup label="5. Identificação & Detalhes">
-                    <option value="venue">🏟️ Casa de Show e Localização</option>
-                    <option value="userHandle">👤 Usuário (@nomedousuario)</option>
-                    <option value="badge">🏷️ Selo de Status Superior</option>
-                    <option value="tagline">✍️ Frase Superior (Tagline)</option>
-                  </optgroup>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-[#2FB8BA]">
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </div>
+              <button
+                id="quick-copy-image-btn"
+                type="button"
+                onClick={handleCopyImage}
+                disabled={isExporting || (!selectedShow && !selectedArtist)}
+                className="lv-ghost"
+                title="Copiar a imagem para colar no WhatsApp ou nos Stories"
+              >
+                {copySuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span>{copySuccess ? 'Imagem copiada' : 'Copiar imagem'}</span>
+              </button>
             </div>
 
-            {/* Grid de Personalização: 50% horizontal (2 boxes lado a lado por linha) */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#B3AE9F]">
-                  Menus de Personalização (Dois lado a lado):
-                </span>
-                <span className="text-[10px] text-[#8A8577]">
-                  Clique em qualquer box para abrir
-                </span>
-              </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <button id="quick-surprise-me-btn" type="button" onClick={handleSurpriseMe} className="lv-link">
+                <Dice5 className="w-3.5 h-3.5" />
+                <span>Surpreenda-me</span>
+              </button>
+              <button type="button" onClick={() => setIsTourWrappedOpen(true)} className="lv-link">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Tour Wrapped 9:16</span>
+              </button>
+              <label className="inline-flex items-center gap-2 text-[12.5px] font-bold text-[#B3AE9F] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={Boolean(config.showCollectorBadge)}
+                  onChange={(e) => setConfig((prev) => ({ ...prev, showCollectorBadge: e.target.checked }))}
+                  className="w-4 h-4 cursor-pointer"
+                />
+                <span className={config.showCollectorBadge ? 'text-[#ECE5D1]' : ''}>Selo no card</span>
+              </label>
+            </div>
+          </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {/* Box A: Selo de Colecionador & Raridade */}
-                <div
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    activeDropdown === 'collector'
-                      ? 'sm:col-span-2 bg-[#1E1833] border-[#FFD60A] shadow-lg shadow-[#FFD60A]/10'
-                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#FFD60A]/40'
-                  }`}
-                >
+          {/* Personalizar */}
+          <div className="mt-9">
+            <h3 className="lv-display text-[24px] text-[#ECE5D1] border-b border-[#282141] pb-3">Personalizar</h3>
+            <div className="lv-group">Colecionador</div>
+                <div className="lv-row" data-open={activeDropdown === 'collector'}>
                   <button
                     type="button"
                     id="dropdown-topic-collector"
                     onClick={() => toggleDropdown('collector')}
-                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                    aria-expanded={activeDropdown === 'collector'}
+                    className="lv-row-head"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'collector' ? 'bg-[#FFD60A] text-[#100C1F]' : 'bg-[#282141] text-[#FFD60A]'}`}>
+                    <div>
+                      <div className="lv-row-icon">
                         <Trophy className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-[#ECE5D1] block">Selo de Colecionador & Raridade</span>
-                        <span className="text-[10px] text-[#8A8577]">Emblema oficial, número da edição e raridade</span>
-                      </div>
+                        <span className="lv-row-title">Selo de Colecionador & Raridade</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono font-bold text-[#FFD60A] bg-[#FFD60A]/10 px-2 py-0.5 rounded-full border border-[#FFD60A]/20">
+                    <div>
+                      <span className="lv-row-val">
                         {config.showCollectorBadge ? `Ativo (${config.collectorRarity || 'Ouro'})` : 'Desativado'}
                       </span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                          activeDropdown === 'collector' ? 'rotate-180 text-[#FFD60A]' : ''
-                        }`}
-                      />
+                      <ChevronDown className="lv-row-chev" />
                     </div>
                   </button>
 
                   {activeDropdown === 'collector' && (
-                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#171226] border border-[#282141]">
+                    <div className="lv-row-body space-y-3">
+                      <div className="flex items-center justify-between gap-3 py-1">
                         <div>
                           <span className="text-xs font-bold text-[#ECE5D1] block">Exibir Selo de Colecionador no Card</span>
                           <span className="text-[10px] text-[#8A8577]">Adiciona emblema com raridade e série no card</span>
@@ -2122,12 +1925,12 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           type="checkbox"
                           checked={Boolean(config.showCollectorBadge)}
                           onChange={(e) => setConfig((prev) => ({ ...prev, showCollectorBadge: e.target.checked }))}
-                          className="w-5 h-5 rounded text-[#FFD60A] focus:ring-0 bg-[#100C1F] border-[#282141] cursor-pointer"
+                          className="w-4 h-4 cursor-pointer"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] block">Raridade do Card Colecionável:</label>
+                        <label className="lv-label">Raridade do Card Colecionável</label>
                         <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                           {[
                             { id: 'gold', label: 'Ouro ✨' },
@@ -2140,22 +1943,18 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                               key={r.id}
                               type="button"
                               onClick={() => setConfig((prev) => ({ ...prev, collectorRarity: r.id as CollectorRarity, showCollectorBadge: true }))}
-                              className={`p-2 rounded-xl border text-center text-xs font-bold transition-all cursor-pointer ${
-                                config.collectorRarity === r.id && config.showCollectorBadge
-                                  ? 'border-[#FFD60A] bg-[#FFD60A]/15 text-[#ECE5D1] shadow'
-                                  : 'border-[#282141] bg-[#171226] text-[#8A8577] hover:text-[#ECE5D1]'
-                              }`}
+                              className="lv-opt p-2 text-center text-xs font-bold" data-on={config.collectorRarity === r.id && config.showCollectorBadge}
                             >
-                              <span className="block text-sm mb-0.5">{r.label.slice(-2)}</span>
-                              <span className="text-[10px] block truncate">{r.label.slice(0, -2)}</span>
+                              <span className="block text-sm mb-0.5">{r.label.split(' ').pop()}</span>
+                              <span className="text-[10px] block truncate">{r.label.split(' ').slice(0, -1).join(' ')}</span>
                             </button>
                           ))}
                         </div>
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
-                          <span>Número da Edição / Série:</span>
+                        <label className="lv-label">
+                          <span>Número da Edição / Série</span>
                           <span className="text-[10px] text-[#8A8577]">Ex: #001, #042, #777</span>
                         </label>
                         <input
@@ -2163,61 +1962,46 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           value={config.collectorEdition || ''}
                           onChange={(e) => setConfig((prev) => ({ ...prev, collectorEdition: e.target.value }))}
                           placeholder="#042"
-                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] font-mono focus:outline-none focus:border-[#FFD60A]"
+                          className="lv-input lv-mono"
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Box B: Carimbos de Presença & Tempo */}
-                <div
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    activeDropdown === 'stamp'
-                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                  }`}
-                >
+                <div className="lv-row" data-open={activeDropdown === 'stamp'}>
                   <button
                     type="button"
                     id="dropdown-topic-stamp"
                     onClick={() => toggleDropdown('stamp')}
-                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                    aria-expanded={activeDropdown === 'stamp'}
+                    className="lv-row-head"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'stamp' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                    <div>
+                      <div className="lv-row-icon">
                         <Award className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-[#ECE5D1] block">Carimbos de Presença</span>
-                        <span className="text-[10px] text-[#8A8577]">Carimbo EU FUI, Show Histórico, Contagem</span>
-                      </div>
+                        <span className="lv-row-title">Carimbos de Presença</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                    <div>
+                      <span className="lv-row-val">
                         {STAMP_TYPES.find((s) => s.id === (config.stampType || 'none'))?.label || 'Sem carimbo'}
                       </span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                          activeDropdown === 'stamp' ? 'rotate-180 text-[#2FB8BA]' : ''
-                        }`}
-                      />
+                      <ChevronDown className="lv-row-chev" />
                     </div>
                   </button>
 
                   {activeDropdown === 'stamp' && (
-                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
+                    <div className="lv-row-body space-y-2">
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {STAMP_TYPES.map((s) => (
                           <button
                             key={s.id}
                             type="button"
                             onClick={() => setConfig((prev) => ({ ...prev, stampType: s.id as any }))}
-                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                              (config.stampType || 'none') === s.id
-                                ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                                : 'bg-[#100C1F] border-[#282141] text-[#8A8577] hover:text-[#ECE5D1]'
-                            }`}
+                            className="lv-opt p-2.5 text-left" data-on={(config.stampType || 'none') === s.id}
                           >
                             <span className="text-xs font-bold text-[#ECE5D1] block">{s.label}</span>
                             <span className="text-[10px] text-[#8A8577] block mt-0.5">{s.desc}</span>
@@ -2228,103 +2012,38 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                   )}
                 </div>
 
-                {/* Box C: Vibes & Presets 1-Clique */}
-                <div
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    activeDropdown === 'vibes'
-                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    id="dropdown-topic-vibes"
-                    onClick={() => toggleDropdown('vibes')}
-                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'vibes' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                        <Wand2 className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-[#ECE5D1] block">Vibes & Presets de Estilo</span>
-                        <span className="text-[10px] text-[#8A8577]">8 estilos visuais pré-configurados em 1 clique</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
-                        8 Presets
-                      </span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                          activeDropdown === 'vibes' ? 'rotate-180 text-[#2FB8BA]' : ''
-                        }`}
-                      />
-                    </div>
-                  </button>
-
-                  {activeDropdown === 'vibes' && (
-                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {STYLE_VIBES.map((v) => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => handleApplyVibe(v)}
-                            className="p-3 rounded-xl border border-[#282141] bg-[#171226] hover:bg-[#1E1833] hover:border-[#2FB8BA] text-left transition-all cursor-pointer group"
-                          >
-                            <span className="text-lg block mb-1 group-hover:scale-110 transition-transform">{v.icon}</span>
-                            <span className="text-xs font-bold text-[#ECE5D1] block leading-tight">{v.name}</span>
-                            <span className="text-[9px] text-[#8A8577] block mt-0.5">{v.config.tagline}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Box D: Memória & Conteúdo do Show */}
-                <div
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    activeDropdown === 'music'
-                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                  }`}
-                >
+            <div className="lv-group">Memória do show</div>
+                <div className="lv-row" data-open={activeDropdown === 'music'}>
                   <button
                     type="button"
                     id="dropdown-topic-music"
                     onClick={() => toggleDropdown('music')}
-                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                    aria-expanded={activeDropdown === 'music'}
+                    className="lv-row-head"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'music' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                    <div>
+                      <div className="lv-row-icon">
                         <Music className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="text-xs font-bold text-[#ECE5D1] block">Faixa Marcante, Setor & Companhia</span>
-                        <span className="text-[10px] text-[#8A8577]">Música favorita, lugar no show e quem foi com você</span>
-                      </div>
+                        <span className="lv-row-title">Faixa Marcante, Setor & Companhia</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                    <div>
+                      <span className="lv-row-val">
                         {config.favoriteSong ? 'Configurado' : 'Opcional'}
                       </span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                          activeDropdown === 'music' ? 'rotate-180 text-[#2FB8BA]' : ''
-                        }`}
-                      />
+                      <ChevronDown className="lv-row-chev" />
                     </div>
                   </button>
 
                   {activeDropdown === 'music' && (
-                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
+                    <div className="lv-row-body space-y-3">
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
+                        <label className="lv-label">
                           <span className="flex items-center gap-1.5">
                             <Music className="w-3 h-3 text-[#2FB8BA]" />
-                            Faixa Marcante (Música Favorita do Show):
+                            Faixa Marcante (Música Favorita do Show)
                           </span>
                           <span className="text-[10px] text-[#8A8577]">Aparece como tag no card</span>
                         </label>
@@ -2333,23 +2052,19 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           value={config.favoriteSong || ''}
                           onChange={(e) => setConfig((prev) => ({ ...prev, favoriteSong: e.target.value }))}
                           placeholder="Ex: Céu Azul, Mulher de Fases, Show das Poderosas..."
-                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
+                          className="lv-input"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] block">Setor do Ingresso:</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                        <label className="lv-label">Setor do Ingresso</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                           {['Pista Premium', 'Na Grade', 'Camarote VIP', 'Pista', 'Cadeira'].map((sec) => (
                             <button
                               key={sec}
                               type="button"
                               onClick={() => setConfig((prev) => ({ ...prev, ticketSector: config.ticketSector === sec ? '' : sec }))}
-                              className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                                config.ticketSector === sec
-                                  ? 'border-[#FFD60A] bg-[#FFD60A]/15 text-[#FFD60A]'
-                                  : 'border-[#282141] bg-[#171226] text-[#8A8577] hover:text-[#ECE5D1]'
-                              }`}
+                              className="lv-opt px-2.5 py-1.5 text-xs font-bold" data-on={config.ticketSector === sec}
                             >
                               {sec}
                             </button>
@@ -2358,8 +2073,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
-                          <span>Companhia no Show:</span>
+                        <label className="lv-label">
+                          <span>Companhia no Show</span>
                           <span className="text-[10px] text-[#8A8577]">Ex: @mariana, @amor, @amigos</span>
                         </label>
                         <input
@@ -2367,19 +2082,19 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           value={config.companionHandle || ''}
                           onChange={(e) => setConfig((prev) => ({ ...prev, companionHandle: e.target.value }))}
                           placeholder="Ex: @mariana"
-                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] font-mono focus:outline-none focus:border-[#2FB8BA]"
+                          className="lv-input lv-mono"
                         />
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] flex items-center justify-between">
-                          <span>Destaques da Turnê / Setlist:</span>
+                        <label className="lv-label">
+                          <span>Destaques da Turnê / Setlist</span>
                           {setlistFmEnabled ? (
                             <button
                               type="button"
                               onClick={handleImportSetlist}
                               disabled={isImportingSetlist}
-                              className="text-[10px] font-bold px-2 py-0.5 rounded-lg border border-[#2FB8BA]/50 text-[#4FDCDE] hover:bg-[#2FB8BA]/10 disabled:opacity-50 transition-colors cursor-pointer"
+                              className="lv-link text-[11.5px]"
                             >
                               {isImportingSetlist ? 'Buscando…' : 'Importar do Setlist.fm'}
                             </button>
@@ -2392,148 +2107,49 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           value={config.setlistHighlights || ''}
                           onChange={(e) => setConfig((prev) => ({ ...prev, setlistHighlights: e.target.value }))}
                           placeholder="Ex: Céu Azul • Zoio de Lula • Proibida pra Mim"
-                          className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
+                          className="lv-input"
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Box E: Filtros de Foto & Efeito Holográfico */}
-                <div
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    activeDropdown === 'effects'
-                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    id="dropdown-topic-effects"
-                    onClick={() => toggleDropdown('effects')}
-                    className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'effects' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                        <Sparkles className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <span className="text-xs font-bold text-[#ECE5D1] block">Filtros de Foto & Efeito Holográfico</span>
-                        <span className="text-[10px] text-[#8A8577]">P&B Noir, Duotone, Grain, Cyber e Brilho Foil</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
-                        {PHOTO_FILTERS.find((f) => f.id === (config.photoFilter || 'none'))?.label || 'Normal'}
-                      </span>
-                      <ChevronDown
-                        className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                          activeDropdown === 'effects' ? 'rotate-180 text-[#2FB8BA]' : ''
-                        }`}
-                      />
-                    </div>
-                  </button>
-
-                  {activeDropdown === 'effects' && (
-                    <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-bold text-[#ECE5D1] block">Filtro de Imagem:</label>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {PHOTO_FILTERS.map((f) => (
-                            <button
-                              key={f.id}
-                              type="button"
-                              onClick={() => setConfig((prev) => ({ ...prev, photoFilter: f.id as any }))}
-                              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                                (config.photoFilter || 'none') === f.id
-                                  ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                                  : 'bg-[#100C1F] border-[#282141] text-[#8A8577] hover:text-[#ECE5D1]'
-                              }`}
-                            >
-                              <span className="text-xs font-bold text-[#ECE5D1] block">{f.label}</span>
-                              <span className="text-[10px] text-[#8A8577] block mt-0.5">{f.desc}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#171226] border border-[#282141]">
-                        <div>
-                          <span className="text-xs font-bold text-[#ECE5D1] block">Película Prismática Holográfica (Foil)</span>
-                          <span className="text-[10px] text-[#8A8577]">Brilho iridescente sobreposto ao card</span>
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={Boolean(config.showHologram)}
-                          onChange={(e) => setConfig((prev) => ({ ...prev, showHologram: e.target.checked }))}
-                          className="w-5 h-5 rounded text-[#2FB8BA] focus:ring-0 bg-[#100C1F] border-[#282141] cursor-pointer"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5 pt-1">
-                        <div className="flex items-center justify-between text-[11px] font-bold text-[#ECE5D1]">
-                          <span>Intensidade do Contraste / Sombra:</span>
-                          <span className="font-mono text-[#2FB8BA]">{config.contrastOverlay}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="10"
-                          max="80"
-                          value={config.contrastOverlay}
-                          onChange={(e) => setConfig((prev) => ({ ...prev, contrastOverlay: parseInt(e.target.value) }))}
-                          className="w-full accent-[#2FB8BA] cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Box 1: Arte do Card */}
-                <div
-                  className={`rounded-2xl border transition-all overflow-hidden ${
-                    activeDropdown === 'art'
-                      ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                      : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                  }`}
-                >
+            <div className="lv-group">Imagem</div>
+                <div className="lv-row" data-open={activeDropdown === 'art'}>
                 <button
                   type="button"
                   id="dropdown-topic-art"
                   onClick={() => toggleDropdown('art')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  aria-expanded={activeDropdown === 'art'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors ${activeDropdown === 'art' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                  <div>
+                    <div className="lv-row-icon">
                       <Sparkles className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-[#ECE5D1] block">Arte do Card</span>
-                      <span className="text-[10px] text-[#8A8577]">Foto de palco ou pôster oficial</span>
-                    </div>
+                      <span className="lv-row-title">Arte do Card</span>
+                      </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                  <div>
+                    <span className="lv-row-val">
                       {config.visualMode === 'show-poster' ? 'Pôster Oficial' : 'Foto do Artista'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'art' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
                 {activeDropdown === 'art' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
+                  <div className="lv-row-body space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-[#B3AE9F]">Escolha a fonte visual de fundo:</span>
+                      <span className="text-[11px] text-[#B3AE9F]">Escolha a fonte visual de fundo</span>
                       <button
                         type="button"
                         onClick={() => {
                           setMediaModalInitialTab(config.visualMode === 'show-poster' ? 'posters' : 'photos');
                           setIsMediaModalOpen(true);
                         }}
-                        className="text-[11px] font-bold text-[#4FDCDE] hover:text-[#22E3E6] flex items-center gap-1 cursor-pointer"
+                        className="lv-link text-[11.5px]"
                       >
                         <Search className="w-3 h-3" />
                         <span>Galeria Online</span>
@@ -2544,11 +2160,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                       <button
                         type="button"
                         onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'artist-photo' }))}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          config.visualMode !== 'show-poster'
-                            ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                            : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40'
-                        }`}
+                        className="lv-opt p-2.5 text-left" data-on={config.visualMode !== 'show-poster'}
                       >
                         <div className="flex items-center gap-1.5 font-extrabold text-xs text-[#ECE5D1]">
                           <ImageIcon className="w-3.5 h-3.5 text-[#2FB8BA]" />
@@ -2562,11 +2174,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                       <button
                         type="button"
                         onClick={() => setConfig((prev) => ({ ...prev, visualMode: 'show-poster' }))}
-                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                          config.visualMode === 'show-poster'
-                            ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                            : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40'
-                        }`}
+                        className="lv-opt p-2.5 text-left" data-on={config.visualMode === 'show-poster'}
                       >
                         <div className="flex items-center gap-1.5 font-extrabold text-xs text-[#ECE5D1]">
                           <Ticket className="w-3.5 h-3.5 text-[#2FB8BA]" />
@@ -2588,51 +2196,217 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 )}
               </div>
 
-              {/* Box 2: Tamanho da Fonte (Com Controle Deslizante e Botões Rápidos) */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'fontSize'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+                <div className="lv-row" data-open={activeDropdown === 'effects'}>
+                  <button
+                    type="button"
+                    id="dropdown-topic-effects"
+                    onClick={() => toggleDropdown('effects')}
+                    aria-expanded={activeDropdown === 'effects'}
+                    className="lv-row-head"
+                  >
+                    <div>
+                      <div className="lv-row-icon">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="lv-row-title">Filtros de Foto & Efeito Holográfico</span>
+                        </div>
+                    </div>
+                    <div>
+                      <span className="lv-row-val">
+                        {PHOTO_FILTERS.find((f) => f.id === (config.photoFilter || 'none'))?.label || 'Normal'}
+                      </span>
+                      <ChevronDown className="lv-row-chev" />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'effects' && (
+                    <div className="lv-row-body space-y-3">
+                      <div className="space-y-1.5">
+                        <label className="lv-label">Filtro de Imagem</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {PHOTO_FILTERS.map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() => setConfig((prev) => ({ ...prev, photoFilter: f.id as any }))}
+                              className="lv-opt p-2.5 text-left" data-on={(config.photoFilter || 'none') === f.id}
+                            >
+                              <span className="text-xs font-bold text-[#ECE5D1] block">{f.label}</span>
+                              <span className="text-[10px] text-[#8A8577] block mt-0.5">{f.desc}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-3 py-1">
+                        <div>
+                          <span className="text-xs font-bold text-[#ECE5D1] block">Película Prismática Holográfica (Foil)</span>
+                          <span className="text-[10px] text-[#8A8577]">Brilho iridescente sobreposto ao card</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={Boolean(config.showHologram)}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, showHologram: e.target.checked }))}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <div className="lv-label">
+                          <span>Intensidade do Contraste / Sombra</span>
+                          <span className="font-mono text-[#2FB8BA]">{config.contrastOverlay}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="80"
+                          value={config.contrastOverlay}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, contrastOverlay: parseInt(e.target.value) }))}
+                          className="w-full accent-[#2FB8BA] cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="lv-row" data-open={activeDropdown === 'vibes'}>
+                  <button
+                    type="button"
+                    id="dropdown-topic-vibes"
+                    onClick={() => toggleDropdown('vibes')}
+                    aria-expanded={activeDropdown === 'vibes'}
+                    className="lv-row-head"
+                  >
+                    <div>
+                      <div className="lv-row-icon">
+                        <Wand2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className="lv-row-title">Vibes & Presets de Estilo</span>
+                        </div>
+                    </div>
+                    <div>
+                      <span className="lv-row-val">
+                        8 Presets
+                      </span>
+                      <ChevronDown className="lv-row-chev" />
+                    </div>
+                  </button>
+
+                  {activeDropdown === 'vibes' && (
+                    <div className="lv-row-body space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {STYLE_VIBES.map((v) => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => handleApplyVibe(v)}
+                            className="lv-opt p-3 text-left group"
+                          >
+                            <span className="text-lg block mb-1 group-hover:scale-110 transition-transform">{v.icon}</span>
+                            <span className="text-xs font-bold text-[#ECE5D1] block leading-tight">{v.name}</span>
+                            <span className="text-[9px] text-[#8A8577] block mt-0.5">{v.config.tagline}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+            <div className="lv-group">Texto e tipografia</div>
+              <div className="lv-row" data-open={activeDropdown === 'fontFamily'}>
+                <button
+                  type="button"
+                  id="dropdown-topic-font-family"
+                  onClick={() => toggleDropdown('fontFamily')}
+                  aria-expanded={activeDropdown === 'fontFamily'}
+                    className="lv-row-head"
+                >
+                  <div>
+                    <div className="lv-row-icon">
+                      <Type className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="lv-row-title">Tipo de Fonte</span>
+                      </div>
+                  </div>
+                  <div>
+                    <span className="lv-row-val">
+                      {FONT_FAMILIES.find((f) => f.id === (config.fontFamily || 'sans'))?.name || 'Sans Moderno'}
+                    </span>
+                    <ChevronDown className="lv-row-chev" />
+                  </div>
+                </button>
+
+                {activeDropdown === 'fontFamily' && (
+                  <div className="lv-row-body space-y-2.5">
+                    <span className="lv-label">
+                      Selecione o tipo de fonte para aplicar no Card
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FONT_FAMILIES.map((font) => (
+                        <button
+                          key={font.id}
+                          type="button"
+                          id={`font-family-${font.id}`}
+                          onClick={() => setConfig((prev) => ({ ...prev, fontFamily: font.id }))}
+                          className="lv-opt p-3 text-left" data-on={(config.fontFamily || 'sans') === font.id}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#ECE5D1]">{font.name}</span>
+                            {(config.fontFamily || 'sans') === font.id && (
+                              <Check className="w-3.5 h-3.5 text-[#4FDCDE]" />
+                            )}
+                          </div>
+                          <div
+                            className="text-base text-[#4FDCDE] font-black mt-1 tracking-wide truncate"
+                            style={{ fontFamily: font.previewFont }}
+                          >
+                            {selectedShow?.artistName || 'Nome da Banda'}
+                          </div>
+                          <p className="text-[10px] text-[#8A8577] mt-0.5">{font.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="lv-row" data-open={activeDropdown === 'fontSize'}>
                 <button
                   type="button"
                   id="dropdown-topic-font-size"
                   onClick={() => toggleDropdown('fontSize')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  aria-expanded={activeDropdown === 'fontSize'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'fontSize' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                  <div>
+                    <div className="lv-row-icon">
                       <Type className="w-4 h-4" />
                     </div>
-                    <div className="truncate">
-                      <span className="text-xs font-bold text-[#ECE5D1] block truncate">Tamanho da Fonte</span>
-                      <span className="text-[10px] text-[#8A8577] block truncate">Slider e botões rápidos</span>
-                    </div>
+                    <div className="min-w-0">
+                      <span className="lv-row-title">Tamanho da Fonte</span>
+                      </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                  <div>
+                    <span className="lv-row-val">
                       {config.fontSize === 'small' ? 'Pequeno' : config.fontSize === 'medium' ? 'Médio' : 'Grande'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'fontSize' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
                 {activeDropdown === 'fontSize' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-4 animate-fadeIn">
+                  <div className="lv-row-body space-y-4">
                     {/* Controle Deslizante Slider */}
-                    <div className="space-y-2 bg-[#100C1F] p-3 rounded-xl border border-[#282141]">
+                    <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
                         <span className="font-bold text-[#ECE5D1] flex items-center gap-1.5">
                           <Sliders className="w-3.5 h-3.5 text-[#2FB8BA]" />
                           Controle Deslizante (Slider)
                         </span>
-                        <span className="font-mono text-[#4FDCDE] font-bold text-xs bg-[#2FB8BA]/10 px-2 py-0.5 rounded border border-[#2FB8BA]/30">
+                        <span className="lv-mono text-[#4FDCDE] text-[11px]">
                           {config.fontSize === 'small' ? 'Pequeno (80%)' : config.fontSize === 'medium' ? 'Médio (90%)' : 'Grande (100% Padrão)'}
                         </span>
                       </div>
@@ -2662,8 +2436,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
                     {/* Botões Rápidos */}
                     <div className="space-y-1.5">
-                      <span className="text-[11px] text-[#B3AE9F] font-bold block">
-                        Botões Rápidos (Feedback Imediato no Card):
+                      <span className="lv-label">
+                        Botões Rápidos (Feedback Imediato no Card)
                       </span>
                       <div className="grid grid-cols-3 gap-2">
                         {[
@@ -2676,11 +2450,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                             type="button"
                             id={`font-size-btn-${opt.id}`}
                             onClick={() => setConfig((prev) => ({ ...prev, fontSize: opt.id as any }))}
-                            className={`py-2 px-2 rounded-xl border text-center transition-all cursor-pointer ${
-                              (config.fontSize || 'large') === opt.id
-                                ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50 shadow-md shadow-[#2FB8BA]/10'
-                                : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40 hover:text-[#ECE5D1]'
-                            }`}
+                            className="lv-opt py-2 px-2 text-center" data-on={(config.fontSize || 'large') === opt.id}
                           >
                             <div className="text-base font-black text-[#4FDCDE] mb-0.5">{opt.badge}</div>
                             <div className="text-xs font-bold text-[#ECE5D1]">{opt.label}</div>
@@ -2693,117 +2463,33 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 )}
               </div>
 
-              {/* Box 3: Tipo de Fonte (Tipografia / Família da Fonte) */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'fontFamily'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
-                <button
-                  type="button"
-                  id="dropdown-topic-font-family"
-                  onClick={() => toggleDropdown('fontFamily')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'fontFamily' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                      <Type className="w-4 h-4" />
-                    </div>
-                    <div className="truncate">
-                      <span className="text-xs font-bold text-[#ECE5D1] block truncate">Tipo de Fonte</span>
-                      <span className="text-[10px] text-[#8A8577] block truncate">Família tipográfica</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
-                      {FONT_FAMILIES.find((f) => f.id === (config.fontFamily || 'sans'))?.name || 'Sans Moderno'}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'fontFamily' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
-                  </div>
-                </button>
-
-                {activeDropdown === 'fontFamily' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2.5 animate-fadeIn">
-                    <span className="text-[11px] text-[#B3AE9F] font-bold block">
-                      Selecione o tipo de fonte para aplicar no Card:
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                      {FONT_FAMILIES.map((font) => (
-                        <button
-                          key={font.id}
-                          type="button"
-                          id={`font-family-${font.id}`}
-                          onClick={() => setConfig((prev) => ({ ...prev, fontFamily: font.id }))}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                            (config.fontFamily || 'sans') === font.id
-                              ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50 shadow-md shadow-[#2FB8BA]/10'
-                              : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40 hover:text-[#ECE5D1]'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-[#ECE5D1]">{font.name}</span>
-                            {(config.fontFamily || 'sans') === font.id && (
-                              <span className="w-2 h-2 rounded-full bg-[#2FB8BA]" />
-                            )}
-                          </div>
-                          <div
-                            className="text-base text-[#4FDCDE] font-black mt-1 tracking-wide truncate"
-                            style={{ fontFamily: font.previewFont }}
-                          >
-                            {selectedShow?.artistName || 'Nome da Banda'}
-                          </div>
-                          <p className="text-[10px] text-[#8A8577] mt-0.5">{font.desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Box 4: Posição do Nome da Banda */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'artistPos'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+              <div className="lv-row" data-open={activeDropdown === 'artistPos'}>
                 <button
                   type="button"
                   id="dropdown-topic-artist-pos"
                   onClick={() => toggleDropdown('artistPos')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  aria-expanded={activeDropdown === 'artistPos'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'artistPos' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                  <div>
+                    <div className="lv-row-icon">
                       <MoveVertical className="w-4 h-4" />
                     </div>
-                    <div className="truncate">
-                      <span className="text-xs font-bold text-[#ECE5D1] block truncate">Posição da Banda</span>
-                      <span className="text-[10px] text-[#8A8577] block truncate">Em cima, no meio ou embaixo</span>
-                    </div>
+                    <div className="min-w-0">
+                      <span className="lv-row-title">Posição da Banda</span>
+                      </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                  <div>
+                    <span className="lv-row-val">
                       {config.artistNamePosition === 'top' ? 'Em Cima' : config.artistNamePosition === 'middle' ? 'No Meio' : 'Embaixo'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'artistPos' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
                 {activeDropdown === 'artistPos' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
-                    <span className="text-[11px] text-[#B3AE9F] block mb-1">Escolha a disposição vertical:</span>
+                  <div className="lv-row-body space-y-2">
+                    <span className="lv-label">Escolha a disposição vertical</span>
                     <div className="grid grid-cols-3 gap-2">
                       {[
                         { id: 'top', label: 'Em Cima', desc: 'Abaixo do Logo' },
@@ -2815,11 +2501,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           type="button"
                           id={`artist-pos-${opt.id}`}
                           onClick={() => setConfig((prev) => ({ ...prev, artistNamePosition: opt.id as any }))}
-                          className={`py-2 px-2 rounded-xl border text-center transition-all cursor-pointer ${
-                            (config.artistNamePosition || 'bottom') === opt.id
-                              ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                              : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40 hover:text-[#ECE5D1]'
-                          }`}
+                          className="lv-opt py-2 px-2 text-center" data-on={(config.artistNamePosition || 'bottom') === opt.id}
                         >
                           <div className="text-xs font-bold">{opt.label}</div>
                           <div className="text-[9px] text-[#8A8577] mt-0.5">{opt.desc}</div>
@@ -2830,227 +2512,65 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 )}
               </div>
 
-              {/* Box: Casa de Show & Localização */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'venue'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+              <div className="lv-row" data-open={activeDropdown === 'tagline'}>
                 <button
                   type="button"
-                  id="dropdown-topic-venue"
-                  onClick={() => toggleDropdown('venue')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  id="dropdown-topic-tagline"
+                  onClick={() => toggleDropdown('tagline')}
+                  aria-expanded={activeDropdown === 'tagline'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'venue' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                      <Building2 className="w-4 h-4" />
+                  <div>
+                    <div className="lv-row-icon">
+                      <Type className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Casa de Show (Box no Card)</span>
+                    <span className="lv-row-title">Frase Superior (Tagline)</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20 truncate max-w-[120px]">
-                      {config.showVenueBadge !== false ? 'Visível' : 'Oculto'}
+                  <div>
+                    <span className="lv-row-val">
+                      {config.tagline || 'Nenhuma'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'venue' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
-                {activeDropdown === 'venue' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-3 animate-fadeIn">
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2 text-xs text-[#ECE5D1] cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={config.showVenueBadge !== false}
-                          onChange={(e) => setConfig((prev) => ({ ...prev, showVenueBadge: e.target.checked }))}
-                          className="rounded border-[#282141] text-[#2FB8BA] focus:ring-0 accent-[#2FB8BA]"
-                        />
-                        <span className="font-bold">Exibir Casa de Show no Card (Entre Data e Cidade)</span>
-                      </label>
-                      <p className="text-[10px] text-[#8A8577] pl-5">
-                        Exibe o nome da casa de show com exatamente o mesmo tamanho, ícone e destaque da data e da cidade.
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#282141]/60">
-                      <label className="text-[11px] font-bold text-[#B3AE9F] block mb-1">
-                        Casa de Show do Evento:
-                      </label>
-                      <div className="flex items-center gap-2 bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs font-bold text-[#ECE5D1]">
-                        <Building2 className="w-3.5 h-3.5 text-[#2FB8BA] shrink-0" />
-                        <span className="truncate">{selectedShow?.venue || 'Nenhum show selecionado'}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Box 5: Usuário no Card */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'userHandle'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
-                <button
-                  type="button"
-                  id="dropdown-topic-user-handle"
-                  onClick={() => toggleDropdown('userHandle')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'userHandle' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                      <AtSign className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Usuário (@nomedousuario)</span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
-                      {config.showUserHandle ? (config.userHandle || '@toboi') : 'Oculto'}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'userHandle' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
-                  </div>
-                </button>
-
-                {activeDropdown === 'userHandle' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2.5 animate-fadeIn">
-                    <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 text-xs text-[#B3AE9F] cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={config.showUserHandle}
-                          onChange={(e) => setConfig((prev) => ({ ...prev, showUserHandle: e.target.checked }))}
-                          className="rounded border-[#282141] text-[#2FB8BA] focus:ring-0 accent-[#2FB8BA]"
-                        />
-                        <span>Exibir no Card</span>
-                      </label>
-                    </div>
+                {activeDropdown === 'tagline' && (
+                  <div className="lv-row-body space-y-2">
                     <input
                       type="text"
-                      id="user-handle-input"
-                      value={config.userHandle}
-                      onChange={(e) => setConfig((prev) => ({ ...prev, userHandle: e.target.value }))}
-                      placeholder="@toboi"
-                      className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs font-mono text-[#4FDCDE] font-bold focus:outline-none focus:border-[#2FB8BA]"
-                    />
-                    <p className="text-[10px] text-[#8A8577]">
-                      Identificador oficial do usuário exibido abaixo do selo Livvo.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Box 6: Selo de Status */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'badge'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
-                <button
-                  type="button"
-                  id="dropdown-topic-badge"
-                  onClick={() => toggleDropdown('badge')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'badge' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                      <CheckCircle2 className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Selo de Status</span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20 truncate max-w-[120px]">
-                      {config.customBadgeText || 'INGRESSO VERIFICADO'}
-                    </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'badge' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
-                  </div>
-                </button>
-
-                {activeDropdown === 'badge' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2.5 animate-fadeIn">
-                    <div className="grid grid-cols-2 gap-2">
-                      {BADGE_PRESETS.map((b) => (
-                        <button
-                          key={b.label}
-                          type="button"
-                          id={`badge-preset-${b.label.replace(/\s+/g, '-').toLowerCase()}`}
-                          onClick={() => setConfig((prev) => ({ ...prev, customBadgeText: b.label }))}
-                          className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                            config.customBadgeText === b.label
-                              ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                              : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40'
-                          }`}
-                        >
-                          <div className="text-xs font-extrabold text-[#ECE5D1]">{b.label}</div>
-                          <div className="text-[10px] text-[#8A8577]">{b.desc}</div>
-                        </button>
-                      ))}
-                    </div>
-
-                    <input
-                      type="text"
-                      id="custom-badge-input"
-                      value={config.customBadgeText}
-                      onChange={(e) => setConfig((prev) => ({ ...prev, customBadgeText: e.target.value }))}
-                      placeholder="Digite outro texto de selo..."
-                      className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
+                      value={config.tagline || ''}
+                      onChange={(e) => setConfig((prev) => ({ ...prev, tagline: e.target.value }))}
+                      placeholder="Ex: TURNÊ NACIONAL, AO VIVO, FESTIVAL..."
+                      className="lv-input"
                     />
                   </div>
                 )}
               </div>
-
-              {/* Box 7: Formato & Proporção */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'ratio'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+            <div className="lv-group">Formato e cor</div>
+              <div className="lv-row" data-open={activeDropdown === 'ratio'}>
                 <button
                   type="button"
                   id="dropdown-topic-ratio"
                   onClick={() => toggleDropdown('ratio')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  aria-expanded={activeDropdown === 'ratio'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'ratio' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                  <div>
+                    <div className="lv-row-icon">
                       <Layers className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Formato & Proporção</span>
+                    <span className="lv-row-title">Formato & Proporção</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20">
+                  <div>
+                    <span className="lv-row-val">
                       {RATIOS.find((r) => r.id === config.aspectRatio)?.name || 'Story (9:16)'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'ratio' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
                 {activeDropdown === 'ratio' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
+                  <div className="lv-row-body space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       {RATIOS.map((r) => (
                         <button
@@ -3058,11 +2578,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                           type="button"
                           id={`ratio-${r.id.replace(':', '-')}`}
                           onClick={() => setConfig((prev) => ({ ...prev, aspectRatio: r.id }))}
-                          className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                            config.aspectRatio === r.id
-                              ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                              : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/50 hover:text-[#ECE5D1]'
-                          }`}
+                          className="lv-opt flex flex-col items-start p-3 text-left" data-on={config.aspectRatio === r.id}
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm">{r.icon}</span>
@@ -3076,41 +2592,77 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 )}
               </div>
 
-              {/* Box 8: Cor de Destaque */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'color'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+              <div className="lv-row" data-open={activeDropdown === 'template'}>
+                <button
+                  type="button"
+                  id="dropdown-topic-template"
+                  onClick={() => toggleDropdown('template')}
+                  aria-expanded={activeDropdown === 'template'}
+                    className="lv-row-head"
+                >
+                  <div>
+                    <div className="lv-row-icon">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <span className="lv-row-title">Estilo Visual (Tema)</span>
+                  </div>
+                  <div>
+                    <span className="lv-row-val">
+                      {TEMPLATES.find((t) => t.id === config.templateId)?.name || 'Modern Stage'}
+                    </span>
+                    <ChevronDown className="lv-row-chev" />
+                  </div>
+                </button>
+
+                {activeDropdown === 'template' && (
+                  <div className="lv-row-body space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {TEMPLATES.map((t) => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setConfig((prev) => ({ ...prev, templateId: t.id }))}
+                          className="lv-opt p-3 text-left" data-on={config.templateId === t.id}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#ECE5D1]">{t.name}</span>
+                            {config.templateId === t.id && (
+                              <Check className="w-3.5 h-3.5 text-[#4FDCDE]" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-[#8A8577] mt-0.5">{t.desc}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="lv-row" data-open={activeDropdown === 'color'}>
                 <button
                   type="button"
                   id="dropdown-topic-color"
                   onClick={() => toggleDropdown('color')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  aria-expanded={activeDropdown === 'color'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'color' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
+                  <div>
+                    <div className="lv-row-icon">
                       <Palette className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Cor de Destaque</span>
+                    <span className="lv-row-title">Cor de Destaque</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <div>
                     <span
                       className="w-3.5 h-3.5 rounded-full border border-white/20 inline-block shadow-sm"
                       style={{ backgroundColor: config.accentColor }}
                     />
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'color' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
                 {activeDropdown === 'color' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
+                  <div className="lv-row-body space-y-2">
                     <div className="flex items-center gap-3 flex-wrap pt-1">
                       {ACCENT_COLORS.map((c) => (
                         <button
@@ -3131,160 +2683,209 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 )}
               </div>
 
-              {/* Box 9: Estilo Visual (Tema) */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'template'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+            <div className="lv-group">Identificação</div>
+              <div className="lv-row" data-open={activeDropdown === 'userHandle'}>
                 <button
                   type="button"
-                  id="dropdown-topic-template"
-                  onClick={() => toggleDropdown('template')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  id="dropdown-topic-user-handle"
+                  onClick={() => toggleDropdown('userHandle')}
+                  aria-expanded={activeDropdown === 'userHandle'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'template' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                      <Sparkles className="w-4 h-4" />
+                  <div>
+                    <div className="lv-row-icon">
+                      <AtSign className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Estilo Visual (Tema)</span>
+                    <span className="lv-row-title">Usuário (@nomedousuario)</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20 truncate max-w-[120px]">
-                      {TEMPLATES.find((t) => t.id === config.templateId)?.name || 'Modern Stage'}
+                  <div>
+                    <span className="lv-row-val">
+                      {config.showUserHandle ? (config.userHandle || '@toboi') : 'Oculto'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'template' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
-                {activeDropdown === 'template' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {TEMPLATES.map((t) => (
+                {activeDropdown === 'userHandle' && (
+                  <div className="lv-row-body space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="flex items-center gap-1.5 text-xs text-[#B3AE9F] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.showUserHandle}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, showUserHandle: e.target.checked }))}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <span>Exibir no Card</span>
+                      </label>
+                    </div>
+                    <input
+                      type="text"
+                      id="user-handle-input"
+                      value={config.userHandle}
+                      onChange={(e) => setConfig((prev) => ({ ...prev, userHandle: e.target.value }))}
+                      placeholder="@toboi"
+                      className="lv-input lv-mono text-[#4FDCDE]"
+                    />
+                    <p className="text-[10px] text-[#8A8577]">
+                      Identificador oficial do usuário exibido abaixo do selo Livvo.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="lv-row" data-open={activeDropdown === 'badge'}>
+                <button
+                  type="button"
+                  id="dropdown-topic-badge"
+                  onClick={() => toggleDropdown('badge')}
+                  aria-expanded={activeDropdown === 'badge'}
+                    className="lv-row-head"
+                >
+                  <div>
+                    <div className="lv-row-icon">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <span className="lv-row-title">Selo de Status</span>
+                  </div>
+                  <div>
+                    <span className="lv-row-val">
+                      {config.customBadgeText || 'INGRESSO VERIFICADO'}
+                    </span>
+                    <ChevronDown className="lv-row-chev" />
+                  </div>
+                </button>
+
+                {activeDropdown === 'badge' && (
+                  <div className="lv-row-body space-y-2.5">
+                    <div className="grid grid-cols-2 gap-2">
+                      {BADGE_PRESETS.map((b) => (
                         <button
-                          key={t.id}
+                          key={b.label}
                           type="button"
-                          onClick={() => setConfig((prev) => ({ ...prev, templateId: t.id }))}
-                          className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                            config.templateId === t.id
-                              ? 'bg-[#2FB8BA]/15 border-[#2FB8BA] text-[#ECE5D1] ring-1 ring-[#2FB8BA]/50'
-                              : 'bg-[#100C1F] border-[#282141] text-[#B3AE9F] hover:border-[#2FB8BA]/40 hover:text-[#ECE5D1]'
-                          }`}
+                          id={`badge-preset-${b.label.replace(/\s+/g, '-').toLowerCase()}`}
+                          onClick={() => setConfig((prev) => ({ ...prev, customBadgeText: b.label }))}
+                          className="lv-opt p-2.5 text-left" data-on={config.customBadgeText === b.label}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-[#ECE5D1]">{t.name}</span>
-                            {config.templateId === t.id && (
-                              <span className="w-2 h-2 rounded-full bg-[#2FB8BA]" />
-                            )}
-                          </div>
-                          <p className="text-[11px] text-[#8A8577] mt-0.5">{t.desc}</p>
+                          <div className="text-xs font-extrabold text-[#ECE5D1]">{b.label}</div>
+                          <div className="text-[10px] text-[#8A8577]">{b.desc}</div>
                         </button>
                       ))}
                     </div>
+
+                    <input
+                      type="text"
+                      id="custom-badge-input"
+                      value={config.customBadgeText}
+                      onChange={(e) => setConfig((prev) => ({ ...prev, customBadgeText: e.target.value }))}
+                      placeholder="Digite outro texto de selo..."
+                      className="lv-input"
+                    />
                   </div>
                 )}
               </div>
 
-              {/* Box 10: Frase Superior */}
-              <div
-                className={`rounded-2xl border transition-all overflow-hidden ${
-                  activeDropdown === 'tagline'
-                    ? 'sm:col-span-2 bg-[#1E1833] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/10'
-                    : 'bg-[#1E1833]/80 border-[#282141] hover:border-[#2FB8BA]/40'
-                }`}
-              >
+              <div className="lv-row" data-open={activeDropdown === 'venue'}>
                 <button
                   type="button"
-                  id="dropdown-topic-tagline"
-                  onClick={() => toggleDropdown('tagline')}
-                  className="w-full flex items-center justify-between p-3.5 text-left transition-colors cursor-pointer"
+                  id="dropdown-topic-venue"
+                  onClick={() => toggleDropdown('venue')}
+                  aria-expanded={activeDropdown === 'venue'}
+                    className="lv-row-head"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeDropdown === 'tagline' ? 'bg-[#2FB8BA] text-[#100C1F]' : 'bg-[#282141] text-[#2FB8BA]'}`}>
-                      <Type className="w-4 h-4" />
+                  <div>
+                    <div className="lv-row-icon">
+                      <Building2 className="w-4 h-4" />
                     </div>
-                    <span className="text-xs font-bold text-[#ECE5D1] truncate">Frase Superior (Tagline)</span>
+                    <span className="lv-row-title">Casa de Show (Box no Card)</span>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-2">
-                    <span className="text-[10px] font-mono font-bold text-[#4FDCDE] bg-[#2FB8BA]/10 px-2 py-0.5 rounded-full border border-[#2FB8BA]/20 truncate max-w-[120px]">
-                      {config.tagline || 'Nenhuma'}
+                  <div>
+                    <span className="lv-row-val">
+                      {config.showVenueBadge !== false ? 'Visível' : 'Oculto'}
                     </span>
-                    <ChevronDown
-                      className={`w-4 h-4 text-[#8A8577] transition-transform duration-200 ${
-                        activeDropdown === 'tagline' ? 'rotate-180 text-[#2FB8BA]' : ''
-                      }`}
-                    />
+                    <ChevronDown className="lv-row-chev" />
                   </div>
                 </button>
 
-                {activeDropdown === 'tagline' && (
-                  <div className="p-4 pt-2 border-t border-[#282141] bg-[#100C1F]/50 space-y-2 animate-fadeIn">
-                    <input
-                      type="text"
-                      value={config.tagline || ''}
-                      onChange={(e) => setConfig((prev) => ({ ...prev, tagline: e.target.value }))}
-                      placeholder="Ex: TURNÊ NACIONAL, AO VIVO, FESTIVAL..."
-                      className="w-full bg-[#100C1F] border border-[#282141] rounded-xl px-3 py-2 text-xs text-[#ECE5D1] focus:outline-none focus:border-[#2FB8BA]"
-                    />
+                {activeDropdown === 'venue' && (
+                  <div className="lv-row-body space-y-3">
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-xs text-[#ECE5D1] cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={config.showVenueBadge !== false}
+                          onChange={(e) => setConfig((prev) => ({ ...prev, showVenueBadge: e.target.checked }))}
+                          className="w-4 h-4 cursor-pointer"
+                        />
+                        <span className="font-bold">Exibir Casa de Show no Card (Entre Data e Cidade)</span>
+                      </label>
+                      <p className="text-[10px] text-[#8A8577] pl-5">
+                        Exibe o nome da casa de show com exatamente o mesmo tamanho, ícone e destaque da data e da cidade.
+                      </p>
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="lv-label">
+                        Casa de Show do Evento
+                      </label>
+                      <div className="flex items-center gap-2 py-2 text-[13px] font-bold text-[#ECE5D1]">
+                        <Building2 className="w-3.5 h-3.5 text-[#2FB8BA] shrink-0" />
+                        <span className="truncate">{selectedShow?.venue || 'Nenhum show selecionado'}</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
+
           </div>
+
+          {/* Exportar */}
+          <div className="grid grid-cols-2 gap-3 mt-9">
+            <button
+              id="download-card-png-btn"
+              type="button"
+              onClick={handleDownloadPng}
+              disabled={isExporting}
+              className="lv-btn lv-btn--cream"
+              title="Baixar o card em PNG de alta resolução (300 DPI)"
+            >
+              {downloadSuccess ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Baixado</span>
+                </>
+              ) : isExporting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Gerando PNG…</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>Baixar PNG</span>
+                </>
+              )}
+            </button>
+            <button
+              id="share-card-btn"
+              type="button"
+              onClick={() => handleOpenShare()}
+              disabled={isExporting || (!selectedShow && !selectedArtist)}
+              className="lv-btn lv-btn--cyan"
+              title="Compartilhar no Instagram, WhatsApp ou Facebook"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>Compartilhar</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {toastMessage && (
+        <div className="lv-toast" role="status" aria-live="polite">
+          {toastMessage}
         </div>
       )}
-    </div>
-
-            {/* Options directly BELOW Personalizar Card: Download and Compartilhar side by side */}
-              <div>
-                <div className="flex items-center gap-3">
-                  {/* Download Button */}
-                  <button
-                    id="download-card-png-btn"
-                    onClick={handleDownloadPng}
-                    disabled={isExporting}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/25 active:scale-95 transition-all cursor-pointer"
-                    title="Baixar Card em PNG de alta resolução (300 DPI)"
-                  >
-                    {downloadSuccess ? (
-                      <>
-                        <Check className="w-4 h-4 text-[#100C1F]" />
-                        <span>Baixado!</span>
-                      </>
-                    ) : isExporting ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin text-[#100C1F]" />
-                        <span>Gerando PNG...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-4 h-4 text-[#100C1F]" />
-                        <span>Download PNG</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Compartilhar Button (triggers social media options) */}
-                  <button
-                    id="share-card-btn"
-                    onClick={() => handleOpenShare()}
-                    disabled={isExporting || (!selectedShow && !selectedArtist)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-extrabold text-sm bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] shadow-lg shadow-[#2FB8BA]/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                    title="Compartilhar nas redes sociais (Instagram, WhatsApp, Facebook)"
-                  >
-                    <Share2 className="w-4 h-4 text-[#100C1F]" />
-                    <span>Compartilhar</span>
-                  </button>
-                </div>
-              </div>
-          </div>
-        </div>
 
       {/* Online Media Search Modal (Posters & Photos) */}
       <MediaSearchModal

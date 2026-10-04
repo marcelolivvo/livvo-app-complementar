@@ -36,3 +36,550 @@
 .animate-legend-glow {
   animation: legendGlow 2.5s ease-in-out infinite;
 }
+
+/* ==========================================================================
+   LIVVO ESTÚDIO — sistema visual "Bilheteria"
+   O Estúdio é um ingresso: palco (card) + picote + canhoto (controles).
+   Paleta oficial: Preto Profundo #100C1F · Superfície #171226 · Linha #282141
+   Ciano #4FDCDE · Teal #2FB8BA · Creme #ECE5D1 · Muted #B3AE9F / #8A8577
+   ========================================================================== */
+
+@font-face {
+  font-family: 'RAYDIS';
+  src: url('/fonts/raydis.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Alfa Slab One';
+  src: url('/fonts/alfa-slab-one.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.lv-studio {
+  --lv-ink: #100c1f;
+  --lv-paper: #171226;
+  --lv-line: #282141;
+  --lv-line-2: #3a3159;
+  --lv-cyan: #4fdcde;
+  --lv-cyan-hi: #22e3e6;
+  --lv-teal: #2fb8ba;
+  --lv-cream: #ece5d1;
+  --lv-muted: #b3ae9f;
+  --lv-dim: #8a8577;
+}
+
+/* Tipografia ------------------------------------------------------------ */
+.lv-display {
+  font-family: 'Alfa Slab One', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: 0.005em;
+}
+/* RAYDIS: somente números e texto sem acento; weight 700 obrigatório */
+.lv-num {
+  font-family: 'RAYDIS', 'Alfa Slab One', sans-serif;
+  font-weight: 700;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+.lv-mono {
+  font-family: 'DM Mono', ui-monospace, SFMono-Regular, monospace;
+}
+.lv-eyebrow {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lv-dim);
+}
+
+/* Papel do ingresso ----------------------------------------------------- */
+.lv-ticket {
+  position: relative;
+  background: var(--lv-paper);
+  border-radius: 10px;
+  overflow: clip; /* clip (não hidden) para manter o sticky do palco */
+}
+.lv-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px dashed var(--lv-line);
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lv-dim);
+}
+.lv-strip b {
+  color: var(--lv-cyan);
+  font-weight: 500;
+}
+
+/* Palco com retícula halftone (referência: pôster halftone oficial) */
+.lv-stage {
+  background-color: var(--lv-paper);
+  background-image: radial-gradient(rgba(79, 220, 222, 0.11) 1px, transparent 1.5px);
+  background-size: 10px 10px;
+}
+
+/* Picote entre palco e canhoto, com recortes */
+.lv-perf {
+  position: relative;
+  height: 28px;
+  background: linear-gradient(var(--lv-paper), var(--lv-paper));
+}
+.lv-perf::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: repeating-linear-gradient(90deg, var(--lv-line-2) 0 7px, transparent 7px 13px);
+}
+.lv-perf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 0 50%, var(--lv-ink) 13px, transparent 13.5px),
+    radial-gradient(circle at 100% 50%, var(--lv-ink) 13px, transparent 13.5px);
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .lv-perf {
+    height: auto;
+    width: 28px;
+  }
+  .lv-perf::before {
+    left: 50%;
+    right: auto;
+    top: 18px;
+    bottom: 18px;
+    width: 2px;
+    height: auto;
+    transform: translateX(-50%);
+    background: repeating-linear-gradient(180deg, var(--lv-line-2) 0 7px, transparent 7px 13px);
+  }
+  .lv-perf::after {
+    background:
+      radial-gradient(circle at 50% 0, var(--lv-ink) 13px, transparent 13.5px),
+      radial-gradient(circle at 50% 100%, var(--lv-ink) 13px, transparent 13.5px);
+  }
+}
+
+/* Campos de preenchimento (linha, sem caixa) ---------------------------- */
+.lv-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1.5px solid var(--lv-line-2);
+  border-radius: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lv-cream);
+  transition: border-color 0.15s ease;
+}
+.lv-input::placeholder {
+  color: var(--lv-dim);
+  font-weight: 500;
+}
+.lv-input:hover:not(:disabled) {
+  border-bottom-color: #4a4070;
+}
+.lv-input:focus {
+  outline: none;
+  border-bottom-color: var(--lv-cyan);
+}
+.lv-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+select.lv-input {
+  appearance: none;
+  padding-right: 22px;
+  cursor: pointer;
+}
+select.lv-input option,
+select.lv-input optgroup {
+  background: var(--lv-paper);
+  color: var(--lv-cream);
+}
+
+/* Botões --------------------------------------------------------------- */
+/* Botão-ingresso: recortes laterais como um bilhete destacável */
+.lv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 15px 22px;
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: var(--lv-ink);
+  cursor: pointer;
+  border-radius: 4px;
+  -webkit-mask:
+    radial-gradient(circle at 0 50%, transparent 7px, #000 7.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle at 0 50%, transparent 7px, #000 7.5px) left / 51% 100% no-repeat,
+    radial-gradient(circle at 100% 50%, transparent 7px, #000 7.5px) right / 51% 100% no-repeat;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.lv-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.lv-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.lv-btn:focus-visible {
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  background-color: #ffffff;
+}
+.lv-btn--cream {
+  background: var(--lv-cream);
+}
+.lv-btn--cream:hover:not(:disabled) {
+  background: #ffffff;
+}
+.lv-btn--cyan {
+  background: var(--lv-cyan);
+}
+.lv-btn--cyan:hover:not(:disabled) {
+  background: var(--lv-cyan-hi);
+}
+
+.lv-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 1px solid var(--lv-line-2);
+  border-radius: 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--lv-cream);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.lv-ghost:hover:not(:disabled) {
+  border-color: var(--lv-cyan);
+}
+.lv-ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.lv-ghost svg {
+  color: var(--lv-cyan);
+}
+
+.lv-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--lv-cyan);
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.lv-link:hover:not(:disabled) {
+  border-bottom-color: currentColor;
+}
+.lv-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Seletor segmentado (Foto | Pôster) */
+.lv-seg {
+  display: inline-flex;
+  border: 1px solid var(--lv-line-2);
+  border-radius: 4px;
+  padding: 2px;
+}
+.lv-seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 2px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--lv-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.lv-seg button:hover {
+  color: var(--lv-cream);
+}
+.lv-seg button[data-on='true'] {
+  background: var(--lv-cyan);
+  color: var(--lv-ink);
+}
+
+/* Foco visível para teclado em todo o Estúdio */
+.lv-studio :is(button, a, input, select, label):focus-visible {
+  outline: 2px solid var(--lv-cyan);
+  outline-offset: 2px;
+}
+.lv-studio .lv-btn:focus-visible {
+  outline: none;
+}
+
+/* Marcas de picote como barra de progresso ------------------------------ */
+.lv-ticks {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(0, 1fr));
+  gap: 3px;
+  height: 14px;
+}
+.lv-ticks span {
+  background: var(--lv-line);
+  border-radius: 1px;
+}
+.lv-ticks span[data-on='true'] {
+  background: var(--lv-cyan);
+}
+
+/* Lista de ajustes do canhoto ------------------------------------------ */
+.lv-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 26px 0 2px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lv-cyan);
+}
+.lv-group::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--lv-line);
+}
+.lv-row {
+  border-bottom: 1px dashed var(--lv-line);
+}
+.lv-row-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 2px;
+  text-align: left;
+  cursor: pointer;
+}
+.lv-row-head > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.lv-row-head > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.lv-row-icon {
+  display: flex;
+  color: var(--lv-teal);
+  flex-shrink: 0;
+}
+.lv-row-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.lv-row-title {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--lv-cream);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.15s ease;
+}
+.lv-row-head:hover .lv-row-title,
+.lv-row[data-open='true'] .lv-row-title {
+  color: var(--lv-cyan);
+}
+.lv-row-val {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--lv-dim);
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lv-row[data-open='true'] .lv-row-val {
+  color: var(--lv-cyan);
+}
+.lv-row-chev {
+  width: 15px;
+  height: 15px;
+  color: var(--lv-dim);
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.lv-row[data-open='true'] .lv-row-chev {
+  transform: rotate(180deg);
+  color: var(--lv-cyan);
+}
+.lv-row-body {
+  padding: 2px 0 18px 28px;
+}
+@media (max-width: 480px) {
+  .lv-row-body {
+    padding-left: 0;
+  }
+  .lv-row-val {
+    max-width: 92px;
+  }
+}
+
+/* Rótulo técnico de campo (DM Mono) */
+.lv-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lv-muted);
+}
+.lv-label > span:last-child:not(:first-child) {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--lv-dim);
+}
+
+/* Opções selecionáveis: marcador lateral como o canhoto de um ingresso */
+.lv-opt {
+  position: relative;
+  border: 1px solid var(--lv-line);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--lv-muted);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+.lv-opt:hover {
+  border-color: var(--lv-line-2);
+  color: var(--lv-cream);
+}
+.lv-opt[data-on='true'] {
+  border-color: var(--lv-cyan);
+  color: var(--lv-cream);
+  background: rgba(79, 220, 222, 0.06);
+  box-shadow: inset 3px 0 0 var(--lv-cyan);
+}
+
+/* Linha de ajuste com interruptor (checkbox) */
+.lv-check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+.lv-studio input[type='checkbox'] {
+  accent-color: var(--lv-cyan);
+}
+.lv-studio input[type='range'] {
+  accent-color: var(--lv-cyan);
+}
+
+/* Lista de shows do artista */
+.lv-show {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 4px;
+  border-bottom: 1px dashed var(--lv-line);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.lv-show:hover {
+  background: rgba(79, 220, 222, 0.05);
+}
+.lv-show:hover .lv-show-go {
+  color: var(--lv-cyan);
+  transform: translateX(2px);
+}
+.lv-show-go {
+  color: var(--lv-dim);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+/* Aviso temporário (toast) no formato de tira de ingresso */
+.lv-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(92vw, 520px);
+  padding: 12px 18px;
+  background: var(--lv-cream);
+  color: var(--lv-ink);
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  animation: lvToastIn 0.22s ease-out;
+}
+@keyframes lvToastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-studio *,
+  .lv-toast {
+    animation: none !important;
+    transition: none !important;
+  }
+}
