@@ -72,6 +72,32 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     }
   });
   const photoInputRef = React.useRef<HTMLInputElement>(null);
+  // Nome de exibição do titular (salvo no aparelho, como a foto)
+  const [userName, setUserName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('livvo_user_name_v1') || '';
+    } catch {
+      return '';
+    }
+  });
+  const handleNameChange = (v: string) => {
+    const clean = v.replace(/\s+/g, ' ').slice(0, 40);
+    setUserName(clean);
+    try {
+      localStorage.setItem('livvo_user_name_v1', clean.trim());
+    } catch {
+      /* sem armazenamento: vale só nesta sessão */
+    }
+  };
+  // Nº de cadastro no Livvo: virá do cadastro; até lá, número de teste (padrão 16)
+  const memberNumber = (() => {
+    try {
+      const n = Number(localStorage.getItem('livvo_member_number_v1'));
+      return Number.isFinite(n) && n > 0 ? Math.floor(n) : 16;
+    } catch {
+      return 16;
+    }
+  })();
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -246,8 +272,21 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
               </button>
               <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoPick} />
               <div className="min-w-0">
-                <span className="lv-eyebrow">Titular</span>
-                <div className="lv-display text-[24px] text-[#ECE5D1] truncate">{userHandle || '@fa'}</div>
+                <label htmlFor="lv-titular-nome" className="lv-eyebrow">
+                  Titular · Nome
+                </label>
+                <input
+                  id="lv-titular-nome"
+                  type="text"
+                  value={userName}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onBlur={(e) => handleNameChange(e.target.value.trim())}
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                  maxLength={40}
+                  className="lv-name-input lv-display"
+                />
+                <div className="lv-mono text-[13px] text-[#4FDCDE] truncate">{userHandle || '@fa'}</div>
                 <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link text-[12px]">
                   {userPhoto ? 'Trocar foto' : 'Adicionar foto'}
                 </button>
@@ -350,6 +389,8 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 className="lv-badge-img"
                 photoUrl={userPhoto}
                 handle={userHandle || '@fa'}
+                name={userName}
+                memberNumber={memberNumber}
                 totalShows={stats.totalShows}
                 sinceYear={stats.oldestShowYear}
                 level={stats.level}

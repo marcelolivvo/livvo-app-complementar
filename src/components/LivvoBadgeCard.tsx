@@ -10,7 +10,8 @@ import React from 'react';
 export interface LivvoBadgeCardProps {
   photoUrl?: string | null;
   handle: string; // @usuario
-  name?: string; // nome de exibição (ainda não existe no app; usa o @ sem arroba)
+  name?: string; // nome de exibição (campo Nome do passaporte; vazio = @ sem arroba)
+  memberNumber?: number; // Nº de cadastro no Livvo (por ordem de cadastro)
   totalShows: number;
   sinceYear?: number;
   level: number; // 1..5 (0 = sem nível)
@@ -39,6 +40,7 @@ export const LivvoBadgeCard: React.FC<LivvoBadgeCardProps> = ({
   photoUrl,
   handle,
   name,
+  memberNumber = 16,
   totalShows,
   sinceYear,
   level,
@@ -64,6 +66,7 @@ export const LivvoBadgeCard: React.FC<LivvoBadgeCardProps> = ({
   const pillText = levelTitle;
   const showsStr = String(totalShows);
   const showsSize = showsStr.length >= 4 ? 22 : showsStr.length === 3 ? 27 : 32;
+  const memberLabel = `Nº ${String(memberNumber).padStart(3, '0').replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
   const clipId = React.useId().replace(/:/g, '');
 
   return (
@@ -81,6 +84,12 @@ export const LivvoBadgeCard: React.FC<LivvoBadgeCardProps> = ({
 
       {/* Base */}
       <image href="/badges/livvo-badge-teste.webp" x={0} y={0} width={528} height={1166} />
+
+      {/* Nº de cadastro no Livvo */}
+      <rect x={398} y={386} width={92} height={30} fill="#53D1D2" />
+      <text x={482} y={409} textAnchor="end" fontFamily="'Plus Jakarta Sans', system-ui, sans-serif" fontWeight={500} fontSize={19} fill={PRETO}>
+        {memberLabel}
+      </text>
 
       {/* Foto do titular (quadrado recortado no app, preenche a moldura) */}
       <g clipPath={`url(#ph-${clipId})`}>
