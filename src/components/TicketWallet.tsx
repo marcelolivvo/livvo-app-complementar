@@ -31,6 +31,7 @@ import { ShowItem, CardTemplateConfig } from '../types';
 import { TourWrappedModal } from './TourWrappedModal';
 import { FanMedalShareModal } from './FanMedalShareModal';
 import { MyHistory } from './MyHistory';
+import { LivvoBadgeCard } from './LivvoBadgeCard';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { TransparentTicketItem } from './TransparentTicketItem';
 import { FanMedalIllustration } from './MedalIllustrations';
@@ -345,14 +346,17 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
           {/* Livvo Badge Teste no lugar do box Nível de fã (teste DRAFT, imagem com dados de exemplo) */}
           {stats && (
             <div className="lv-badge-slot">
-              <img
-                src="/badges/livvo-badge-teste.webp"
-                alt={`Credencial de fã Livvo, nível ${stats.levelTitle}`}
+              <LivvoBadgeCard
                 className="lv-badge-img"
-                width={528}
-                height={1166}
+                photoUrl={userPhoto}
+                handle={userHandle || '@fa'}
+                totalShows={stats.totalShows}
+                sinceYear={stats.oldestShowYear}
+                level={stats.level}
+                levelTitle={stats.levelTitle}
+                medalColor={stats.currentMedal?.metalColor}
               />
-              <span className="lv-eyebrow">Badge teste · dados de exemplo</span>
+              <span className="lv-eyebrow">Badge teste · com os seus dados</span>
               <button type="button" onClick={() => setIsMedalShareOpen(true)} className="lv-link">
                 <Share2 className="w-3.5 h-3.5" />
                 <span>Compartilhar credencial</span>
