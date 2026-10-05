@@ -33,9 +33,11 @@ import {
   ChevronRight,
   Trophy,
   Award,
+  Lock,
 } from 'lucide-react';
 import { ShowItem, ArtistItem, CardTemplateConfig, CardTemplateId, AspectRatio, CardFontFamily, CollectorRarity } from '../types';
 import { EventCard } from './EventCard';
+import { RetroTicket, RetroTicketStage } from './RetroTicket';
 import { autoFetchArtistPhoto } from '../services/artistPhotoService';
 import { MediaSearchModal } from './MediaSearchModal';
 import { getIntegrationStatus, findSetlistForShow } from '../services/liveDataService';
@@ -376,6 +378,32 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   const [savedToWalletSuccess, setSavedToWalletSuccess] = useState(false);
   const [isTourWrappedOpen, setIsTourWrappedOpen] = useState(false);
   const [fanStats, setFanStats] = useState(() => walletService.getStats());
+
+  // Formato do card: poster vertical ou Ingresso Retrô (exclusivo Fã Ouro+ ou Livvo PRO)
+  const [cardFormat, setCardFormat] = useState<'poster' | 'retro'>('poster');
+  const [isPro, setIsPro] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('livvo_pro_v1') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const RETRO_MIN_LEVEL = 3; // Fã Ouro
+  const retroUnlocked = isPro || fanStats.level >= RETRO_MIN_LEVEL;
+  const isRetro = cardFormat === 'retro';
+  const retroBlocked = isRetro && !retroUnlocked;
+  const handleUnlockProForTest = () => {
+    try {
+      localStorage.setItem('livvo_pro_v1', '1');
+    } catch {
+      /* sem armazenamento: libera só nesta sessão */
+    }
+    setIsPro(true);
+  };
+  const warnRetroLocked = () => {
+    setToastMessage('O Ingresso Retrô é exclusivo para Fã Ouro (26+ shows) ou Livvo PRO.');
+    setTimeout(() => setToastMessage(null), 3500);
+  };
 
   const refreshStats = () => {
     setFanStats(walletService.getStats());
@@ -966,6 +994,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   // Download Single Card as high resolution PNG
   const handleDownloadPng = async () => {
     if (!cardRef.current) return;
+    if (retroBlocked) return warnRetroLocked();
     if (!selectedShow && !selectedArtist) {
       setToastMessage('💡 Escolha uma banda ou show na busca acima para baixar seu card!');
       setTimeout(() => setToastMessage(null), 3500);
@@ -986,7 +1015,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       const link = document.createElement('a');
       const safeArtist = effectiveArtist.replace(/[^a-z0-9]/gi, '_').toLowerCase();
       const safeCity = effectiveCity.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-      link.download = `livvo_${safeArtist}_${safeCity}_${effectiveCode}.png`;
+      link.download = `livvo_${isRetro ? 'ingresso_retro_' : ''}${safeArtist}_${safeCity}_${effectiveCode}.png`;
       link.href = dataUrl;
       link.click();
 
@@ -1002,6 +1031,10 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   // Generate PNG Blob for native sharing & clipboard
   const handleGeneratePngBlob = async (): Promise<Blob | null> => {
     if (!cardRef.current || (!selectedShow && !selectedArtist)) return null;
+    if (retroBlocked) {
+      warnRetroLocked();
+      return null;
+    }
     try {
       setIsExporting(true);
       const dataUrl = await toPng(cardRef.current, {
@@ -1757,26 +1790,92 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       <section className="lv-ticket lg:grid lg:grid-cols-[minmax(0,1fr)_28px_minmax(0,440px)]">
         {/* Palco */}
         <div className="lv-stage">
-          <div className="p-5 sm:p-10 flex flex-col items-center gap-4 lg:sticky lg:top-4">
-            <div className="relative shadow-[0_24px_60px_rgba(0,0,0,0.55)] flex justify-center items-center w-full max-w-[440px]">
-              <EventCard
-                ref={cardRef}
-                show={selectedShow}
-                artistName={selectedArtist?.artistName}
-                photoUrl={currentPhoto}
-                posterUrl={currentPoster}
-                config={config}
-                isExporting={isExporting}
-              />
+          <div
+            className={`${isRetro ? 'px-3 py-5 sm:p-8' : 'p-5 sm:p-10'} flex flex-col items-center gap-4 lg:sticky lg:top-4`}
+          >
+            {/* Formato do card */}
+            <div className="lv-seg" role="group" aria-label="Formato do card">
+              <button
+                type="button"
+                data-on={!isRetro}
+                aria-pressed={!isRetro}
+                onClick={() => setCardFormat('poster')}
+                title="Poster vertical para Stories e feed"
+              >
+                <ImageIcon className="w-3.5 h-3.5" />
+                <span>Poster</span>
+              </button>
+              <button
+                type="button"
+                data-on={isRetro}
+                aria-pressed={isRetro}
+                onClick={() => setCardFormat('retro')}
+                title={retroUnlocked ? 'Ingresso horizontal com fundo transparente' : 'Exclusivo para Fã Ouro ou Livvo PRO'}
+              >
+                {retroUnlocked ? <LivvoTicketIcon className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                <span>Ingresso Retrô</span>
+              </button>
             </div>
-            <p className="lv-mono text-[11px] text-[#8A8577] flex items-center gap-2">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${selectedShow || selectedArtist ? 'bg-[#4FDCDE]' : 'bg-[#8A8577]'}`}
-              />
-              {selectedShow || selectedArtist
-                ? 'Alta resolução · 300 DPI · pronto para baixar'
-                : 'Escolha um artista para montar o card'}
-            </p>
+
+            {isRetro ? (
+              <div className="w-full max-w-[960px]">
+                <RetroTicketStage>
+                  <RetroTicket
+                    ref={cardRef}
+                    show={selectedShow}
+                    artistName={selectedArtist?.artistName}
+                    photoUrl={currentPhoto}
+                    posterUrl={currentPoster}
+                    config={config}
+                  />
+                </RetroTicketStage>
+              </div>
+            ) : (
+              <div className="relative shadow-[0_24px_60px_rgba(0,0,0,0.55)] flex justify-center items-center w-full max-w-[440px]">
+                <EventCard
+                  ref={cardRef}
+                  show={selectedShow}
+                  artistName={selectedArtist?.artistName}
+                  photoUrl={currentPhoto}
+                  posterUrl={currentPoster}
+                  config={config}
+                  isExporting={isExporting}
+                />
+              </div>
+            )}
+
+            {retroBlocked ? (
+              <div className="w-full max-w-[560px] border-t border-dashed border-[#3A3159] pt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                <p className="text-[12.5px] text-[#B3AE9F] flex items-center gap-2 min-w-0">
+                  <Lock className="w-3.5 h-3.5 text-[#4FDCDE] shrink-0" />
+                  <span>
+                    Exclusivo para <b className="text-[#ECE5D1]">Fã Ouro</b> ou <b className="text-[#ECE5D1]">Livvo PRO</b>.
+                    {fanStats.effectiveShows < 26 && (
+                      <>
+                        {' '}
+                        Falta{26 - fanStats.effectiveShows === 1 ? '' : 'm'}{' '}
+                        <span className="text-[#4FDCDE]">{26 - fanStats.effectiveShows}</span>{' '}
+                        {26 - fanStats.effectiveShows === 1 ? 'show' : 'shows'}.
+                      </>
+                    )}
+                  </span>
+                </p>
+                <button type="button" onClick={handleUnlockProForTest} className="lv-link" title="Simula a assinatura PRO neste navegador">
+                  <span>Liberar para teste (admin)</span>
+                </button>
+              </div>
+            ) : (
+              <p className="lv-mono text-[11px] text-[#8A8577] flex items-center gap-2">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${selectedShow || selectedArtist ? 'bg-[#4FDCDE]' : 'bg-[#8A8577]'}`}
+                />
+                {!(selectedShow || selectedArtist)
+                  ? 'Escolha um artista para montar o card'
+                  : isRetro
+                    ? 'Ingresso Retrô · PNG com fundo transparente'
+                    : 'Alta resolução · 300 DPI · pronto para baixar'}
+              </p>
+            )}
           </div>
         </div>
 
