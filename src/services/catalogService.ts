@@ -1,5 +1,6 @@
 import { ShowItem, ArtistItem } from '../types';
 import { dbService } from './db';
+import { adminCatalog, searchFullCatalog } from './adminCatalogService';
 
 export interface CatalogSearchParams {
   q?: string;
@@ -16,6 +17,32 @@ export async function searchCatalogApi(
   params?: string | CatalogSearchParams,
   signal?: AbortSignal
 ): Promise<CatalogSearchResult> {
+  // Admin com o catálogo completo ligado: busca no CSV inteiro pelo servidor
+  if (adminCatalog.isEnabled()) {
+    const p = typeof params === 'string' ? { q: params } : params || {};
+    const q = (p.q || '').trim();
+    if (p.artist || q.length >= 3) {
+      try {
+        const full = await searchFullCatalog(
+          { q: q || undefined, artist: p.artist, limit: p.artist ? 2000 : p.limit },
+          signal
+        );
+        if (full) {
+          // Shows do artista no CSV + os da lista padrão (sem repetir)
+          if (p.artist) {
+            const local = dbService.getAllShows().filter((s) => s.artistName.toLowerCase() === p.artist!.toLowerCase());
+            const seen = new Set(full.shows.map((s) => s.showCode));
+            local.forEach((s) => !seen.has(s.showCode) && full.shows.push(s));
+          }
+          return full;
+        }
+      } catch (err: any) {
+        if (err?.name === 'AbortError') throw err;
+        console.warn('Catálogo completo indisponível, usando a lista padrão:', err);
+      }
+    }
+  }
+
   const allShows = dbService.getAllShows();
   const allArtists = dbService.getAllArtists();
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import crypto from 'crypto';
 import { initCatalog, searchCatalog, checkRateLimit } from './serverCatalog.js';
 import { registerIntegrationRoutes } from './serverIntegrations.js';
 
@@ -24,8 +25,38 @@ app.use((req, res, next) => {
 // Initialize in-memory catalog once on server start
 initCatalog();
 
-// API Route: Protected Catalog Search (Paginated, Rate-Limited, No mass dumping)
+// Admin: o catálogo completo (CSV) só responde com o código LIVVO_ADMIN_KEY (variável no Vercel)
+const adminKeyStatus = (req: express.Request): 'ok' | 'missing-env' | 'denied' => {
+  const expected = process.env.LIVVO_ADMIN_KEY || '';
+  if (!expected) return 'missing-env';
+  const given = String(req.headers['x-livvo-admin-key'] || '');
+  const a = crypto.createHash('sha256').update(given).digest();
+  const b = crypto.createHash('sha256').update(expected).digest();
+  return given && crypto.timingSafeEqual(a, b) ? 'ok' : 'denied';
+};
+
+const clientIpOf = (req: express.Request) =>
+  (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown-client';
+
+app.post('/api/admin/verify', (req, res) => {
+  const rl = checkRateLimit(`verify:${clientIpOf(req)}`);
+  if (!rl.allowed) return res.status(429).json({ ok: false });
+  const status = adminKeyStatus(req);
+  if (status === 'missing-env') return res.status(503).json({ ok: false, error: 'LIVVO_ADMIN_KEY não configurada' });
+  if (status === 'denied') return res.status(401).json({ ok: false });
+  return res.json({ ok: true });
+});
+
+// API Route: Protected Catalog Search (Paginated, Rate-Limited, No mass dumping) — somente admin
 app.get('/api/catalog/search', (req, res) => {
+    const auth = adminKeyStatus(req);
+    if (auth === 'missing-env') {
+      return res.status(503).json({ error: 'Catálogo completo desativado: LIVVO_ADMIN_KEY não configurada.' });
+    }
+    if (auth === 'denied') {
+      return res.status(401).json({ error: 'Catálogo completo liberado apenas para admin.' });
+    }
+
     // 1. IP-based rate limiting to prevent automated scraping
     const clientIp =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
@@ -59,6 +90,8 @@ app.get('/api/catalog/search', (req, res) => {
         venue: venue ? String(venue) : undefined,
         page: page ? parseInt(String(page), 10) : undefined,
         limit: limit ? parseInt(String(limit), 10) : undefined,
+        // Admin escolhendo um artista: traz todos os shows dele de uma vez
+        maxLimit: artist ? 2000 : undefined,
       });
 
       return res.json(result);

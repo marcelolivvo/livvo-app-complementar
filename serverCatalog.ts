@@ -131,6 +131,7 @@ export interface SearchOptions {
   venue?: string;
   page?: number;
   limit?: number;
+  maxLimit?: number;
 }
 
 /**
@@ -141,7 +142,7 @@ export function searchCatalog(options: SearchOptions): CatalogSearchResult {
     initCatalog();
   }
 
-  const MAX_LIMIT = 25;
+  const MAX_LIMIT = Math.min(options.maxLimit || 25, 2000);
   const requestedLimit = parseInt(String(options.limit || 20), 10);
   const limit = Math.min(Math.max(1, isNaN(requestedLimit) ? 20 : requestedLimit), MAX_LIMIT);
   const requestedPage = parseInt(String(options.page || 1), 10);
@@ -276,6 +277,19 @@ export function searchCatalog(options: SearchOptions): CatalogSearchResult {
 
     return true;
   });
+
+  // Artistas: nome igual primeiro, depois começa com, depois contém, depois só por show; empate por nº de shows
+  if (q || artistFilter) {
+    const term = artistFilter || q;
+    const rank = (a: CatalogArtist) => {
+      const n = normalizeText(a.artistName);
+      if (n === term) return 0;
+      if (n.startsWith(term)) return 1;
+      if (n.includes(term)) return 2;
+      return 3;
+    };
+    matchingArtists.sort((a, b) => rank(a) - rank(b) || (b.showsCount || 0) - (a.showsCount || 0));
+  }
 
   // Calculate pagination based on shows (or artists)
   const totalItems = Math.max(matchingShowRows.length, matchingArtists.length);
