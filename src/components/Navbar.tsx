@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { AdminCatalogToggle } from './AdminCatalogToggle';
 import {
   Layers,
   Image as ImageIcon,
@@ -237,6 +238,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {isAdmin ? (
                     <div className="py-2 space-y-3">
+                      {/* Catálogo completo (CSV) — liberado só com o código de admin */}
+                      <AdminCatalogToggle />
+
                       {/* Grupo 1: Telas Exclusivas do Administrador */}
                       <div className="space-y-1">
                         <span className="px-3 text-[10px] font-black tracking-wider uppercase text-[#8A8577] block">
