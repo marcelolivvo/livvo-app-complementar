@@ -30,6 +30,7 @@ const ACCESS: Record<number, string> = {
   5: 'ALL ACCESS',
 };
 
+const CARD_TOP = 306; // topo do crachá na imagem base (acima disso: cordão e mosquetão)
 const CREAM = '#EEE6D0'; // creme do crachá (amostrado na imagem)
 const INK = '#0C0817'; // tarja de baixo (amostrada)
 const CYAN = '#4FDCDE';
@@ -73,17 +74,32 @@ export const LivvoBadgeCard: React.FC<LivvoBadgeCardProps> = ({
     <svg
       viewBox="0 0 528 1166"
       className={className}
+      overflow="visible"
       role="img"
       aria-label={`Credencial de fã Livvo de ${cleanHandle}: ${totalShows} shows, ${levelTitle}, acesso ${access}`}
     >
       <defs>
+        {/* Brilho teal só no crachá (não no cordão nem no mosquetão) */}
+        <filter id={`glow-${clipId}`} x="-15%" y="-10%" width="130%" height="125%">
+          <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#2FB8BA" floodOpacity="0.95" />
+          <feDropShadow dx="0" dy="0" stdDeviation="12" floodColor="#2FB8BA" floodOpacity="0.55" />
+        </filter>
+        <clipPath id={`card-${clipId}`}>
+          <rect x={0} y={CARD_TOP} width={528} height={1166 - CARD_TOP} />
+        </clipPath>
+        <clipPath id={`top-${clipId}`}>
+          <rect x={0} y={0} width={528} height={CARD_TOP} />
+        </clipPath>
         <clipPath id={`ph-${clipId}`}>
           <rect x={46} y={426} width={436} height={393} />
         </clipPath>
       </defs>
 
-      {/* Base */}
-      <image href="/badges/livvo-badge-teste.webp" x={0} y={0} width={528} height={1166} />
+      {/* Base: cordão e mosquetão sem brilho; crachá com brilho teal */}
+      <image href="/badges/livvo-badge-teste.webp" x={0} y={0} width={528} height={1166} clipPath={`url(#top-${clipId})`} />
+      <g filter={`url(#glow-${clipId})`}>
+        <image href="/badges/livvo-badge-teste.webp" x={0} y={0} width={528} height={1166} clipPath={`url(#card-${clipId})`} />
+      </g>
 
       {/* Nº de cadastro no Livvo */}
       <rect x={398} y={386} width={92} height={30} fill="#53D1D2" />

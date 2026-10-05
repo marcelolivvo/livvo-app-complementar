@@ -260,16 +260,6 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
 
             {/* Titular: foto + @usuario */}
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => photoInputRef.current?.click()}
-                className="lv-avatar"
-                data-empty={!userPhoto}
-                title={userPhoto ? 'Trocar foto' : 'Adicionar sua foto'}
-                aria-label={userPhoto ? 'Trocar foto do titular' : 'Adicionar foto do titular'}
-              >
-                {userPhoto ? <img src={userPhoto} alt="" /> : <Camera className="w-5 h-5" />}
-              </button>
               <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoPick} />
               <div className="min-w-0">
                 <label htmlFor="lv-titular-nome" className="lv-eyebrow">
@@ -287,9 +277,6 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                   className="lv-name-input lv-display"
                 />
                 <div className="lv-mono text-[13px] text-[#4FDCDE] truncate">{userHandle || '@fa'}</div>
-                <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link text-[12px]">
-                  {userPhoto ? 'Trocar foto' : 'Adicionar foto'}
-                </button>
               </div>
             </div>
 
@@ -402,6 +389,10 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                 <Share2 className="w-3.5 h-3.5" />
                 <span>Compartilhar credencial</span>
               </button>
+              <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link lv-photo-mobile">
+                <Camera className="w-3.5 h-3.5" />
+                <span>{userPhoto ? 'Trocar foto' : 'Adicionar foto'}</span>
+              </button>
             </div>
           )}
         </div>
@@ -423,9 +414,17 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
         )}
 
         {/* Zona de leitura mecânica */}
-        <div className="lv-mrz" aria-hidden="true">
-          <div>{mrzLine1}</div>
-          <div>{mrzLine2}</div>
+        <div className="lv-mrz-row">
+          <div className="lv-mrz" aria-hidden="true">
+            <div>{mrzLine1}</div>
+            <div>{mrzLine2}</div>
+          </div>
+          <div className="lv-mrz-photo">
+            <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link">
+              <Camera className="w-3.5 h-3.5" />
+              <span>{userPhoto ? 'Trocar foto' : 'Adicionar foto'}</span>
+            </button>
+          </div>
         </div>
       </section>
 
