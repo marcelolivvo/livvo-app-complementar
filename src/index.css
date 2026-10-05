@@ -1112,3 +1112,108 @@ select.lv-input optgroup {
   background: var(--lv-cyan-hi);
   border-color: var(--lv-cyan-hi);
 }
+
+/* Minha História (gráficos do passaporte) --------------------------------- */
+.lv-btn--teal {
+  background: var(--lv-teal);
+}
+.lv-btn--teal:hover:not(:disabled) {
+  background: var(--lv-cyan-hi);
+}
+.lv-hist {
+  border-top: 1px dashed var(--lv-line-2);
+  scroll-margin-top: 80px;
+}
+.lv-hist .lv-strip {
+  border-bottom-style: dashed;
+}
+.lv-hist-close {
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lv-cyan);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.lv-hist-close:hover {
+  color: var(--lv-cream);
+}
+.lv-hist-block {
+  min-width: 0;
+}
+.lv-hist-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.lv-hist-readout {
+  margin-top: 6px;
+  min-height: 18px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 11.5px;
+  color: var(--lv-muted);
+}
+.lv-hist-years {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: 14px;
+}
+.lv-hist-year {
+  padding: 14px 16px 10px;
+  border: 1px dashed var(--lv-line-2);
+  border-radius: 6px;
+}
+.lv-hist-year[data-record='true'] {
+  border: 1.5px solid var(--lv-cyan);
+}
+.lv-hist-year header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.lv-hist-stamp {
+  margin-left: auto;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lv-cyan);
+  border: 1.5px solid var(--lv-cyan);
+  border-radius: 3px;
+  padding: 3px 7px;
+  transform: rotate(-3deg);
+}
+.lv-hist-rank {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.lv-hist-bar {
+  margin-top: 5px;
+  height: 6px;
+  background: var(--lv-line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.lv-hist-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+.lv-hist-milestones {
+  margin-top: 8px;
+}
+.lv-hist-milestones li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 11px 0;
+  border-bottom: 1px dashed var(--lv-line);
+}
+.lv-hist-empty {
+  padding: 18px 0 4px;
+}

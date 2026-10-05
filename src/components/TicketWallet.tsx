@@ -23,11 +23,14 @@ import {
   Clock,
   Check,
   Camera,
+  BarChart3,
+  ChevronDown,
 } from 'lucide-react';
 import { walletService, CollectedTicket, FanStats, AchievementBadge, FanMedalTier, WeeklyChallenge } from '../services/walletService';
 import { ShowItem, CardTemplateConfig } from '../types';
 import { TourWrappedModal } from './TourWrappedModal';
 import { FanMedalShareModal } from './FanMedalShareModal';
+import { MyHistory } from './MyHistory';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { TransparentTicketItem } from './TransparentTicketItem';
 import { FanMedalIllustration } from './MedalIllustrations';
@@ -55,6 +58,7 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
   const [medalsFilter, setMedalsFilter] = useState<'all' | 'unlocked' | 'locked'>('unlocked');
   const [activeTicketIndex, setActiveTicketIndex] = useState<number | null>(0);
   const [isWrappedOpen, setIsWrappedOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isMedalShareOpen, setIsMedalShareOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [stickers, setStickers] = useState<StickerState[]>([]);
@@ -307,6 +311,23 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
+                onClick={() => {
+                  const next = !isHistoryOpen;
+                  setIsHistoryOpen(next);
+                  if (next) {
+                    setTimeout(() => document.getElementById('minha-historia')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+                  }
+                }}
+                aria-expanded={isHistoryOpen}
+                aria-controls="minha-historia"
+                className="lv-btn lv-btn--stub lv-btn--teal"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Minha história</span>
+                <ChevronDown className={`w-4 h-4 -ml-4 transition-transform ${isHistoryOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsWrappedOpen(true)}
                 disabled={tickets.length === 0}
                 className="lv-btn lv-btn--stub lv-btn--cream"
@@ -345,6 +366,22 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             </div>
           )}
         </div>
+
+        {/* Minha História: seção fixa dentro do passaporte, aberta pelo botão */}
+        {isHistoryOpen && (
+          <div id="minha-historia" className="lv-hist">
+            <div className="lv-strip">
+              <span>Livvo · Minha história</span>
+              <button type="button" onClick={() => setIsHistoryOpen(false)} className="lv-hist-close">
+                Fechar
+              </button>
+            </div>
+            <div className="p-5 sm:p-8">
+              <h3 className="lv-display text-[clamp(22px,4vw,32px)] text-[#ECE5D1] mb-2">Minha história</h3>
+              <MyHistory tickets={tickets} />
+            </div>
+          </div>
+        )}
 
         {/* Zona de leitura mecânica */}
         <div className="lv-mrz" aria-hidden="true">
