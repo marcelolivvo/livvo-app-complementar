@@ -342,20 +342,26 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             </div>
           </div>
 
-          {/* Livvo Badge Teste no lugar do box Nível de fã (teste DRAFT, imagem com dados de exemplo) */}
+          {/* Medalha do nível atual */}
           {stats && (
-            <div className="lv-badge-slot">
-              <img
-                src="/badges/livvo-badge-teste.webp"
-                alt={`Credencial de fã Livvo, nível ${stats.levelTitle}`}
-                className="lv-badge-img"
-                width={528}
-                height={1166}
+            <div className="lv-holder">
+              <span className="lv-eyebrow">Nível de fã</span>
+              <FanMedalIllustration
+                medalId={stats.currentMedal?.id}
+                level={stats.level}
+                unlocked={stats.level > 0}
+                className={`w-[112px] h-[112px] ${stats.level === 5 ? 'animate-legend-glow' : ''}`}
               />
-              <span className="lv-eyebrow">Badge teste · dados de exemplo</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="lv-display text-[26px] text-[#ECE5D1]">{stats.levelTitle}</span>
+                <span className="lv-mono text-[12px] text-[#B3AE9F]">
+                  <strong className="lv-num text-[22px] text-[#4FDCDE] align-middle mr-1.5">{stats.totalShows}</strong>
+                  {stats.totalShows === 1 ? 'show' : 'shows'}
+                </span>
+              </div>
               <button type="button" onClick={() => setIsMedalShareOpen(true)} className="lv-link">
                 <Share2 className="w-3.5 h-3.5" />
-                <span>Compartilhar credencial</span>
+                <span>Compartilhar medalha</span>
               </button>
             </div>
           )}

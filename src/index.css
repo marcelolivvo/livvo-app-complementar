@@ -1217,26 +1217,3 @@ select.lv-input optgroup {
 .lv-hist-empty {
   padding: 18px 0 4px;
 }
-
-/* Livvo Badge Teste no lugar do box Nível de fã ---------------------------- */
-.lv-badge-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
-}
-.lv-badge-img {
-  width: 210px;
-  height: auto;
-  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, 0.45));
-}
-@media (min-width: 1024px) {
-  /* O cordão sai da linha do topo do passaporte */
-  .lv-badge-slot {
-    margin-top: -33px;
-  }
-  .lv-badge-img {
-    width: 236px;
-  }
-}
