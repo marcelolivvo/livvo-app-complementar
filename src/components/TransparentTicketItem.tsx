@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Calendar, MapPin, Building2, ExternalLink, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Building2, Trash2 } from 'lucide-react';
 import { CollectedTicket } from '../services/walletService';
 import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly } from '../utils/stateUtils';
@@ -71,9 +71,7 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
     <div
       ref={containerRef}
       onClick={onToggleActive}
-      className={`relative w-full min-h-[175px] sm:min-h-[185px] transition-all duration-300 cursor-pointer group select-none ${
-        isActive ? 'scale-[1.01]' : 'hover:scale-[1.005]'
-      }`}
+      className="relative w-full min-h-[175px] sm:min-h-[185px] transition-all duration-300 cursor-pointer group select-none"
     >
       {/* 1. Transparent Ticket Contour SVG with Neon Cyan Stroke */}
       <svg
@@ -151,7 +149,7 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-base sm:text-lg font-black text-[#ECE5D1] truncate leading-tight tracking-tight">
+              <h4 className="text-[27px] sm:text-[30px] font-black text-[#ECE5D1] truncate leading-tight tracking-tight">
                 {ticket.artistName}
               </h4>
               {ticket.stampType && ticket.stampType !== 'none' && ticket.stampType !== 'eu-fui' && (
@@ -161,14 +159,8 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
               )}
             </div>
 
-            {ticket.tourName ? (
-              <p className="text-xs text-[#4FDCDE] font-semibold truncate mt-0.5">
-                {ticket.tourName}
-              </p>
-            ) : (
-              <p className="text-[11px] text-[#8A8577] truncate mt-0.5">
-                Lembrança Personalizada do Show
-              </p>
+            {ticket.tourName && (
+              <p className="text-xs text-[#4FDCDE] font-semibold truncate mt-0.5">{ticket.tourName}</p>
             )}
           </div>
 
@@ -180,28 +172,21 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
           </div>
         </div>
 
-        {/* Linha Central: Data, Local (Venue) e Cidade */}
-        <div className="grid grid-cols-3 gap-2 my-1 text-xs">
-          {/* Data */}
+        {/* Data em uma linha; local e cidade na linha de baixo */}
+        <div className="my-1 space-y-1.5 text-xs min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
             <Calendar className="w-3.5 h-3.5 text-[#2FB8BA] shrink-0" />
-            <span className="font-mono font-bold text-[#ECE5D1] truncate text-[11px] sm:text-xs">
+            <span className="font-mono font-bold text-[#ECE5D1] text-[12px] sm:text-[13px]">
               {cleanDateOnly(ticket.date)}
             </span>
           </div>
-
-          {/* Local */}
-          <div className="flex items-center gap-1.5 min-w-0" title={ticket.venue}>
+          <div className="flex items-center gap-1.5 min-w-0" title={`${ticket.venue || ''} · ${cleanCityOnly(ticket.city)}`}>
             <Building2 className="w-3.5 h-3.5 text-[#4FDCDE] shrink-0" />
-            <span className="text-[#B3AE9F] truncate text-[11px] sm:text-xs">
+            <span className="text-[#B3AE9F] truncate text-[11.5px] sm:text-xs min-w-0">
               {ticket.venue || 'Local a confirmar'}
             </span>
-          </div>
-
-          {/* Cidade */}
-          <div className="flex items-center gap-1.5 min-w-0">
-            <MapPin className="w-3.5 h-3.5 text-[#FFD60A] shrink-0" />
-            <span className="text-[#ECE5D1] font-semibold truncate text-[11px] sm:text-xs">
+            <MapPin className="w-3.5 h-3.5 text-[#4FDCDE] shrink-0 ml-1.5" />
+            <span className="text-[#ECE5D1] font-semibold text-[11.5px] sm:text-xs shrink-0">
               {cleanCityOnly(ticket.city)}
             </span>
           </div>
@@ -211,7 +196,7 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-[#282141]/40">
           <div className="text-[10px] text-[#8A8577] font-mono flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#2FB8BA] animate-pulse" />
-            <span>Ingresso Oficial Livvo</span>
+            <span>Livvo Ticket Retro</span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
@@ -220,11 +205,10 @@ export const TransparentTicketItem: React.FC<TransparentTicketItemProps> = ({
                 e.stopPropagation();
                 onOpenInStudio(ticket);
               }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95"
-              title="Abrir ingresso no Estúdio"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] text-xs font-black shadow-sm transition-all cursor-pointer active:scale-95"
+              title="Editar este ingresso no Estúdio"
             >
-              <span>Abrir no Estúdio</span>
-              <ExternalLink className="w-3 h-3 text-[#100C1F]" />
+              <span>Editar</span>
             </button>
 
             <button

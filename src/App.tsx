@@ -25,9 +25,7 @@ export const App: React.FC = () => {
     setShows(loadedShows);
     setArtists(loadedArtists);
 
-    if (loadedShows.length > 0 && !selectedShow) {
-      setSelectedShow(loadedShows[0]);
-    }
+    // O Estúdio abre vazio: o fã escolhe o artista (sem banda pré-selecionada)
 
     // Seed wallet if fresh
     const photosMap = new Map<string, string>();
