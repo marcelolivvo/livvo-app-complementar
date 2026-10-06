@@ -1241,11 +1241,11 @@ select.lv-input optgroup {
   }
 }
 
-/* Credencial Backstage (canvas na proporção da arte, 2143 x 3509) */
+/* Credencial Backstage (canvas na proporção da arte com a margem do brilho, 2239 x 3605) */
 .livvo-credencial {
   position: relative;
   display: block;
-  aspect-ratio: 2143 / 3509;
+  aspect-ratio: 2239 / 3605;
   user-select: none;
 }
 .livvo-credencial > .lc-canvas {
@@ -1254,7 +1254,7 @@ select.lv-input optgroup {
   height: 100%;
 }
 .lv-badge-slot .lv-credencial {
-  width: 230px;
+  width: 240px;
   filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.5));
 }
 @media (min-width: 1024px) {
@@ -1263,7 +1263,7 @@ select.lv-input optgroup {
     margin-top: 0;
   }
   .lv-badge-slot .lv-credencial {
-    width: 250px;
+    width: 256px;
   }
 }
 

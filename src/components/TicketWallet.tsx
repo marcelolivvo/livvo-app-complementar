@@ -147,7 +147,7 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     };
     reader.readAsDataURL(file);
   };
-  // Compartilhar credencial: PNG transparente em resolução cheia (2143 x 3509)
+  // Compartilhar credencial: PNG transparente em resolução cheia (2239 x 3605, com o brilho)
   const [gerandoCredencial, setGerandoCredencial] = useState(false);
   const compartilharCredencial = async () => {
     if (!stats || gerandoCredencial) return;

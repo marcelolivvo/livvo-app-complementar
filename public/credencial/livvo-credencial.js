@@ -8,7 +8,7 @@
 
    Em JS:
      LivvoCredencial.render(elemento, { nome, usuario, shows, numero, desde, foto, nivel?, recortada? })
-     LivvoCredencial.exportarPNG(dados)  -> Promise<Blob>  (PNG transparente 2143 x 3509 px)
+     LivvoCredencial.exportarPNG(dados)  -> Promise<Blob>  (PNG transparente 2239 x 3605 px: peça + margem do brilho)
 
    - nivel: calculado pelo nº de shows (Bronze até 10, Prata 11-25, Ouro 26-50, Platina 51-100, Lenda Viva 101+).
      Pode ser forçado com `nivel` ("Fã Platina", "platina"...).
@@ -17,7 +17,8 @@
    - foto: com fundo transparente (recortada) a pessoa fica sobre a moldura off-white, saindo pelo topo;
      com fundo comum, a foto entra dentro da moldura off-white, com borda creme em volta.
      A detecção é automática (borda transparente); `recortada: true/false` força o modo.
-   Tudo é desenhado num <canvas> com as coordenadas da peça original (2143 x 3509 px), então a tela
+   Tudo é desenhado num <canvas> com as coordenadas da peça original (2143 x 3509 px, mais 48 px de margem
+   em volta para o brilho Teal da tarja), então a tela
    e o PNG exportado saem idênticos. */
 (function () {
   'use strict';
@@ -27,8 +28,10 @@
   })();
 
   // ------------------------------------------------------------------ geometria da peça (px no molde)
-  var W = 2143, H = 3509;
-  var MOLDES = [480, 960, 1440, 2143];
+  var W = 2143, H = 3509;            // coordenadas da peça
+  var PAD = 48;                      // margem transparente do molde (brilho da tarja)
+  var WT = W + 2 * PAD, HT = H + 2 * PAD; // 2239 x 3605: tamanho total do canvas/PNG
+  var MOLDES = [480, 960, 1440, WT];
   var SELO = { x: 1449, y: 1533, w: 535, h: 535 };
   var BOLINHA = { x: 1794, y: 2736, s: 156 };
   // moldura off-white (polígono) e área interna usada pela foto comum (30 px de borda creme)
@@ -98,8 +101,8 @@
   function urlMolde(larguraPx) {
     var w = MOLDES[MOLDES.length - 1];
     for (var i = 0; i < MOLDES.length; i++) if (MOLDES[i] >= larguraPx) { w = MOLDES[i]; break; }
-    if (w === 2143 && larguraPx >= 2143) return BASE + 'img/credencial-molde-2143.png';
-    if (!suportaWebp) return BASE + (w > 960 ? 'img/credencial-molde-2143.png' : 'img/credencial-molde-960.png');
+    if (w === WT && larguraPx >= WT) return BASE + 'img/credencial-molde-' + WT + '.png';
+    if (!suportaWebp) return BASE + (w > 960 ? 'img/credencial-molde-' + WT + '.png' : 'img/credencial-molde-960.png');
     return BASE + 'img/credencial-molde-' + w + '.webp';
   }
   function urlCamada(nome) { return BASE + 'img/' + nome + (suportaWebp ? '.webp' : '.png'); }
@@ -264,16 +267,17 @@
       carregarFoto(d.foto).catch(function () { return null; })
     ]).then(function (r) {
       var molde = r[1], selo = r[2], bolinha = r[3], foto = r[4];
-      var esc = larguraPx / W;
+      var esc = larguraPx / WT;
       canvas.width = Math.round(larguraPx);
-      canvas.height = Math.round(H * esc);
+      canvas.height = Math.round(HT * esc);
       var ctx = canvas.getContext('2d');
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
       ctx.setTransform(esc, 0, 0, esc, 0, 0);
-      ctx.drawImage(molde, 0, 0, W, H);
+      ctx.drawImage(molde, 0, 0, WT, HT);
+      ctx.translate(PAD, PAD); // daqui em diante, coordenadas da peça
 
       // foto
       var modo = null;
@@ -339,7 +343,7 @@
   function larguraAlvo(el) {
     var css = el.getBoundingClientRect().width || 360;
     var px = css * Math.min(window.devicePixelRatio || 1, 3);
-    return Math.max(240, Math.min(W, Math.round(px)));
+    return Math.max(240, Math.min(WT, Math.round(px)));
   }
 
   function render(el, dados) {
@@ -374,7 +378,7 @@
 
   function exportarPNG(dados, largura) {
     var c = document.createElement('canvas');
-    return desenhar(c, dados, largura || W).then(function (info) {
+    return desenhar(c, dados, largura || WT).then(function (info) {
       if (!info.exportavel) throw new Error('A foto vem de outro domínio sem CORS; não é possível exportar o PNG.');
       return new Promise(function (ok, erro) {
         c.toBlob(function (b) { b ? ok(b) : erro(new Error('Falha ao gerar o PNG.')); }, 'image/png');
