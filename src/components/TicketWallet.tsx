@@ -136,12 +136,20 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
           try {
             localStorage.setItem('livvo_user_photo_v1', url);
           } catch {
-            return lado > 640 ? salvar(640) : url; // sem espaço: menor; se ainda falhar, vale só nesta sessão
+            if (lado > 640) return salvar(640); // sem espaço: tenta menor
+            setToastMessage('A foto aparece agora, mas o aparelho está sem espaço para guardá-la: ela some ao recarregar.');
+            setTimeout(() => setToastMessage(null), 5000);
+            return url;
           }
           return url;
         };
         const url = salvar(1024);
         if (url) setUserPhoto(url);
+      };
+      img.onerror = () => {
+        // Ex.: HEIC do iPhone no Chrome — o navegador não consegue abrir o arquivo
+        setToastMessage('Não foi possível abrir esta foto. Envie em JPG ou PNG (fotos HEIC do iPhone não abrem em todos os navegadores).');
+        setTimeout(() => setToastMessage(null), 5000);
       };
       img.src = String(reader.result);
     };
@@ -431,7 +439,24 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
           {/* Credencial Backstage no lugar do box Nível de fã (teste DRAFT, com os dados do usuário) */}
           {stats && (
             <div className="lv-badge-slot">
-              <LivvoCredencialCard className="lv-badge-img lv-credencial" {...dadosCredencial()} />
+              <div className="lv-cred-wrap">
+                <LivvoCredencialCard className="lv-badge-img lv-credencial" {...dadosCredencial()} />
+                {/* Área da foto: toque para adicionar/trocar; sem foto, mostra o convite */}
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="lv-cred-photo"
+                  data-empty={!userPhoto}
+                  aria-label={userPhoto ? 'Trocar a foto da credencial' : 'Adicionar sua foto à credencial'}
+                >
+                  {!userPhoto && (
+                    <span>
+                      <Camera className="w-5 h-5" />
+                      Adicionar sua foto
+                    </span>
+                  )}
+                </button>
+              </div>
               <span className="lv-eyebrow">Credencial teste · com os seus dados</span>
               <button type="button" onClick={compartilharCredencial} disabled={gerandoCredencial} className="lv-link">
                 <Share2 className="w-3.5 h-3.5" />

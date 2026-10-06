@@ -1320,3 +1320,42 @@ select.lv-input optgroup {
     display: none;
   }
 }
+
+/* Área da foto sobre a credencial (moldura off-white: x 290–1946, y 656–1963 no canvas 2239 x 3605) */
+.lv-cred-wrap {
+  position: relative;
+}
+.lv-cred-photo {
+  position: absolute;
+  left: 12.95%;
+  top: 18.2%;
+  width: 73.96%;
+  height: 36.26%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.lv-cred-photo span {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--lv-ink, #100c1f);
+  text-align: center;
+}
+.lv-cred-photo[data-empty='true'] {
+  border: 2px dashed rgba(16, 12, 31, 0.35);
+}
+.lv-cred-photo[data-empty='true']:hover {
+  border-color: var(--lv-teal, #2fb8ba);
+}
+.lv-cred-photo:focus-visible {
+  outline: 2px solid var(--lv-cyan, #4fdcde);
+  outline-offset: 2px;
+}
