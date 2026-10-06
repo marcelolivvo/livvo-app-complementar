@@ -13,7 +13,13 @@ import {
   Check,
   Lock,
   Ticket,
+  UserCircle2,
+  LogIn,
+  LogOut,
+  RotateCcw,
 } from 'lucide-react';
+import { guestService, GUEST_CARD_LIMIT } from '../services/guestService';
+import { adminCatalog } from '../services/adminCatalogService';
 import { LivvoLogo } from './LivvoLogo';
 import { ShowItem, ArtistItem } from '../types';
 
@@ -59,9 +65,33 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenUploader,
   onLoadSample,
   onClearAll,
-  isAdmin = true,
+  isAdmin: _isAdminProp,
   onToggleAdmin,
 }) => {
+  // #14: o Admin fica dentro do menu do usuário e só aparece para administradores.
+  // Nesta prévia, a área de admin é liberada com ?admin=1 no endereço (ou pelo código de admin já salvo);
+  // ?admin=0 desliga. No livvomusic.com.br, quem define o admin é o login real.
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    try {
+      const flag = new URLSearchParams(window.location.search).get('admin');
+      if (flag === '1') localStorage.setItem('livvo_admin_mode_v1', '1');
+      if (flag === '0') localStorage.removeItem('livvo_admin_mode_v1');
+      return localStorage.getItem('livvo_admin_mode_v1') === '1' || adminCatalog.hasKey();
+    } catch {
+      return false;
+    }
+  });
+  const [account, setAccount] = useState(() => ({
+    login: guestService.getLogin(),
+    used: guestService.usedCount(),
+  }));
+  useEffect(
+    () =>
+      guestService.onChange(() => setAccount({ login: guestService.getLogin(), used: guestService.usedCount() })),
+    []
+  );
+  useEffect(() => adminCatalog.onChange(() => setIsAdmin((prev) => prev || adminCatalog.hasKey())), []);
+  const accountLabel = account.login ? account.login.email.split('@')[0] : 'Entrar';
   const activeTab = (propActiveTab || currentTab || 'studio') as ActiveTab;
   const setActiveTab = (tab: ActiveTab) => {
     if (propSetActiveTab) propSetActiveTab(tab);
@@ -105,14 +135,15 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-[#100C1F]/95 backdrop-blur-xl border-b border-[#282141]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-3 sm:gap-4">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
           {/* Logo & Brand */}
           <div className="flex items-center gap-3 shrink-0">
             <div className="flex items-center hover:scale-105 transition-transform cursor-pointer" onClick={() => setActiveTab('studio')}>
-              <LivvoLogo className="w-14 h-14 sm:w-16 sm:h-16 drop-shadow-lg" />
+              <LivvoLogo className="w-11 h-11 sm:w-16 sm:h-16 drop-shadow-lg" />
             </div>
 
-            <div>
+            {/* #14: no celular o cabeçalho fica só com a marca, as abas e o usuário */}
+            <div className="hidden sm:block">
               <h1 className="text-lg font-black tracking-tight text-[#ECE5D1] leading-none">
                 Virtual <span className="text-[#2FB8BA]">Poster</span>
               </h1>
@@ -125,11 +156,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Navigation - Main Navigation Bar (Fotos e Shows foram movidos exclusivamente para o menu de Admin) */}
-          <nav className="flex items-center gap-2 shrink-0">
+          <nav className="flex items-center gap-1.5 sm:gap-2 min-w-0">
             <button
               id="tab-studio"
               onClick={() => setActiveTab('studio')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
                 activeTab === 'studio'
                   ? 'bg-[#2FB8BA] text-[#100C1F] shadow-lg shadow-[#2FB8BA]/25 scale-100'
                   : 'bg-[#171226] text-[#B3AE9F] hover:text-[#ECE5D1] hover:bg-[#1E1833] border border-[#282141]'
@@ -142,14 +173,15 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               id="tab-wallet"
               onClick={() => setActiveTab('wallet')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
                 activeTab === 'wallet'
                   ? 'bg-[#ECE5D1] hover:bg-[#FFFFFF] text-[#100C1F] shadow-lg shadow-black/20 scale-100'
                   : 'bg-[#171226] text-[#B3AE9F] hover:text-[#ECE5D1] hover:bg-[#1E1833] border border-[#282141]'
               }`}
             >
               <Ticket className="w-4 h-4" />
-              <span>Livvo Wallet</span>
+              <span className="sm:hidden">Wallet</span>
+              <span className="hidden sm:inline">Livvo Wallet</span>
               {typeof walletCount === 'number' && walletCount > 0 && (
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${activeTab === 'wallet' ? 'bg-[#100C1F] text-[#ECE5D1]' : 'bg-[#ECE5D1]/20 text-[#ECE5D1]'}`}>
                   {walletCount}
@@ -159,14 +191,14 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Active Context Chip for Admin (quando visualizando Fotos ou Shows) */}
             {isAdmin && activeTab === 'photos' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A]/15 text-[#FFD60A] border border-[#FFD60A]/30 animate-in fade-in">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FFD60A]/15 text-[#FFD60A] border border-[#FFD60A]/30 animate-in fade-in">
                 <ImageIcon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Modo Admin:</span> Fotos
               </span>
             )}
 
             {isAdmin && activeTab === 'shows' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#2FB8BA]/15 text-[#4FDCDE] border border-[#2FB8BA]/30 animate-in fade-in">
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#2FB8BA]/15 text-[#4FDCDE] border border-[#2FB8BA]/30 animate-in fade-in">
                 <Table className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Modo Admin:</span> Shows
               </span>
@@ -178,23 +210,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Admin Dropdown Menu */}
             <div className="relative" ref={dropdownRef}>
               <button
-                id="admin-dropdown-toggle-btn"
+                id="user-menu-toggle-btn"
                 onClick={() => setIsAdminMenuOpen((prev) => !prev)}
-                className={`inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs font-extrabold border transition-all cursor-pointer ${
-                  isAdmin
-                    ? isAdminMenuOpen
-                      ? 'bg-[#2FB8BA] text-[#100C1F] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/25'
-                      : 'bg-[#2FB8BA]/10 text-[#4FDCDE] border-[#2FB8BA]/30 hover:bg-[#2FB8BA]/20 hover:border-[#4FDCDE]'
-                    : 'bg-[#1E1833] text-[#8A8577] border-[#282141] hover:text-[#ECE5D1]'
+                aria-expanded={isAdminMenuOpen}
+                aria-haspopup="menu"
+                aria-label={account.login ? `Menu do usuário ${account.login.email}` : 'Entrar ou abrir o menu do usuário'}
+                className={`inline-flex items-center gap-2 px-2.5 sm:px-3.5 py-2.5 rounded-2xl text-xs font-extrabold border transition-all cursor-pointer ${
+                  isAdminMenuOpen
+                    ? 'bg-[#2FB8BA] text-[#100C1F] border-[#2FB8BA] shadow-lg shadow-[#2FB8BA]/25'
+                    : 'bg-[#2FB8BA]/10 text-[#4FDCDE] border-[#2FB8BA]/30 hover:bg-[#2FB8BA]/20 hover:border-[#4FDCDE]'
                 }`}
-                title="Abrir menu de opções de Administrador"
+                title={account.login ? account.login.email : 'Entrar'}
               >
-                {isAdmin ? (
-                  <ShieldCheck className="w-4 h-4 text-inherit" />
-                ) : (
-                  <ShieldAlert className="w-4 h-4 text-inherit" />
-                )}
-                <span>Admin</span>
+                <UserCircle2 className="w-5 h-5 text-inherit" />
+                <span className="hidden sm:inline max-w-[110px] truncate">{accountLabel}</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 ${
                     isAdminMenuOpen ? 'rotate-180' : ''
@@ -204,7 +233,52 @@ export const Navbar: React.FC<NavbarProps> = ({
 
               {/* Dropdown Panel */}
               {isAdminMenuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-3xl bg-[#140F24]/98 border border-[#282141] shadow-2xl backdrop-blur-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                <div className="absolute right-0 top-full mt-2 w-[min(24rem,calc(100vw-2rem))] max-h-[calc(100vh-6rem)] overflow-y-auto rounded-3xl bg-[#140F24]/98 border border-[#282141] shadow-2xl backdrop-blur-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  {/* Conta do usuário (#12 e #14) */}
+                  <div className="px-3 py-3 space-y-3">
+                    {account.login ? (
+                      <>
+                        <div className="min-w-0">
+                          <div className="text-[11px] text-[#8A8577]">Conectado como</div>
+                          <div className="text-[13px] font-bold text-[#ECE5D1] truncate">{account.login.email}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            guestService.logout();
+                            setIsAdminMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 p-2.5 rounded-xl bg-[#171226] hover:bg-[#1E1833] text-[12px] font-bold text-[#B3AE9F] hover:text-[#ECE5D1]"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sair
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[12.5px] text-[#B3AE9F]">
+                          Sem login você cria até {GUEST_CARD_LIMIT} cards.{' '}
+                          <span className="text-[#ECE5D1] font-bold">
+                            {account.used} de {GUEST_CARD_LIMIT} usados.
+                          </span>
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAdminMenuOpen(false);
+                            guestService.requestLogin();
+                          }}
+                          className="w-full py-2.5 px-3 rounded-2xl font-extrabold text-xs bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] flex items-center justify-center gap-2"
+                        >
+                          <LogIn className="w-4 h-4" />
+                          Entrar no Livvo
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {isAdmin && (
+                  <div className="border-t border-[#282141] pt-1">
                   {/* Dropdown Header */}
                   <div className="px-3 py-2.5 border-b border-[#282141] flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -410,34 +484,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                         </div>
                       )}
                     </div>
-                  ) : (
-                    /* Conteúdo para usuário comum quando clica no botão Admin */
-                    <div className="py-3 px-1 space-y-3">
-                      <div className="p-3 bg-[#171226] rounded-2xl border border-[#282141] text-xs text-[#B3AE9F] space-y-1.5">
-                        <div className="font-bold text-[#ECE5D1] flex items-center gap-1.5">
-                          <Lock className="w-4 h-4 text-[#FFD60A]" />
-                          Acesso de Administrador
-                        </div>
-                        <p className="text-[11px] leading-relaxed">
-                          As funções de <strong>Base de Fotos</strong>, <strong>Catálogo de Shows</strong> e{' '}
-                          <strong>Importação CSV</strong> são reservadas aos administradores do sistema.
-                        </p>
-                      </div>
-
-                      {onToggleAdmin && (
-                        <button
-                          id="admin-menu-enable-btn"
-                          onClick={() => {
-                            onToggleAdmin();
-                            setIsAdminMenuOpen(false);
-                          }}
-                          className="w-full py-2.5 px-3 rounded-2xl font-extrabold text-xs bg-[#2FB8BA] hover:bg-[#22E3E6] text-[#100C1F] flex items-center justify-center gap-2 shadow-lg shadow-[#2FB8BA]/20 transition-all cursor-pointer active:scale-95"
-                        >
-                          <ShieldCheck className="w-4 h-4" />
-                          <span>Ativar Modo Administrador</span>
-                        </button>
-                      )}
-                    </div>
+                  ) : null}
+                  {/* Teste da prévia: zera a contagem de cards sem login */}
+                  <div className="px-3 pt-2 border-t border-[#282141] mt-2">
+                    <button
+                      type="button"
+                      onClick={() => guestService.resetGuestCards()}
+                      className="w-full flex items-center gap-2 p-2 rounded-xl text-[11px] text-[#8A8577] hover:text-[#ECE5D1] hover:bg-[#1E1833]"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Zerar contagem de cards sem login (teste)
+                    </button>
+                  </div>
+                  </div>
                   )}
                 </div>
               )}

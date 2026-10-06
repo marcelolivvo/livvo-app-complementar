@@ -6,6 +6,7 @@ import { LivvoB2B } from './components/LivvoB2B';
 import { TicketWallet } from './components/TicketWallet';
 import { PhotoManager } from './components/PhotoManager';
 import { CsvUploaderModal } from './components/CsvUploaderModal';
+import { LoginModal } from './components/LoginModal';
 import { ShowItem, ArtistItem, CardTemplateConfig } from './types';
 import { dbService } from './services/db';
 import { walletService } from './services/walletService';
@@ -47,7 +48,7 @@ export const App: React.FC = () => {
       showVenueBadge: true,
       showDateHighlight: true,
       contrastOverlay: 40,
-      customBadgeText: 'INGRESSO VERIFICADO',
+      customBadgeText: '', // N1: sem selo de verificação até existir a ferramenta
     });
   }, []);
 
@@ -115,8 +116,9 @@ export const App: React.FC = () => {
         onSelectShow={handleSelectShowForStudio}
         onSelectArtist={(a) => {
           setSelectedArtist(a);
-          const firstShow = shows.find((s) => s.artistCode === a.artistCode);
-          if (firstShow) setSelectedShow(firstShow);
+          // #2: com mais de um show, a pessoa escolhe o show no Estúdio
+          const artistShows = shows.filter((s) => s.artistCode === a.artistCode);
+          setSelectedShow(artistShows.length === 1 ? artistShows[0] : null);
           setCurrentTab('studio');
         }}
         onOpenCsvModal={() => setIsUploaderOpen(true)}
@@ -206,6 +208,8 @@ export const App: React.FC = () => {
         onClose={() => setIsUploaderOpen(false)}
         onImportShows={handleImportShows}
       />
+
+      <LoginModal />
     </div>
   );
 };

@@ -359,11 +359,12 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
                   <dd className="lv-num">{stats.uniqueArtists}</dd>
                   <span className="truncate">{stats.topArtist ? `mais visto: ${stats.topArtist.name}` : 'nenhum ainda'}</span>
                 </div>
+                {/* #3: cidades e estados juntos, com a mesma regra em todo o app */}
                 <div>
-                  <dt>Estados</dt>
-                  <dd className="lv-num">{stats.uniqueStates}</dd>
+                  <dt>Cidades</dt>
+                  <dd className="lv-num">{stats.uniqueCities}</dd>
                   <span>
-                    {stats.uniqueCities} {stats.uniqueCities === 1 ? 'cidade' : 'cidades'}
+                    em {stats.uniqueStates} {stats.uniqueStates === 1 ? 'estado' : 'estados'}
                   </span>
                 </div>
               </dl>

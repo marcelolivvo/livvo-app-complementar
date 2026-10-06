@@ -4,6 +4,7 @@ import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly, getStateAbbreviation } from '../utils/stateUtils';
 import { LivvoLogo } from './LivvoLogo';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
+import { LIVVO_SITE, visibleBadge } from '../utils/livvoBrand';
 
 /**
  * Livvo Ingresso Retrô — versão horizontal do card, desenhada sobre o modelo
@@ -90,7 +91,7 @@ export const RetroTicket = forwardRef<HTMLDivElement, RetroTicketProps>(
       showShowCode = true,
       showUserHandle = true,
       userHandle = '@toboi',
-      customBadgeText = 'INGRESSO VERIFICADO',
+      customBadgeText = '',
     } = config;
 
     // Mesma foto do poster (foto do artista ou pôster da turnê), recortada para o canhoto
@@ -231,7 +232,7 @@ export const RetroTicket = forwardRef<HTMLDivElement, RetroTicketProps>(
             </div>
 
             <div className="flex flex-col items-end" style={{ gap: 7 }}>
-              {customBadgeText && (
+              {visibleBadge(customBadgeText) && (
                 <span
                   style={{
                     padding: '5px 10px 4px',
@@ -246,7 +247,7 @@ export const RetroTicket = forwardRef<HTMLDivElement, RetroTicketProps>(
                     textTransform: 'uppercase',
                   }}
                 >
-                  {customBadgeText}
+                  {visibleBadge(customBadgeText)}
                 </span>
               )}
               {showUserHandle && (
@@ -343,7 +344,7 @@ export const RetroTicket = forwardRef<HTMLDivElement, RetroTicketProps>(
             <span>INGRESSO PERSONALIZADO · LIVVO PASS</span>
             <span className="flex items-center" style={{ gap: 7, color: CREAM }}>
               <span style={{ width: 6, height: 6, borderRadius: 999, background: CYAN, display: 'inline-block' }} />
-              LIVVO PASS DIGITAL
+              {LIVVO_SITE}
             </span>
           </div>
         </div>

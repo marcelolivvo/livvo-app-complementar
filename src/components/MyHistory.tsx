@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Lock } from 'lucide-react';
+import { MIN_SHOWS_FOR_PATTERNS } from '../utils/livvoBrand';
 import { CollectedTicket } from '../services/walletService';
 import {
   buildHistory,
@@ -416,7 +418,74 @@ export const MyHistory: React.FC<{ tickets: CollectedTicket[] }> = ({ tickets })
     );
   }
 
-  const bestWeekday = h.weekdays.indexOf(Math.max(...h.weekdays));
+  const maxWeekday = Math.max(...h.weekdays);
+  const tiedWeekdays = h.weekdays
+    .map((v, i) => (v === maxWeekday ? WEEKDAYS_SHORT[i] : null))
+    .filter((d): d is string => Boolean(d));
+  // #4: com empate, não aponta um dia como preferido
+  const weekdayFallback =
+    tiedWeekdays.length === 1 ? `Seu dia de show: ${tiedWeekdays[0]}` : `Empate entre ${tiedWeekdays.join(', ')}`;
+
+  // #6 e #18: gráficos e métricas de padrão só a partir de 10 shows
+  const totalShows = tickets.length;
+  if (totalShows < MIN_SHOWS_FOR_PATTERNS) {
+    const missing = MIN_SHOWS_FOR_PATTERNS - totalShows;
+    const basicMilestones = h.milestones.filter((m) => m.key !== 'gap' && m.key !== 'streak');
+    return (
+      <div className="space-y-8">
+        <p className="text-[14px] text-[#B3AE9F] max-w-[720px]">
+          <strong className="text-[#ECE5D1]">{plural(h.dated.length, 'show', 'shows')}</strong> desde {firstYear}.
+        </p>
+
+        <div className="lv-hist-locked">
+          <Lock className="w-5 h-5 text-[#4FDCDE] shrink-0" aria-hidden="true" />
+          <div className="space-y-2 min-w-0">
+            <h4 className="lv-display text-[18px] text-[#ECE5D1] leading-snug">
+              A partir de {MIN_SHOWS_FOR_PATTERNS} shows você já tem o seu histórico em gráficos
+            </h4>
+            <p className="text-[13px] text-[#B3AE9F]">
+              Falta{missing === 1 ? '' : 'm'} <strong className="text-[#ECE5D1]">{missing}</strong>{' '}
+              {missing === 1 ? 'show' : 'shows'}. Cada show salvo no Estúdio entra aqui: anos, meses, linha do tempo, dia
+              preferido e seus padrões de fã.
+            </p>
+            <div
+              className="lv-ticks max-w-[360px]"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={MIN_SHOWS_FOR_PATTERNS}
+              aria-valuenow={totalShows}
+              aria-label="Shows até liberar os gráficos"
+            >
+              {Array.from({ length: MIN_SHOWS_FOR_PATTERNS }).map((_, i) => (
+                <span key={i} data-on={i < totalShows} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          <RankList title="Artistas mais vistos" items={h.topArtists} />
+          <RankList title="Cidades" items={h.topCities} unit={['show', 'shows']} />
+          <RankList title="Casas de show" items={h.topVenues} unit={['show', 'shows']} />
+        </div>
+
+        {basicMilestones.length > 0 && (
+          <div className="lv-hist-block">
+            <h4 className="lv-eyebrow">Marcos da história</h4>
+            <ol className="lv-hist-milestones">
+              {basicMilestones.map((m) => (
+                <li key={m.key}>
+                  <span className="lv-mono text-[11px] text-[#4FDCDE] w-[86px] shrink-0">{m.date ? fmtDate(m.date) : ''}</span>
+                  <span className="text-[13.5px] text-[#ECE5D1] font-bold">{m.title}</span>
+                  <span className="text-[13px] text-[#B3AE9F] min-w-0">{m.detail}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -479,7 +548,7 @@ export const MyHistory: React.FC<{ tickets: CollectedTicket[] }> = ({ tickets })
           labels={WEEKDAYS_SHORT}
           values={h.weekdays}
           describe={(i) => `${WEEKDAYS_SHORT[i]}: ${plural(h.weekdays[i], 'show', 'shows')}`}
-          fallback={`Seu dia de show: ${WEEKDAYS_SHORT[bestWeekday]}`}
+          fallback={weekdayFallback}
         />
         <SmallColumns
           title="Artistas novos por ano"

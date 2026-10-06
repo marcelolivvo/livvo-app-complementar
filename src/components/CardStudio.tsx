@@ -54,6 +54,8 @@ import { searchCatalogApi } from '../services/catalogService';
 import { extractDominantColor } from '../services/colorExtractor';
 import { walletService } from '../services/walletService';
 import { FanMedalIllustration } from './MedalIllustrations';
+import { guestService, GUEST_CARD_LIMIT } from '../services/guestService';
+import { VERIFICATION_SOON } from '../utils/livvoBrand';
 
 interface CardStudioProps {
   shows: ShowItem[];
@@ -248,7 +250,6 @@ const RATIOS: { id: AspectRatio; name: string; icon: string; res: string }[] = [
 ];
 
 const BADGE_PRESETS = [
-  { label: 'INGRESSO VERIFICADO', desc: 'Em 2 linhas' },
   { label: 'EU FUI', desc: 'Selo presença' },
   { label: 'VIP PASS', desc: 'Acesso VIP' },
   { label: 'AO VIVO', desc: 'Em tempo real' },
@@ -294,14 +295,19 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     propSelectedArtist || preselectedArtist || null
   );
 
+  // Guarda o artista mais recente: atualizações em sequência (ex.: busca de foto logo após escolher o artista)
+  // não podem partir de um valor antigo, senão o artista escolhido se perde.
+  const selectedArtistRef = useRef<ArtistItem | null>(selectedArtist);
   const setSelectedArtist = (val: React.SetStateAction<ArtistItem | null>) => {
-    const next = typeof val === 'function' ? val(selectedArtist) : val;
+    const next = typeof val === 'function' ? val(selectedArtistRef.current) : val;
+    selectedArtistRef.current = next;
     setSelectedArtistState(next);
     if (onSelectArtist) onSelectArtist(next);
   };
 
   useEffect(() => {
     if (propSelectedArtist) {
+      selectedArtistRef.current = propSelectedArtist;
       setSelectedArtistState(propSelectedArtist);
       setArtistSearchQuery(propSelectedArtist.artistName);
     }
@@ -330,7 +336,23 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareChannel, setShareChannel] = useState<'instagram' | 'whatsapp' | 'facebook' | 'native' | null>(null);
 
+  // #12: até 3 cards sem login; cada show (ou artista) é um card
+  const getCardKey = () =>
+    selectedShow?.showCode || (selectedArtist ? `artist-${selectedArtist.artistCode}` : 'card');
+  const [guestState, setGuestState] = useState(() => ({
+    loggedIn: guestService.isLoggedIn(),
+    used: guestService.usedCount(),
+  }));
+  useEffect(
+    () =>
+      guestService.onChange(() =>
+        setGuestState({ loggedIn: guestService.isLoggedIn(), used: guestService.usedCount() })
+      ),
+    []
+  );
+
   const handleOpenShare = (channel?: 'instagram' | 'whatsapp' | 'facebook' | 'native' | null) => {
+    if ((selectedShow || selectedArtist) && !guestService.allowCard(getCardKey())) return;
     setShareChannel(channel || null);
     setIsShareModalOpen(true);
   };
@@ -376,6 +398,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
   const [isExtractingColor, setIsExtractingColor] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [savedToWalletSuccess, setSavedToWalletSuccess] = useState(false);
+  // #9: uma ação principal por estado — antes de salvar, Salvar; depois, Baixar e Compartilhar
+  const [savedKey, setSavedKey] = useState<string | null>(null);
   const [isTourWrappedOpen, setIsTourWrappedOpen] = useState(false);
   const [fanStats, setFanStats] = useState(() => walletService.getStats());
 
@@ -425,7 +449,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     showVenueBadge: true,
     showDateHighlight: true,
     contrastOverlay: 40,
-    customBadgeText: 'INGRESSO VERIFICADO',
+    customBadgeText: '', // N1: sem selo de verificação até existir a ferramenta
     photoFilter: 'none',
     stampType: 'none',
     showHologram: false,
@@ -905,7 +929,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             setSelectedVenue('');
             setSelectedDate('');
           }
-          onSelectShow(firstShow);
+          // #2: com mais de um show, a pessoa escolhe o card (data, cidade e local) — nada é preenchido por ela
+          onSelectShow(allShows.length === 1 ? firstShow : null);
         } else {
           // Fallback show with artist's own name so it NEVER shows a different band
           const fallbackShow: ShowItem = {
@@ -945,7 +970,8 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             setSelectedVenue('');
             setSelectedDate('');
           }
-          onSelectShow(firstShow);
+          // #2: com mais de um show, a pessoa escolhe o card (data, cidade e local) — nada é preenchido por ela
+          onSelectShow(showsForThisArtist.length === 1 ? firstShow : null);
         } else {
           const fallbackShow: ShowItem = {
             id: `show_${artist.artistCode}`,
@@ -1000,6 +1026,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       setTimeout(() => setToastMessage(null), 3500);
       return;
     }
+    if (!guestService.allowCard(getCardKey())) return;
     try {
       setIsExporting(true);
 
@@ -1035,6 +1062,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       warnRetroLocked();
       return null;
     }
+    if (!guestService.allowCard(getCardKey())) return null;
     try {
       setIsExporting(true);
       const dataUrl = await toPng(cardRef.current, {
@@ -1097,6 +1125,13 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       setTimeout(() => setToastMessage(null), 3500);
       return;
     }
+    if (!selectedShow && artistShows.length > 1) {
+      // #2: com vários shows, o ingresso só é salvo depois que a pessoa escolhe qual viu
+      setToastMessage('Escolha o show na lista acima antes de salvar.');
+      setTimeout(() => setToastMessage(null), 3500);
+      return;
+    }
+    if (!guestService.allowCard(getCardKey())) return;
     const effectiveShowCode = selectedShow?.showCode || `LIVVO_${selectedArtist?.artistCode || 'TICKET'}`;
     const effectiveArtistName = selectedShow?.artistName || selectedArtist?.artistName || 'Artista';
 
@@ -1118,6 +1153,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
     refreshStats();
     if (onWalletUpdated) onWalletUpdated();
 
+    setSavedKey(getCardKey());
     setSavedToWalletSuccess(true);
     setToastMessage('Ingresso salvo no seu passaporte. Veja no Livvo Wallet.');
     setTimeout(() => {
@@ -1251,8 +1287,10 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
     // Auto-mount card if none is mounted yet
     let targetShow = selectedShow;
-    if (!targetShow) {
-      const candidate = artistShows[0] || dbArtistShows[0];
+    const knownShows = artistShows.length > 0 ? artistShows : dbArtistShows;
+    if (!targetShow && knownShows.length <= 1) {
+      // #2: só monta o show sozinho quando o artista tem um único show; com vários, a pessoa escolhe
+      const candidate = knownShows[0];
       if (candidate) {
         targetShow = candidate;
         handleApplyShow(candidate);
@@ -1286,9 +1324,11 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
     let targetShow = selectedShow;
 
-    if (!targetShow) {
-      // Find candidate show from artistShows or dbArtistShows
-      const candidate = artistShows[0] || dbArtistShows[0];
+    const knownPosterShows = artistShows.length > 0 ? artistShows : dbArtistShows;
+    if (!targetShow && knownPosterShows.length > 1) {
+      // #2: com vários shows, o pôster fica guardado até a pessoa escolher o show
+    } else if (!targetShow) {
+      const candidate = knownPosterShows[0];
       if (candidate) {
         targetShow = { ...candidate, posterUrl: url };
         handleApplyShow(targetShow);
@@ -1323,6 +1363,9 @@ export const CardStudio: React.FC<CardStudioProps> = ({
       setIsMediaModalOpen(false);
     }, 350);
   };
+
+  const hasCard = Boolean(selectedShow || selectedArtist);
+  const isSaved = hasCard && savedKey === getCardKey();
 
   return (
     <div className="lv-studio space-y-5">
@@ -1725,10 +1768,10 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                   setIsMediaModalOpen(true);
                 }}
                 className="lv-ghost"
-                title="Buscar pôsteres e fotos em alta resolução"
+                title="Buscar foto ou pôster atualizado online"
               >
                 <Search className="w-3.5 h-3.5" />
-                <span>Buscar mídias online</span>
+                <span>Foto Atualizada</span>
               </button>
 
               {selectedArtist && !currentPhoto && (
@@ -1816,6 +1859,20 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                 <span>Ingresso Retrô</span>
               </button>
             </div>
+
+            {/* #1: durante a criação o card é uma prévia; nada aparece como verificado */}
+            {hasCard && (
+              <span className="lv-state-chip" data-saved={isSaved}>
+                {isSaved ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Salvo no seu Wallet
+                  </>
+                ) : (
+                  'Prévia · ainda não salvo'
+                )}
+              </span>
+            )}
 
             {isRetro ? (
               <div className="w-full max-w-[960px]">
@@ -1942,25 +1999,36 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <button id="save-to-wallet-btn" type="button" onClick={handleSaveToWallet} className="lv-ghost lv-ghost--teal">
+            {/* #9: antes de salvar, Salvar é a única ação em destaque */}
+            {isSaved ? (
+              <p className="inline-flex items-center gap-2 text-[13px] font-bold text-[#4FDCDE]" role="status">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Ingresso salvo. Agora baixe ou compartilhe.</span>
+              </p>
+            ) : (
+              <button
+                id="save-to-wallet-btn"
+                type="button"
+                onClick={handleSaveToWallet}
+                className="lv-btn lv-btn--teal w-full"
+              >
                 <LivvoTicketIcon className="w-4 h-4" />
-                <span>{savedToWalletSuccess ? 'Ingresso salvo' : 'Salvar ingresso'}</span>
+                <span>Salvar ingresso</span>
               </button>
+            )}
+
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
               <button
                 id="quick-copy-image-btn"
                 type="button"
                 onClick={handleCopyImage}
-                disabled={isExporting || (!selectedShow && !selectedArtist)}
-                className="lv-ghost"
+                disabled={isExporting || !hasCard}
+                className="lv-link"
                 title="Copiar a imagem para colar no WhatsApp ou nos Stories"
               >
-                {copySuccess ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copySuccess ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 <span>{copySuccess ? 'Imagem copiada' : 'Copiar imagem'}</span>
               </button>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
               <button id="quick-surprise-me-btn" type="button" onClick={handleSurpriseMe} className="lv-link">
                 <Dice5 className="w-3.5 h-3.5" />
                 <span>Surpreenda-me</span>
@@ -2872,7 +2940,7 @@ export const CardStudio: React.FC<CardStudioProps> = ({
                   </div>
                   <div>
                     <span className="lv-row-val">
-                      {config.customBadgeText || 'INGRESSO VERIFICADO'}
+                      {config.customBadgeText || 'Sem selo'}
                     </span>
                     <ChevronDown className="lv-row-chev" />
                   </div>
@@ -2880,7 +2948,17 @@ export const CardStudio: React.FC<CardStudioProps> = ({
 
                 {activeDropdown === 'badge' && (
                   <div className="lv-row-body space-y-2.5">
+                    <p className="text-[11px] text-[#B3AE9F] border-l-2 border-[#4FDCDE] pl-2.5">{VERIFICATION_SOON}</p>
                     <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setConfig((prev) => ({ ...prev, customBadgeText: '' }))}
+                        className="lv-opt p-2.5 text-left"
+                        data-on={!config.customBadgeText}
+                      >
+                        <div className="text-xs font-extrabold text-[#ECE5D1]">SEM SELO</div>
+                        <div className="text-[10px] text-[#8A8577]">Card limpo</div>
+                      </button>
                       {BADGE_PRESETS.map((b) => (
                         <button
                           key={b.label}
@@ -2963,14 +3041,14 @@ export const CardStudio: React.FC<CardStudioProps> = ({
             )}
           </div>
 
-          {/* Exportar */}
+          {/* Exportar — #9: viram a ação principal depois de salvar */}
           <div className="grid grid-cols-2 gap-3 mt-7">
             <button
               id="download-card-png-btn"
               type="button"
               onClick={handleDownloadPng}
               disabled={isExporting}
-              className="lv-btn lv-btn--cream"
+              className={isSaved ? 'lv-btn lv-btn--cream' : 'lv-ghost'}
               title="Baixar o card em PNG de alta resolução (300 DPI)"
             >
               {downloadSuccess ? (
@@ -2994,14 +3072,26 @@ export const CardStudio: React.FC<CardStudioProps> = ({
               id="share-card-btn"
               type="button"
               onClick={() => handleOpenShare()}
-              disabled={isExporting || (!selectedShow && !selectedArtist)}
-              className="lv-btn lv-btn--cyan"
+              disabled={isExporting || !hasCard}
+              className={isSaved ? 'lv-btn lv-btn--cyan' : 'lv-ghost'}
               title="Compartilhar no Instagram, WhatsApp ou Facebook"
             >
               <Share2 className="w-4 h-4" />
               <span>Compartilhar</span>
             </button>
           </div>
+
+          {/* #12: contador de cards sem login (prévia: login simulado) */}
+          {!guestState.loggedIn && (
+            <p className="lv-mono text-[11px] text-[#8A8577] mt-3 flex flex-wrap items-center gap-x-2">
+              <span>
+                Sem login: {guestState.used} de {GUEST_CARD_LIMIT} cards
+              </span>
+              <button type="button" onClick={() => guestService.requestLogin()} className="lv-link text-[#4FDCDE]">
+                Entrar
+              </button>
+            </p>
+          )}
         </div>
       </section>
 

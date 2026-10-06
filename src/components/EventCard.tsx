@@ -5,6 +5,7 @@ import { cleanDateOnly } from '../utils/dateUtils';
 import { cleanCityOnly } from '../utils/stateUtils';
 import { LivvoLogo } from './LivvoLogo';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
+import { LIVVO_SITE, visibleBadge } from '../utils/livvoBrand';
 
 interface EventCardProps {
   show?: ShowItem | null;
@@ -31,7 +32,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
       showVenueBadge = true,
       showDateHighlight = true,
       contrastOverlay = 40,
-      customBadgeText = 'INGRESSO VERIFICADO',
+      customBadgeText = '',
     } = config;
 
     // Determine whether to show poster or artist photo
@@ -511,19 +512,15 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
 
               {/* Right side: Custom Status Badge & Show Code */}
               <div className="flex flex-col items-end gap-1">
-                <div
-                  className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider text-[#100C1F] shadow-lg text-center min-w-[72px]"
-                  style={{ backgroundColor: accentColor }}
-                >
-                  {customBadgeText === 'INGRESSO VERIFICADO' ? (
-                    <div className="leading-tight py-0.5">
-                      <div>INGRESSO</div>
-                      <div>VERIFICADO</div>
-                    </div>
-                  ) : (
-                    <span>{customBadgeText}</span>
-                  )}
-                </div>
+                {/* N1: o Livvo não usa "verificado" até ter ferramenta de verificação */}
+                {visibleBadge(customBadgeText) && (
+                  <div
+                    className="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider text-[#100C1F] shadow-lg text-center min-w-[72px]"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    <span>{visibleBadge(customBadgeText)}</span>
+                  </div>
+                )}
 
                 {/* SHOW Code: ONLY rendered when a show is chosen and has a showCode */}
                 {showShowCode && show?.showCode && (
@@ -679,9 +676,7 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                   <LivvoTicketIcon className="w-4 h-4 text-[#2FB8BA]" />
                   <span className="text-[#ECE5D1]">LIVVO PASS OFICIAL</span>
                 </div>
-                <div className="tracking-widest font-mono text-[10px] text-[#4FDCDE]">
-                  ||| | | |||| | || | ||| ||
-                </div>
+                <div className="tracking-wider font-mono text-[10px] text-[#4FDCDE] lowercase">{LIVVO_SITE}</div>
               </div>
             ) : (
               <div className="flex items-center justify-between px-1 pt-0.5">
@@ -691,9 +686,8 @@ export const EventCard = forwardRef<HTMLDivElement, EventCardProps>(
                 >
                   Livvo Virtual Poster
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[#8A8577]">
-                  {config.showCollectorBadge ? 'Item de Colecionador Autêntico' : 'Registro Personalizado'}
-                </span>
+                {/* #12: o site do Livvo vai em todos os cards */}
+                <span className="font-mono text-[10px] tracking-wider text-[#4FDCDE] lowercase">{LIVVO_SITE}</span>
               </div>
             )}
           </div>

@@ -1359,3 +1359,34 @@ select.lv-input optgroup {
   outline: 2px solid var(--lv-cyan, #4fdcde);
   outline-offset: 2px;
 }
+
+/* Estado do card no Estúdio (#1 e #9): Prévia enquanto não salvo, Salvo depois */
+.lv-state-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px dashed var(--lv-line-2);
+  border-radius: 999px;
+  font-family: 'DM Mono', ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #b3ae9f;
+}
+.lv-state-chip[data-saved='true'] {
+  border-style: solid;
+  border-color: var(--lv-teal);
+  color: var(--lv-cyan);
+}
+
+/* Minha história travada antes de 10 shows (#18) */
+.lv-hist-locked {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border: 1px dashed var(--lv-teal);
+  border-radius: 8px;
+  background: rgba(47, 184, 186, 0.06);
+}
