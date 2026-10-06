@@ -31,6 +31,7 @@ import { ShowItem, CardTemplateConfig } from '../types';
 import { TourWrappedModal } from './TourWrappedModal';
 import { FanMedalShareModal } from './FanMedalShareModal';
 import { MyHistory } from './MyHistory';
+import { LivvoCredencialCard, exportarCredencialPNG } from './LivvoCredencialCard';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { TransparentTicketItem } from './TransparentTicketItem';
 import { FanMedalIllustration } from './MedalIllustrations';
@@ -71,6 +72,32 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     }
   });
   const photoInputRef = React.useRef<HTMLInputElement>(null);
+  // Nome de exibição do titular (salvo no aparelho, como a foto)
+  const [userName, setUserName] = useState<string>(() => {
+    try {
+      return localStorage.getItem('livvo_user_name_v1') || '';
+    } catch {
+      return '';
+    }
+  });
+  const handleNameChange = (v: string) => {
+    const clean = v.replace(/\s+/g, ' ').slice(0, 40);
+    setUserName(clean);
+    try {
+      localStorage.setItem('livvo_user_name_v1', clean.trim());
+    } catch {
+      /* sem armazenamento: vale só nesta sessão */
+    }
+  };
+  // Nº de cadastro no Livvo: virá do cadastro; até lá, número de teste (padrão 16)
+  const memberNumber = (() => {
+    try {
+      const n = Number(localStorage.getItem('livvo_member_number_v1'));
+      return Number.isFinite(n) && n > 0 ? Math.floor(n) : 16;
+    } catch {
+      return 16;
+    }
+  })();
   const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -79,27 +106,86 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        // Recorte quadrado central em 256 px para caber no armazenamento local
-        const size = 256;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const side = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
-        const url = canvas.toDataURL('image/jpeg', 0.85);
-        setUserPhoto(url);
-        try {
-          localStorage.setItem('livvo_user_photo_v1', url);
-        } catch {
-          /* sem armazenamento: a foto vale só nesta sessão */
-        }
+        // Foto da credencial: mantém a proporção e a transparência (foto recortada fica sobre a
+        // moldura off-white; foto comum entra na moldura). Lado maior até 1024 px para a qualidade
+        // da credencial; se o aparelho não tiver espaço, tenta 640 px.
+        const salvar = (lado: number): string | null => {
+          const k = Math.min(1, lado / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * k));
+          const h = Math.max(1, Math.round(img.height * k));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return null;
+          ctx.drawImage(img, 0, 0, w, h);
+          let transparente = false;
+          try {
+            const d = ctx.getImageData(0, 0, w, h).data;
+            for (let i = 3; i < d.length; i += 4 * 7) if (d[i] < 250) { transparente = true; break; }
+          } catch {
+            /* sem leitura de pixels: trata como foto comum */
+          }
+          let url: string;
+          if (transparente) {
+            url = canvas.toDataURL('image/webp', 0.9);
+            if (!url.startsWith('data:image/webp')) url = canvas.toDataURL('image/png');
+          } else {
+            url = canvas.toDataURL('image/jpeg', 0.88);
+          }
+          try {
+            localStorage.setItem('livvo_user_photo_v1', url);
+          } catch {
+            return lado > 640 ? salvar(640) : url; // sem espaço: menor; se ainda falhar, vale só nesta sessão
+          }
+          return url;
+        };
+        const url = salvar(1024);
+        if (url) setUserPhoto(url);
       };
       img.src = String(reader.result);
     };
     reader.readAsDataURL(file);
   };
+  // Compartilhar credencial: PNG transparente em resolução cheia (2143 x 3509)
+  const [gerandoCredencial, setGerandoCredencial] = useState(false);
+  const compartilharCredencial = async () => {
+    if (!stats || gerandoCredencial) return;
+    setGerandoCredencial(true);
+    try {
+      const blob = await exportarCredencialPNG(dadosCredencial());
+      const nomeArq = `Livvo_Credencial_${(userHandle || 'fa').replace(/^@/, '').replace(/[^\w.-]+/g, '') || 'fa'}.png`;
+      const arquivo = new File([blob], nomeArq, { type: 'image/png' });
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+      if (nav.share && nav.canShare?.({ files: [arquivo] })) {
+        await nav.share({ files: [arquivo], title: 'Minha credencial Livvo' });
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = nomeArq;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      }
+    } catch (err) {
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        setToastMessage('Não foi possível gerar a credencial agora.');
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } finally {
+      setGerandoCredencial(false);
+    }
+  };
+  const dadosCredencial = () => ({
+    nome: (userName || (userHandle || '').replace(/^@/, '')).trim(),
+    usuario: userHandle || '@fa',
+    shows: stats?.totalShows ?? 0,
+    numero: memberNumber,
+    desde: stats?.oldestShowYear,
+    foto: userPhoto,
+    nivel: stats?.levelTitle,
+  });
   const [stickerFilter, setStickerFilter] = useState<'all' | 'unlocked' | 'locked' | 'soon'>('unlocked');
 
   const refreshWallet = () => {
@@ -233,23 +319,23 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
 
             {/* Titular: foto + @usuario */}
             <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => photoInputRef.current?.click()}
-                className="lv-avatar"
-                data-empty={!userPhoto}
-                title={userPhoto ? 'Trocar foto' : 'Adicionar sua foto'}
-                aria-label={userPhoto ? 'Trocar foto do titular' : 'Adicionar foto do titular'}
-              >
-                {userPhoto ? <img src={userPhoto} alt="" /> : <Camera className="w-5 h-5" />}
-              </button>
               <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoPick} />
               <div className="min-w-0">
-                <span className="lv-eyebrow">Titular</span>
-                <div className="lv-display text-[24px] text-[#ECE5D1] truncate">{userHandle || '@fa'}</div>
-                <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link text-[12px]">
-                  {userPhoto ? 'Trocar foto' : 'Adicionar foto'}
-                </button>
+                <label htmlFor="lv-titular-nome" className="lv-eyebrow">
+                  Titular · Nome
+                </label>
+                <input
+                  id="lv-titular-nome"
+                  type="text"
+                  value={userName}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onBlur={(e) => handleNameChange(e.target.value.trim())}
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                  maxLength={40}
+                  className="lv-name-input lv-display"
+                />
+                <div className="lv-mono text-[13px] text-[#4FDCDE] truncate">{userHandle || '@fa'}</div>
               </div>
             </div>
 
@@ -342,26 +428,18 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             </div>
           </div>
 
-          {/* Medalha do nível atual */}
+          {/* Credencial Backstage no lugar do box Nível de fã (teste DRAFT, com os dados do usuário) */}
           {stats && (
-            <div className="lv-holder">
-              <span className="lv-eyebrow">Nível de fã</span>
-              <FanMedalIllustration
-                medalId={stats.currentMedal?.id}
-                level={stats.level}
-                unlocked={stats.level > 0}
-                className={`w-[112px] h-[112px] ${stats.level === 5 ? 'animate-legend-glow' : ''}`}
-              />
-              <div className="flex flex-col items-center gap-1">
-                <span className="lv-display text-[26px] text-[#ECE5D1]">{stats.levelTitle}</span>
-                <span className="lv-mono text-[12px] text-[#B3AE9F]">
-                  <strong className="lv-num text-[22px] text-[#4FDCDE] align-middle mr-1.5">{stats.totalShows}</strong>
-                  {stats.totalShows === 1 ? 'show' : 'shows'}
-                </span>
-              </div>
-              <button type="button" onClick={() => setIsMedalShareOpen(true)} className="lv-link">
+            <div className="lv-badge-slot">
+              <LivvoCredencialCard className="lv-badge-img lv-credencial" {...dadosCredencial()} />
+              <span className="lv-eyebrow">Credencial teste · com os seus dados</span>
+              <button type="button" onClick={compartilharCredencial} disabled={gerandoCredencial} className="lv-link">
                 <Share2 className="w-3.5 h-3.5" />
-                <span>Compartilhar medalha</span>
+                <span>{gerandoCredencial ? 'Gerando credencial…' : 'Compartilhar credencial'}</span>
+              </button>
+              <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link lv-photo-mobile">
+                <Camera className="w-3.5 h-3.5" />
+                <span>{userPhoto ? 'Trocar foto' : 'Adicionar foto'}</span>
               </button>
             </div>
           )}
@@ -384,9 +462,17 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
         )}
 
         {/* Zona de leitura mecânica */}
-        <div className="lv-mrz" aria-hidden="true">
-          <div>{mrzLine1}</div>
-          <div>{mrzLine2}</div>
+        <div className="lv-mrz-row">
+          <div className="lv-mrz" aria-hidden="true">
+            <div>{mrzLine1}</div>
+            <div>{mrzLine2}</div>
+          </div>
+          <div className="lv-mrz-photo">
+            <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link">
+              <Camera className="w-3.5 h-3.5" />
+              <span>{userPhoto ? 'Trocar foto' : 'Adicionar foto'}</span>
+            </button>
+          </div>
         </div>
       </section>
 
