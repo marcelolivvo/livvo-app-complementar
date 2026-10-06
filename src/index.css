@@ -1241,6 +1241,32 @@ select.lv-input optgroup {
   }
 }
 
+/* Credencial Backstage (canvas na proporção da arte, 2143 x 3509) */
+.livvo-credencial {
+  position: relative;
+  display: block;
+  aspect-ratio: 2143 / 3509;
+  user-select: none;
+}
+.livvo-credencial > .lc-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.lv-badge-slot .lv-credencial {
+  width: 230px;
+  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.5));
+}
+@media (min-width: 1024px) {
+  /* sem cordão: não sobe sobre a linha do topo do passaporte */
+  .lv-badge-slot:has(.lv-credencial) {
+    margin-top: 0;
+  }
+  .lv-badge-slot .lv-credencial {
+    width: 250px;
+  }
+}
+
 /* Crachá: brilho teal no contorno, para a tarja escura aparecer no fundo escuro */
 .lv-badge-slot .lv-badge-img {
   overflow: visible;

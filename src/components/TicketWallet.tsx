@@ -31,7 +31,7 @@ import { ShowItem, CardTemplateConfig } from '../types';
 import { TourWrappedModal } from './TourWrappedModal';
 import { FanMedalShareModal } from './FanMedalShareModal';
 import { MyHistory } from './MyHistory';
-import { LivvoBadgeCard } from './LivvoBadgeCard';
+import { LivvoCredencialCard, exportarCredencialPNG } from './LivvoCredencialCard';
 import { LivvoTicketIcon } from './LivvoTicketIcon';
 import { TransparentTicketItem } from './TransparentTicketItem';
 import { FanMedalIllustration } from './MedalIllustrations';
@@ -106,27 +106,86 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
     reader.onload = () => {
       const img = new Image();
       img.onload = () => {
-        // Recorte quadrado central em 256 px para caber no armazenamento local
-        const size = 256;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        const side = Math.min(img.width, img.height);
-        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
-        const url = canvas.toDataURL('image/jpeg', 0.85);
-        setUserPhoto(url);
-        try {
-          localStorage.setItem('livvo_user_photo_v1', url);
-        } catch {
-          /* sem armazenamento: a foto vale só nesta sessão */
-        }
+        // Foto da credencial: mantém a proporção e a transparência (foto recortada fica sobre a
+        // moldura off-white; foto comum entra na moldura). Lado maior até 1024 px para a qualidade
+        // da credencial; se o aparelho não tiver espaço, tenta 640 px.
+        const salvar = (lado: number): string | null => {
+          const k = Math.min(1, lado / Math.max(img.width, img.height));
+          const w = Math.max(1, Math.round(img.width * k));
+          const h = Math.max(1, Math.round(img.height * k));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return null;
+          ctx.drawImage(img, 0, 0, w, h);
+          let transparente = false;
+          try {
+            const d = ctx.getImageData(0, 0, w, h).data;
+            for (let i = 3; i < d.length; i += 4 * 7) if (d[i] < 250) { transparente = true; break; }
+          } catch {
+            /* sem leitura de pixels: trata como foto comum */
+          }
+          let url: string;
+          if (transparente) {
+            url = canvas.toDataURL('image/webp', 0.9);
+            if (!url.startsWith('data:image/webp')) url = canvas.toDataURL('image/png');
+          } else {
+            url = canvas.toDataURL('image/jpeg', 0.88);
+          }
+          try {
+            localStorage.setItem('livvo_user_photo_v1', url);
+          } catch {
+            return lado > 640 ? salvar(640) : url; // sem espaço: menor; se ainda falhar, vale só nesta sessão
+          }
+          return url;
+        };
+        const url = salvar(1024);
+        if (url) setUserPhoto(url);
       };
       img.src = String(reader.result);
     };
     reader.readAsDataURL(file);
   };
+  // Compartilhar credencial: PNG transparente em resolução cheia (2143 x 3509)
+  const [gerandoCredencial, setGerandoCredencial] = useState(false);
+  const compartilharCredencial = async () => {
+    if (!stats || gerandoCredencial) return;
+    setGerandoCredencial(true);
+    try {
+      const blob = await exportarCredencialPNG(dadosCredencial());
+      const nomeArq = `Livvo_Credencial_${(userHandle || 'fa').replace(/^@/, '').replace(/[^\w.-]+/g, '') || 'fa'}.png`;
+      const arquivo = new File([blob], nomeArq, { type: 'image/png' });
+      const nav = navigator as Navigator & { canShare?: (d: { files: File[] }) => boolean };
+      if (nav.share && nav.canShare?.({ files: [arquivo] })) {
+        await nav.share({ files: [arquivo], title: 'Minha credencial Livvo' });
+      } else {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = nomeArq;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      }
+    } catch (err) {
+      if (!(err instanceof DOMException && err.name === 'AbortError')) {
+        setToastMessage('Não foi possível gerar a credencial agora.');
+        setTimeout(() => setToastMessage(null), 3500);
+      }
+    } finally {
+      setGerandoCredencial(false);
+    }
+  };
+  const dadosCredencial = () => ({
+    nome: (userName || (userHandle || '').replace(/^@/, '')).trim(),
+    usuario: userHandle || '@fa',
+    shows: stats?.totalShows ?? 0,
+    numero: memberNumber,
+    desde: stats?.oldestShowYear,
+    foto: userPhoto,
+    nivel: stats?.levelTitle,
+  });
   const [stickerFilter, setStickerFilter] = useState<'all' | 'unlocked' | 'locked' | 'soon'>('unlocked');
 
   const refreshWallet = () => {
@@ -369,25 +428,14 @@ export const TicketWallet: React.FC<TicketWalletProps> = ({
             </div>
           </div>
 
-          {/* Livvo Badge Teste no lugar do box Nível de fã (teste DRAFT, imagem com dados de exemplo) */}
+          {/* Credencial Backstage no lugar do box Nível de fã (teste DRAFT, com os dados do usuário) */}
           {stats && (
             <div className="lv-badge-slot">
-              <LivvoBadgeCard
-                className="lv-badge-img"
-                photoUrl={userPhoto}
-                handle={userHandle || '@fa'}
-                name={userName}
-                memberNumber={memberNumber}
-                totalShows={stats.totalShows}
-                sinceYear={stats.oldestShowYear}
-                level={stats.level}
-                levelTitle={stats.levelTitle}
-                medalColor={stats.currentMedal?.metalColor}
-              />
-              <span className="lv-eyebrow">Badge teste · com os seus dados</span>
-              <button type="button" onClick={() => setIsMedalShareOpen(true)} className="lv-link">
+              <LivvoCredencialCard className="lv-badge-img lv-credencial" {...dadosCredencial()} />
+              <span className="lv-eyebrow">Credencial teste · com os seus dados</span>
+              <button type="button" onClick={compartilharCredencial} disabled={gerandoCredencial} className="lv-link">
                 <Share2 className="w-3.5 h-3.5" />
-                <span>Compartilhar credencial</span>
+                <span>{gerandoCredencial ? 'Gerando credencial…' : 'Compartilhar credencial'}</span>
               </button>
               <button type="button" onClick={() => photoInputRef.current?.click()} className="lv-link lv-photo-mobile">
                 <Camera className="w-3.5 h-3.5" />
