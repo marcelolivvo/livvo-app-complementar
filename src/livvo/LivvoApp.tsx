@@ -112,9 +112,9 @@ export const LivvoApp: React.FC = () => {
       break;
     default:
       pagina = (
-        <div className="lv-card p-8 text-center">
+        <div className="lv-empty">
           <p className="lv-h2">Esta página não existe.</p>
-          <Link to="/" className="lv-btn lv-btn--cyan mt-6">
+          <Link to="/" className="lv-btn lv-btn--cyan">
             Ir para o Início
           </Link>
         </div>

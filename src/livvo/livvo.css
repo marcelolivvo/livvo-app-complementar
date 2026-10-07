@@ -54,6 +54,292 @@
   outline: none;
 }
 
+/* Gramática "Bilheteria" do Estúdio (src/index.css) dentro do Livvo final ----------
+   As classes .lv-ticket, .lv-strip, .lv-stage, .lv-perf, .lv-fields, .lv-ticks, .lv-group,
+   .lv-show, .lv-tabs, .lv-passport, .lv-btn--stub, .lv-input etc. vêm do Estúdio.
+   Ajuste da identidade oficial (decisão de 07/10/2026): rótulos em Barlow, não em DM Mono. */
+.lv-app :is(.lv-strip, .lv-eyebrow, .lv-mono, .lv-group, .lv-label, .lv-row-val, .lv-fields dt, .lv-stamp-name, .lv-stamp-req, .lv-tally span, .lv-sticker-state, .lv-state-chip) {
+  font-family: 'Barlow', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+}
+.lv-app .lv-strip {
+  font-size: 11px;
+}
+.lv-app .lv-strip b {
+  font-weight: 700;
+}
+.lv-app .lv-fields > div > span {
+  font-family: 'Barlow', 'Plus Jakarta Sans', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.lv-app .lv-state-chip {
+  border-radius: 3px;
+}
+.lv-app .lv-tabs button .lv-mono {
+  font-size: 12px;
+}
+.lv-app .lv-btn--stub {
+  padding-right: 22px;
+}
+.lv-app a.lv-btn,
+.lv-app a.lv-ghost,
+.lv-app a.lv-link {
+  text-decoration: none;
+}
+.lv-app .lv-input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--lv-cyan);
+}
+.lv-app .lv-input {
+  font-size: 16px; /* 16px: o iPhone não dá zoom ao focar */
+}
+.lv-app select.lv-input {
+  background-image: linear-gradient(45deg, transparent 50%, var(--lv-dim) 50%), linear-gradient(135deg, var(--lv-dim) 50%, transparent 50%);
+  background-position: calc(100% - 9px) 55%, calc(100% - 4px) 55%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.lv-app .lv-ticks {
+  height: 12px;
+}
+.lv-app .lv-ticks span {
+  background: var(--lv-line-2);
+}
+.lv-app .lv-ticks span[data-on='true'] {
+  background: var(--lv-cyan);
+}
+
+/* Título de página em Alfa Slab One teal (como "Passaporte Oficial de Shows") */
+.lv-titulo-teal {
+  color: var(--lv-teal);
+}
+
+/* Cabeçalho de grupo com ação à direita */
+.lv-grp {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 34px 0 2px;
+}
+.lv-grp .lv-group {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.lv-grp + .lv-show,
+.lv-grp + div > .lv-show:first-child {
+  border-top: 0;
+}
+
+/* Linhas de lista (.lv-show do Estúdio, com coluna menor no celular) */
+.lv-app .lv-show {
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 12px 4px;
+  color: inherit;
+  text-decoration: none;
+}
+.lv-app .lv-show--av {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+.lv-app .lv-show--fixa {
+  cursor: default;
+}
+.lv-app .lv-show--fixa:hover {
+  background: transparent;
+}
+@media (min-width: 640px) {
+  .lv-app .lv-show {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    gap: 14px;
+  }
+  .lv-app .lv-show--av {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+}
+.lv-show-t {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--lv-cream);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lv-show:hover .lv-show-t {
+  color: #fff;
+}
+.lv-show--fixa:hover .lv-show-t {
+  color: var(--lv-cream);
+}
+.lv-show-s {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--lv-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lv-show-n {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--lv-cyan);
+}
+
+/* Data em coluna, sem caixa */
+.lv-dt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.lv-dt b {
+  font-family: 'RAYDIS', 'Alfa Slab One', sans-serif;
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 0.9;
+  color: var(--lv-cream);
+}
+.lv-dt span {
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--lv-dim);
+  white-space: nowrap;
+}
+
+/* Ingresso em contorno ciano (Carteira de ingressos do Estúdio) */
+.lv-contorno {
+  position: relative;
+  min-width: 0;
+  /* altura mínima para o pôster 4:5 caber inteiro no canhoto */
+  min-height: max(150px, calc((var(--nx, 120px) - 28px) * 1.25 + 28px));
+}
+.lv-contorno-svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgba(79, 220, 222, 0.35));
+  transition: filter 0.2s ease;
+}
+.lv-contorno[data-on='true'] .lv-contorno-svg,
+.lv-contorno:hover .lv-contorno-svg {
+  filter: drop-shadow(0 0 10px rgba(79, 220, 222, 0.6)) drop-shadow(0 0 20px rgba(79, 220, 222, 0.25));
+}
+.lv-contorno-canhoto {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--nx, 120px);
+  padding: 14px 12px 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lv-contorno-canhoto > * {
+  width: 100%;
+}
+.lv-contorno-canhoto .lv-poster {
+  border-radius: 16px 6px 6px 16px;
+}
+.lv-contorno-corpo {
+  position: relative;
+  min-width: 0;
+  padding: 18px 20px 18px calc(var(--nx, 120px) + 18px);
+}
+@media (max-width: 480px) {
+  .lv-contorno-corpo {
+    padding: 16px 16px 16px calc(var(--nx, 100px) + 14px);
+  }
+}
+
+/* Campo de busca em linha (como os campos do Estúdio) */
+.lv-busca {
+  position: relative;
+  display: block;
+}
+.lv-busca > svg {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 17px;
+  height: 17px;
+  color: var(--lv-dim);
+  pointer-events: none;
+}
+.lv-busca .lv-input {
+  padding-left: 26px;
+  padding-right: 34px;
+}
+.lv-busca .lv-iconbtn {
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+}
+.lv-busca input[type='search']::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* Rótulo do campo com o campo embaixo */
+.lv-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Página-ingresso: palco | picote | canhoto (vertical no computador) */
+.lv-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 1024px) {
+  .lv-split {
+    grid-template-columns: minmax(0, 1fr) 28px minmax(0, var(--lv-split-dir, 420px));
+  }
+  .lv-split--palco-esq {
+    grid-template-columns: minmax(0, var(--lv-split-esq, 380px)) 28px minmax(0, 1fr);
+  }
+}
+.lv-pad {
+  padding: 20px;
+}
+@media (min-width: 640px) {
+  .lv-pad {
+    padding: 26px 28px;
+  }
+}
+
+/* Médias da comunidade: números em amarelo (amarelo só para notas) */
+.lv-app .lv-fields dd.lv-nota-num {
+  color: var(--lv-nota);
+  font-size: 46px;
+}
+.lv-app .lv-fields > div > .lv-discs {
+  margin-top: 2px;
+  color: var(--lv-nota);
+  overflow: visible;
+}
+
+/* Estado vazio e erro (.lv-empty do Estúdio) com texto alinhado */
+.lv-app .lv-empty p {
+  max-width: 440px;
+}
+
 /* Tipografia --------------------------------------------------------------- */
 .lv-kicker {
   font-family: 'Barlow', 'Plus Jakarta Sans', sans-serif;
@@ -344,91 +630,6 @@
   background: var(--lv-line);
 }
 
-/* Superfícies --------------------------------------------------------------- */
-.lv-card {
-  background: var(--lv-paper);
-  border: 1px solid var(--lv-line);
-  border-radius: 10px;
-}
-.lv-section {
-  margin-top: 36px;
-}
-.lv-section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.lv-divider-month {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 28px 0 14px;
-}
-.lv-divider-month::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: repeating-linear-gradient(90deg, var(--lv-line-2) 0 6px, transparent 6px 11px);
-}
-
-/* Ingresso (para o que é seu) ----------------------------------------------- */
-.lv-tix {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr;
-  background: var(--lv-paper);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.lv-tix-stub {
-  position: relative;
-  padding: 16px 18px;
-  border-top: 2px dashed var(--lv-line-2);
-}
-.lv-tix-stub::before,
-.lv-tix-stub::after {
-  content: '';
-  position: absolute;
-  top: -12px;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: var(--lv-ink);
-}
-.lv-tix-stub::before {
-  left: -11px;
-}
-.lv-tix-stub::after {
-  right: -11px;
-}
-.lv-tix-body {
-  padding: 18px;
-}
-@media (min-width: 720px) {
-  .lv-tix--h {
-    grid-template-columns: minmax(0, 1fr) 236px;
-  }
-  .lv-tix--h .lv-tix-stub {
-    border-top: 0;
-    border-left: 2px dashed var(--lv-line-2);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .lv-tix--h .lv-tix-stub::before {
-    top: -11px;
-    left: -12px;
-  }
-  .lv-tix--h .lv-tix-stub::after {
-    top: auto;
-    bottom: -11px;
-    left: -12px;
-    right: auto;
-  }
-}
-
 /* Pôster halftone gerado pelos dados ---------------------------------------- */
 .lv-poster {
   --p-bg: var(--lv-ink);
@@ -668,130 +869,13 @@
   }
 }
 
-/* Busca, abas e filtros ------------------------------------------------------- */
-.lv-search {
-  position: relative;
-}
-.lv-search input {
-  width: 100%;
-  height: 52px;
-  padding: 0 44px 0 46px;
-  background: var(--lv-paper);
-  border: 1.5px solid var(--lv-line-2);
-  border-radius: 8px;
-  color: var(--lv-cream);
-  font-size: 16px;
-  font-weight: 600;
-  transition: border-color 0.15s ease;
-}
-.lv-search input::placeholder {
-  color: var(--lv-dim);
-  font-weight: 500;
-}
-.lv-search input:focus {
-  outline: none;
-  border-color: var(--lv-cyan);
-}
-.lv-search > svg {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  color: var(--lv-dim);
-  pointer-events: none;
-}
-.lv-search-clear {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-.lv-tabs2 {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 8px;
-  background: var(--lv-paper);
-  border: 1px solid var(--lv-line);
-}
-.lv-tabs2 button {
-  padding: 8px 16px;
-  border-radius: 5px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--lv-muted);
-  background: none;
-  border: 0;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.lv-tabs2 button[aria-selected='true'] {
-  background: var(--lv-cream);
-  color: var(--lv-ink);
-}
-.lv-chips {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 2px 0;
-}
-.lv-chips::-webkit-scrollbar {
-  display: none;
-}
-.lv-chip {
-  position: relative;
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid var(--lv-line-2);
-  background: transparent;
-  color: var(--lv-cream);
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
-}
-.lv-chip:hover {
-  border-color: var(--lv-cyan);
-}
-.lv-chip[data-on='true'] {
-  background: rgba(79, 220, 222, 0.12);
-  border-color: var(--lv-cyan);
-  color: var(--lv-cyan);
-}
-.lv-chip svg {
-  width: 15px;
-  height: 15px;
-}
-.lv-chip select {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-  font-size: 16px;
-}
-.lv-chip select option {
-  background: var(--lv-paper);
-  color: var(--lv-cream);
-}
-
 /* Etiquetas ------------------------------------------------------------------ */
 .lv-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: 3px;
   font-family: 'Barlow', sans-serif;
   font-size: 10.5px;
   font-weight: 700;
@@ -889,20 +973,6 @@
   margin-left: -9px;
 }
 
-/* Progresso em picotes ------------------------------------------------------- */
-.lv-perfs {
-  display: grid;
-  gap: 3px;
-  height: 10px;
-}
-.lv-perfs span {
-  border-radius: 1px;
-  background: var(--lv-line-2);
-}
-.lv-perfs span[data-on='true'] {
-  background: var(--lv-cyan);
-}
-
 /* Silhuetas de carregamento -------------------------------------------------- */
 @keyframes lvPulse {
   0%,
@@ -937,116 +1007,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 11px 16px;
-  border-radius: 8px;
+  padding: 12px 18px;
+  border-radius: 4px;
   background: var(--lv-cream);
   color: var(--lv-ink);
   font-size: 13.5px;
   font-weight: 700;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   white-space: nowrap;
-}
-
-/* Linha de lista (agenda, memórias) ------------------------------------------ */
-.lv-row2 {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  color: inherit;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: background-color 0.15s ease;
-}
-a.lv-row2:hover {
-  background: var(--lv-raise);
-}
-.lv-datebox {
-  flex-shrink: 0;
-  width: 52px;
-  text-align: center;
-  padding: 6px 0 7px;
-  border-radius: 6px;
-  border: 1px solid var(--lv-line-2);
-  background: var(--lv-ink);
-}
-.lv-datebox b {
-  display: block;
-  font-family: 'RAYDIS', 'Alfa Slab One', sans-serif;
-  font-weight: 700;
-  font-size: 22px;
-  line-height: 1;
-  color: var(--lv-cream);
-}
-.lv-datebox span {
-  display: block;
-  margin-top: 3px;
-  font-family: 'Barlow', sans-serif;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--lv-dim);
-}
-
-/* Botão em largura total no celular ----------------------------------------- */
-.lv-btn-block {
-  width: 100%;
-}
-@media (min-width: 640px) {
-  .lv-btn-block {
-    width: auto;
-    min-width: 220px;
-  }
-}
-
-/* Página do show: no celular, pôster menor ao lado do título (o Eu fui aparece sem rolar);
-   no computador, pôster fixo na coluna da esquerda. */
-.lv-showpage {
-  display: grid;
-  grid-template-columns: minmax(0, 38%) minmax(0, 1fr);
-  grid-template-areas:
-    'poster head'
-    'body body';
-  gap: 0 16px;
-  align-items: start;
-}
-.lv-showpage-poster {
-  grid-area: poster;
-}
-.lv-showpage-head {
-  grid-area: head;
-  min-width: 0;
-}
-.lv-showpage-body {
-  grid-area: body;
-  min-width: 0;
-}
-.lv-showpage-head .lv-h1 {
-  font-size: clamp(24px, 7vw, 34px);
-}
-@media (min-width: 640px) {
-  .lv-showpage {
-    grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
-    gap: 0 28px;
-  }
-}
-@media (min-width: 1024px) {
-  .lv-showpage {
-    grid-template-columns: minmax(0, 380px) minmax(0, 1fr);
-    grid-template-areas:
-      'poster head'
-      'poster body';
-    grid-template-rows: auto 1fr;
-    gap: 0 48px;
-  }
-  .lv-showpage-poster {
-    position: sticky;
-    top: 88px;
-  }
-  .lv-showpage-head .lv-h1 {
-    font-size: 44px;
-  }
 }
 
 /* Início: no computador, coluna principal + coluna lateral */
@@ -1059,7 +1027,7 @@ a.lv-row2:hover {
   .lv-home {
     grid-template-columns: minmax(0, 1fr) 360px;
   }
-  .lv-home-side > .lv-section:first-child {
+  .lv-home-side > section:first-child > .lv-grp {
     margin-top: 0;
   }
 }

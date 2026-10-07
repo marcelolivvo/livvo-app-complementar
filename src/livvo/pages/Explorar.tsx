@@ -1,41 +1,35 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Search, X, Check, CalendarDays, MapPin, Building2, PlusCircle } from 'lucide-react';
+import { Search, X, PlusCircle } from 'lucide-react';
 import { combina, ehFuturo, useCatalogo, type Show } from '../data/catalog';
 import { socialDoShow } from '../data/social';
 import { mesAno, plural } from '../format';
 import { Link, setQuery, useRoute } from '../router';
 import { useLivvo } from '../store';
-import { Avatar, CardShow, GradeCarregando, TagExemplo } from '../ui';
+import { Avatar, Bilhete, CardShow, GradeCarregando, Grupo, TagExemplo } from '../ui';
 
 const PAGINA = 40;
 
 const milhar = (n: number) => `${(Math.round(n / 100) / 10).toLocaleString('pt-BR')} mil`;
 
-/** Seletor em formato de chip (usa o <select> nativo por baixo: acessível e bom no celular). */
-const ChipSelect: React.FC<{
+/** Filtro como os campos do Estúdio: rótulo em caixa alta e <select> nativo sublinhado. */
+const Filtro: React.FC<{
   rotulo: string;
-  icone: React.ReactNode;
   valor: string;
   opcoes: Array<{ valor: string; rotulo: string }>;
   onChange: (v: string) => void;
-}> = ({ rotulo, icone, valor, opcoes, onChange }) => {
-  const atual = opcoes.find((o) => o.valor === valor);
-  return (
-    <label className="lv-chip" data-on={Boolean(valor)}>
-      {icone}
-      <span>{atual ? atual.rotulo : rotulo}</span>
-      <ChevronDown />
-      <select aria-label={rotulo} value={valor} onChange={(e) => onChange(e.target.value)}>
-        <option value="">{`Qualquer ${rotulo.toLowerCase()}`}</option>
-        {opcoes.map((o) => (
-          <option key={o.valor} value={o.valor}>
-            {o.rotulo}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-};
+}> = ({ rotulo, valor, opcoes, onChange }) => (
+  <label className="lv-campo">
+    <span className="lv-label">{rotulo}</span>
+    <select className="lv-input" value={valor} onChange={(e) => onChange(e.target.value)} data-on={Boolean(valor)}>
+      <option value="">Todas</option>
+      {opcoes.map((o) => (
+        <option key={o.valor} value={o.valor}>
+          {o.rotulo}
+        </option>
+      ))}
+    </select>
+  </label>
+);
 
 export const Explorar: React.FC = () => {
   const { query } = useRoute();
@@ -69,6 +63,12 @@ export const Explorar: React.FC = () => {
     if (!catalogo) return [];
     return catalogo.shows.filter((s) => (aba === 'proximos' ? ehFuturo(s) : !ehFuturo(s)));
   }, [catalogo, aba]);
+
+  const contagem = useMemo(() => {
+    if (!catalogo) return { passados: 0, proximos: 0 };
+    const proximos = catalogo.shows.filter(ehFuturo).length;
+    return { passados: catalogo.shows.length - proximos, proximos };
+  }, [catalogo]);
 
   const opcoes = useMemo(() => {
     const cidades = new Map<string, number>();
@@ -144,87 +144,107 @@ export const Explorar: React.FC = () => {
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="lv-kicker lv-kicker--cyan">Explorar</div>
-          <h1 className="lv-h1 mt-1">Shows</h1>
-          <p className="lv-sub mt-2 max-w-xl">Encontre um show que você viveu para guardar na sua história, ou um que vem aí.</p>
-        </div>
-      </div>
+      <Bilhete
+        rotulo="Buscar shows"
+        esquerda={
+          <>
+            Livvo · <b>Shows</b>
+          </>
+        }
+        direita={catalogo ? `${milhar(catalogo.totalCatalogo)} no catálogo` : ' '}
+      >
+        <div className="lv-pad">
+          <h1 className="lv-h1">Encontre o seu show</h1>
+          <p className="lv-sub mt-2 max-w-xl">Um show que você viveu, para guardar na sua história, ou um que vem aí.</p>
 
-      <div className="mt-6 space-y-4">
-        <div className="lv-search">
-          <Search />
-          <input
-            type="search"
-            inputMode="search"
-            enterKeyHint="search"
-            value={termo}
-            onChange={(e) => setTermo(e.target.value)}
-            placeholder="Artista, casa de show ou cidade"
-            aria-label="Buscar shows por artista, casa de show ou cidade"
-          />
-          {termo && (
-            <button type="button" className="lv-iconbtn lv-search-clear" aria-label="Limpar busca" onClick={() => setTermo('')}>
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="lv-tabs2" role="tablist" aria-label="Período">
-            <button type="button" role="tab" aria-selected={aba === 'passados'} onClick={() => setQuery({ aba: null, ano: null })}>
-              Passados
-            </button>
-            <button type="button" role="tab" aria-selected={aba === 'proximos'} onClick={() => setQuery({ aba: 'proximos', ano: null, fui: null })}>
-              Próximos
-            </button>
+          <div className="mt-6 grid gap-x-6 gap-y-5 grid-cols-3 lg:grid-cols-[minmax(0,2.2fr)_repeat(3,minmax(0,1fr))]">
+            <label className="lv-campo col-span-3 lg:col-span-1">
+              <span className="lv-label">Artista, casa ou cidade</span>
+              <span className="lv-busca">
+                <Search />
+                <input
+                  className="lv-input"
+                  type="search"
+                  inputMode="search"
+                  enterKeyHint="search"
+                  value={termo}
+                  onChange={(e) => setTermo(e.target.value)}
+                  placeholder="Busque uma banda, casa ou cidade"
+                />
+                {termo && (
+                  <button type="button" className="lv-iconbtn" aria-label="Limpar busca" onClick={() => setTermo('')}>
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </span>
+            </label>
+            <Filtro rotulo="Cidade" valor={cidade} opcoes={opcoes.cidades} onChange={(v) => setQuery({ cidade: v || null, casa: null })} />
+            {aba === 'passados' ? (
+              <Filtro rotulo="Ano" valor={ano} opcoes={opcoes.anos} onChange={(v) => setQuery({ ano: v || null })} />
+            ) : (
+              <span />
+            )}
+            <Filtro rotulo="Casa" valor={casa} opcoes={opcoes.casas} onChange={(v) => setQuery({ casa: v || null })} />
           </div>
-          {aba === 'proximos' && <TagExemplo texto="Datas de exemplo" title="O catálogo real ainda não tem shows futuros. Estas datas são fictícias, para mostrar a agenda." />}
-        </div>
 
-        <div className="lv-chips" aria-label="Filtros">
-          <ChipSelect rotulo="Cidade" icone={<MapPin />} valor={cidade} opcoes={opcoes.cidades} onChange={(v) => setQuery({ cidade: v || null, casa: null })} />
-          {aba === 'passados' && (
-            <ChipSelect rotulo="Ano" icone={<CalendarDays />} valor={ano} opcoes={opcoes.anos} onChange={(v) => setQuery({ ano: v || null })} />
-          )}
-          <ChipSelect rotulo="Casa" icone={<Building2 />} valor={casa} opcoes={opcoes.casas} onChange={(v) => setQuery({ casa: v || null })} />
-          {logado && aba === 'passados' && (
-            <button type="button" className="lv-chip" data-on={soFui} aria-pressed={soFui} onClick={() => setQuery({ fui: soFui ? null : '1' })}>
-              <Check /> Shows que eu fui
-            </button>
-          )}
-          {temFiltro && (
-            <button
-              type="button"
-              className="lv-link ml-1 shrink-0"
-              onClick={() => {
-                setTermo('');
-                setQuery({ q: null, cidade: null, ano: null, casa: null, fui: null });
-              }}
-            >
-              Limpar
-            </button>
-          )}
+          <div className="mt-7 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+            <div className="lv-tabs" role="tablist" aria-label="Período">
+              <button type="button" role="tab" aria-selected={aba === 'passados'} data-on={aba === 'passados'} onClick={() => setQuery({ aba: null, ano: null })}>
+                Passados <span className="lv-mono">{contagem.passados.toLocaleString('pt-BR')}</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={aba === 'proximos'}
+                data-on={aba === 'proximos'}
+                onClick={() => setQuery({ aba: 'proximos', ano: null, fui: null })}
+              >
+                Próximos <span className="lv-mono">{contagem.proximos}</span>
+              </button>
+            </div>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pb-2">
+              {logado && aba === 'passados' && (
+                <label className="lv-check !py-0 text-[13.5px] font-bold">
+                  <input type="checkbox" className="accent-[#4FDCDE] w-4 h-4" checked={soFui} onChange={() => setQuery({ fui: soFui ? null : '1' })} />
+                  Só shows que eu fui
+                </label>
+              )}
+              {aba === 'proximos' && (
+                <TagExemplo texto="Datas de exemplo" title="O catálogo real ainda não tem shows futuros. Estas datas são fictícias, para mostrar a agenda." />
+              )}
+              {temFiltro && (
+                <button
+                  type="button"
+                  className="lv-link"
+                  onClick={() => {
+                    setTermo('');
+                    setQuery({ q: null, cidade: null, ano: null, casa: null, fui: null });
+                  }}
+                >
+                  Limpar filtros
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
+      </Bilhete>
 
       <div className="mt-5" aria-live="polite">
         {erro ? (
-          <div className="lv-card p-6 text-center">
+          <div className="lv-empty">
             <p className="font-bold">Não conseguimos carregar os shows agora.</p>
-            <p className="lv-meta mt-1">Confira a conexão e tente de novo.</p>
-            <button type="button" className="lv-ghost mt-4" onClick={tentarDeNovo}>
+            <p className="lv-meta">Confira a conexão e tente de novo.</p>
+            <button type="button" className="lv-ghost" onClick={tentarDeNovo}>
               Tentar de novo
             </button>
           </div>
         ) : !catalogo ? (
           <GradeCarregando />
         ) : filtrados.length === 0 ? (
-          <div className="lv-card p-6 sm:p-8 text-center">
+          <div className="lv-empty">
             <p className="lv-h2">Nenhum show encontrado{termoUrl ? ` para “${termoUrl}”` : ''}.</p>
-            <p className="lv-sub mt-2">Confira o nome ou tire um filtro. Se o show não está no catálogo, você pode pedir a inclusão.</p>
-            <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <p className="lv-sub">Confira o nome ou tire um filtro. Se o show não está no catálogo, você pode pedir a inclusão.</p>
+            <div className="flex flex-wrap justify-center gap-3">
               <Link to={`/registrar${termoUrl ? `?q=${encodeURIComponent(termoUrl)}` : ''}`} className="lv-ghost">
                 <PlusCircle className="w-4 h-4" /> Meu show não está aqui
               </Link>
@@ -243,10 +263,8 @@ export const Explorar: React.FC = () => {
             </p>
             {grupos.map((g) => (
               <section key={g.chave} aria-label={g.titulo}>
-                <div className="lv-divider-month">
-                  <h2 className="lv-kicker">{g.titulo}</h2>
-                </div>
-                <div className="lv-grid lv-grid--5">
+                <Grupo titulo={g.titulo} />
+                <div className="lv-grid lv-grid--5 mt-4">
                   {g.shows.map((s) => (
                     <CardShow key={s.id} show={s} fui={fuiIds.has(s.id)} linhaSocial={linhaSocial(s)} />
                   ))}

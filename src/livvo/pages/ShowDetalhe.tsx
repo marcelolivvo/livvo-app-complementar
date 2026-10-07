@@ -1,34 +1,17 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ArrowLeft,
-  CalendarDays,
-  ExternalLink,
-  ListMusic,
-  MapPin,
-  MessageCircle,
-  Share2,
-  Ticket,
-  UserCheck,
-  UserPlus,
-  Lock,
-  Users,
-  Check,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ExternalLink, MessageCircle, Share2, Ticket, UserCheck, UserPlus } from 'lucide-react';
 import { ehFuturo, useCatalogo, type Show } from '../data/catalog';
 import { MIN_AMOSTRA_NOTAS, socialDoShow, type ResenhaExemplo } from '../data/social';
-import { dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
+import { dataCartao, dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
 import { Link, navigate, useRoute } from '../router';
 import { livvo, nivelVerificacao, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
-import { Avatar, CardShow, CarimboFui, Discos, Poster, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
+import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
 
 const ROTULO_VISIBILIDADE = { privado: 'Só você vê', seguidores: 'Visível para quem te segue', publico: 'Visível para todos' };
 
 const Bloco: React.FC<{ titulo: string; extra?: React.ReactNode; children: React.ReactNode; id?: string }> = ({ titulo, extra, children, id }) => (
-  <section className="lv-section" id={id} aria-label={titulo}>
-    <div className="lv-section-head">
-      <h2 className="lv-h2">{titulo}</h2>
-      {extra}
-    </div>
+  <section id={id} aria-label={titulo}>
+    <Grupo titulo={titulo} extra={extra} />
     {children}
   </section>
 );
@@ -55,55 +38,48 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
   };
 
   return (
-    <div className="lv-tix lv-tix--h mt-6" id="minha-memoria">
-      <div className="lv-tix-body lv-stage">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="lv-kicker lv-kicker--cyan">Sua memória</div>
-            <p className="lv-meta mt-1">
-              Registrada em {dataCurta(memoria.criadaEm)} · {ROTULO_VISIBILIDADE[memoria.visibilidade]}
-            </p>
-          </div>
-          <CarimboFui animar={recem} />
+    <div className="lv-passport" id="minha-memoria">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="lv-eyebrow !text-[#4FDCDE]">Sua memória</div>
+          <p className="lv-meta mt-1">
+            Registrada em {dataCurta(memoria.criadaEm)} · {ROTULO_VISIBILIDADE[memoria.visibilidade]}
+          </p>
         </div>
-
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <div>
-            <div className="lv-kicker">Nota do show</div>
-            <div className="mt-2 flex items-center gap-3">
-              <Discos valor={memoria.notaShow} onChange={(v) => salvarNota('notaShow', v)} tamanho={30} rotulo="Nota do show" />
-              {memoria.notaShow !== undefined && <span className="lv-nota-num text-[22px]">{nota(memoria.notaShow)}</span>}
-            </div>
-          </div>
-          <div ref={orgRef}>
-            <div className="lv-kicker">Nota da organização</div>
-            <div className="mt-2 flex items-center gap-3">
-              <Discos
-                valor={memoria.notaOrganizacao}
-                onChange={(v) => salvarNota('notaOrganizacao', v)}
-                tamanho={30}
-                rotulo="Nota da organização"
-              />
-              {memoria.notaOrganizacao !== undefined && <span className="lv-nota-num text-[22px]">{nota(memoria.notaOrganizacao)}</span>}
-            </div>
-          </div>
-        </div>
-        <p className="lv-meta mt-4">Duas notas para o artista não pagar pela fila do bar. Toque no disco: metade esquerda vale meio ponto.</p>
+        <CarimboFui animar={recem} />
       </div>
 
-      <div className="lv-tix-stub">
-        <div className="lv-kicker">Verificação</div>
-        <div className="mt-2 flex items-center gap-2">
+      <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <div>
+          <div className="lv-label">Nota do show</div>
+          <div className="mt-2 flex items-center gap-3">
+            <Discos valor={memoria.notaShow} onChange={(v) => salvarNota('notaShow', v)} tamanho={28} rotulo="Nota do show" />
+            {memoria.notaShow !== undefined && <span className="lv-nota-num text-[22px]">{nota(memoria.notaShow)}</span>}
+          </div>
+        </div>
+        <div ref={orgRef}>
+          <div className="lv-label">Nota da organização</div>
+          <div className="mt-2 flex items-center gap-3">
+            <Discos valor={memoria.notaOrganizacao} onChange={(v) => salvarNota('notaOrganizacao', v)} tamanho={28} rotulo="Nota da organização" />
+            {memoria.notaOrganizacao !== undefined && <span className="lv-nota-num text-[22px]">{nota(memoria.notaOrganizacao)}</span>}
+          </div>
+        </div>
+      </div>
+      <p className="lv-meta mt-4">Duas notas para o artista não pagar pela fila do bar. Toque no disco: metade esquerda vale meio ponto.</p>
+
+      <div className="mt-4 pt-4 border-t border-dashed border-[#3A3159]">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="lv-label">Verificação</span>
           <span className="lv-tag lv-tag--teal">{ROTULO_VERIFICACAO[nivel]}</span>
         </div>
         <p className="lv-meta mt-2 leading-snug">Suba o selo com foto, ingresso ou um amigo que confirme que você estava lá.</p>
-        <div className="mt-3 flex flex-col items-start gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
           <span className="inline-flex items-center gap-2 text-[13px] font-bold text-[#B3AE9F]">
             <Ticket className="w-4 h-4 text-[#2FB8BA]" /> Ingresso de Memória <TagProxima parte={2} />
           </span>
           <button
             type="button"
-            className={`lv-link ${confirmar ? '' : 'text-[#8A8577]'}`}
+            className={`lv-link ${confirmar ? '' : '!text-[#8A8577]'}`}
             onClick={() => {
               if (!confirmar) return setConfirmar(true);
               livvo.remover(memoria.id);
@@ -119,7 +95,7 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
 };
 
 const CardResenha: React.FC<{ r: ResenhaExemplo; exemplo: boolean }> = ({ r, exemplo }) => (
-  <article className="lv-card p-4">
+  <article className="py-4 border-b border-dashed border-[#282141]">
     <header className="flex items-center gap-3">
       <Avatar nome={r.pessoa.nome} tamanho={38} />
       <div className="min-w-0 flex-1">
@@ -133,12 +109,12 @@ const CardResenha: React.FC<{ r: ResenhaExemplo; exemplo: boolean }> = ({ r, exe
     </header>
     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
       <span className="inline-flex items-center gap-2">
-        <span className="lv-kicker">Show</span>
+        <span className="lv-label">Show</span>
         <Discos valor={r.notaShow} tamanho={15} rotulo="Nota do show" />
         <span className="lv-nota-num text-[14px]">{nota(r.notaShow)}</span>
       </span>
       <span className="inline-flex items-center gap-2">
-        <span className="lv-kicker">Organização</span>
+        <span className="lv-label">Organização</span>
         <Discos valor={r.notaOrganizacao} tamanho={15} rotulo="Nota da organização" />
         <span className="lv-nota-num text-[14px]">{nota(r.notaOrganizacao)}</span>
       </span>
@@ -199,9 +175,9 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
 
   if (erro) {
     return (
-      <div className="lv-card p-6 text-center">
+      <div className="lv-empty">
         <p className="font-bold">Não conseguimos abrir este show agora.</p>
-        <button type="button" className="lv-ghost mt-4" onClick={tentarDeNovo}>
+        <button type="button" className="lv-ghost" onClick={tentarDeNovo}>
           Tentar de novo
         </button>
       </div>
@@ -222,10 +198,10 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
   }
   if (!show || !soc) {
     return (
-      <div className="lv-card p-8 text-center">
+      <div className="lv-empty">
         <p className="lv-h2">Não encontramos este show.</p>
-        <p className="lv-sub mt-2">O link pode estar incompleto, ou o show ainda não está no catálogo.</p>
-        <Link to="/explorar" className="lv-btn lv-btn--cyan mt-6">
+        <p className="lv-sub">O link pode estar incompleto, ou o show ainda não está no catálogo.</p>
+        <Link to="/explorar" className="lv-btn lv-btn--cyan">
           Explorar shows
         </Link>
       </div>
@@ -256,12 +232,49 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
     ? `Bora? ${show.artista} · ${show.casa}, ${show.cidade} · ${dataCurta(show.ts)}. ${url}`
     : `Lembra deste show? ${show.artista} · ${show.casa} · ${dataCurta(show.ts)}. Guardei no Livvo: ${url}`;
 
+  const cabecalho = (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="lv-kicker lv-kicker--cyan">{show.turne || (futuro ? 'Show que vem aí' : 'Show ao vivo')}</span>
+        {show.exemplo && <TagExemplo texto="Show de exemplo" title="O catálogo real ainda não tem shows futuros. Este show e a data são fictícios." />}
+      </div>
+      <h1 className="lv-h1 mt-2 break-words">{show.artista}</h1>
+      <div className="mt-3 space-y-1 text-[14px] sm:text-[14.5px] text-[#B3AE9F]">
+        <p>
+          <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="text-[#ECE5D1] font-bold hover:underline">
+            {show.casa}
+          </Link>{' '}
+          · {show.cidade}, {show.uf}
+        </p>
+        <p>
+          <span className="first-letter:uppercase inline-block">{dataLonga(show.ts)}</span> · {quando(show.ts)}
+        </p>
+      </div>
+    </>
+  );
+
+  const linhaOutroShow = (s: Show, titulo: 'casa' | 'artista') => {
+    const fui = Boolean(lv.memoriaDoShow(s.id));
+    const d = dataCartao(s.ts);
+    return (
+      <Linha
+        key={s.id}
+        to={`/show/${s.id}`}
+        inicio={<CaixaData ts={s.ts} comAno />}
+        titulo={titulo === 'casa' ? s.casa : s.artista}
+        sub={titulo === 'casa' ? `${s.cidade} · ${d.semana}` : `${s.casa} · ${d.semana}`}
+        fim={fui ? <CarimboFui /> : <ArrowRight className="w-4 h-4 lv-show-go" />}
+        rotulo={`${s.artista}, ${s.casa}, ${d.dia} ${d.mes} ${d.ano}${fui ? ', você foi' : ''}`}
+      />
+    );
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3 -mt-1 mb-4">
         <button
           type="button"
-          className="lv-link text-[#B3AE9F]"
+          className="lv-link !text-[#B3AE9F]"
           onClick={() => (window.history.length > 1 ? window.history.back() : navigate('/explorar'))}
         >
           <ArrowLeft className="w-4 h-4" /> Voltar
@@ -275,158 +288,170 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         </button>
       </div>
 
-      <div className="lv-showpage">
-        <div className="lv-showpage-poster">
-          <Poster show={show}>
-            {minha && (
-              <span className="lv-poster-flag max-lg:hidden">
-                <CarimboFui animar={recem} />
-              </span>
-            )}
-          </Poster>
-          <p className="lv-meta mt-2 text-center hidden lg:block">Pôster gerado pelos dados do show</p>
-        </div>
-
-        <div className="lv-showpage-head">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="lv-kicker lv-kicker--cyan">{show.turne || (futuro ? 'Show que vem aí' : 'Show ao vivo')}</span>
-            {show.exemplo && <TagExemplo texto="Show de exemplo" title="O catálogo real ainda não tem shows futuros. Este show e a data são fictícios." />}
-          </div>
-          <h1 className="lv-h1 mt-2 break-words">{show.artista}</h1>
-          <div className="mt-3 sm:mt-4 space-y-1.5 text-[14px] sm:text-[14.5px] text-[#B3AE9F]">
-            <p className="flex items-start gap-2">
-              <MapPin className="w-4 h-4 mt-0.5 shrink-0 text-[#2FB8BA]" />
-              <span className="min-w-0">
-                <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="text-[#ECE5D1] font-bold hover:underline">
-                  {show.casa}
-                </Link>{' '}
-                · {show.cidade}, {show.uf}
-              </span>
-            </p>
-            <p className="flex items-start gap-2">
-              <CalendarDays className="w-4 h-4 mt-0.5 shrink-0 text-[#2FB8BA]" />
-              <span>
-                <span className="first-letter:uppercase inline-block">{dataLonga(show.ts)}</span> · {quando(show.ts)}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        <div className="lv-showpage-body">
-          {/* Ação principal ------------------------------------------------------- */}
-          {futuro ? (
-            <div className="mt-7">
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  className={interesse === 'quero_ir' ? 'lv-btn lv-btn--cream' : interesse ? 'lv-ghost !py-[14px]' : 'lv-btn lv-btn--cyan'}
-                  aria-pressed={interesse === 'quero_ir'}
-                  onClick={() => marcar('quero_ir')}
-                >
-                  {interesse === 'quero_ir' && <Check className="w-4 h-4" strokeWidth={3} />}
-                  Quero ir
-                </button>
-                <button
-                  type="button"
-                  className={interesse === 'tenho_ingresso' ? 'lv-btn lv-btn--cream' : 'lv-ghost !py-[14px]'}
-                  aria-pressed={interesse === 'tenho_ingresso'}
-                  onClick={() => marcar('tenho_ingresso')}
-                >
-                  {interesse === 'tenho_ingresso' ? <Check className="w-4 h-4" strokeWidth={3} /> : <Ticket className="w-4 h-4" />}
-                  Tenho ingresso
-                </button>
+      <Bilhete
+        rotulo={show.artista}
+        esquerda={
+          <>
+            Livvo · <b>Shows</b>
+          </>
+        }
+        direita={dataCurta(show.ts)}
+      >
+        <div className="lv-split lv-split--palco-esq">
+          <div className="lv-stage p-4 sm:p-6 lg:p-8">
+            <div className="grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block">
+              <div>
+                <Poster show={show} />
+                <p className="lv-eyebrow mt-3 text-center hidden lg:block">Pôster gerado pelos dados do show</p>
               </div>
-              <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-3">
-                <div className="flex items-baseline gap-2">
-                  <span className="lv-num text-[40px] text-[#ECE5D1]">{dias}</span>
-                  <span className="lv-kicker">{dias === 1 ? 'dia para o show' : 'dias para o show'}</span>
+              <div className="min-w-0 lg:hidden">{cabecalho}</div>
+            </div>
+          </div>
+          <div className="lv-perf" aria-hidden="true" />
+          <div className="p-4 sm:p-6 lg:p-8 min-w-0">
+            <div className="hidden lg:block">{cabecalho}</div>
+
+            {/* Ação principal: uma por estado ------------------------------------- */}
+            {futuro ? (
+              <div className="lg:mt-7">
+                <div className="flex flex-wrap gap-3">
+                  {interesse === 'quero_ir' ? (
+                    <Stub icone={Check} cor="cream" aria-pressed onClick={() => marcar('quero_ir')}>
+                      Quero ir
+                    </Stub>
+                  ) : (
+                    <button
+                      type="button"
+                      className={interesse ? 'lv-ghost !py-[14px]' : 'lv-btn lv-btn--stub lv-btn--cyan'}
+                      aria-pressed={false}
+                      onClick={() => marcar('quero_ir')}
+                    >
+                      {!interesse && <Check className="w-4 h-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />}
+                      <span>Quero ir</span>
+                    </button>
+                  )}
+                  {interesse === 'tenho_ingresso' ? (
+                    <Stub icone={Check} cor="cream" aria-pressed onClick={() => marcar('tenho_ingresso')}>
+                      Tenho ingresso
+                    </Stub>
+                  ) : (
+                    <button type="button" className="lv-ghost !py-[14px]" aria-pressed={false} onClick={() => marcar('tenho_ingresso')}>
+                      <Ticket className="w-4 h-4" /> Tenho ingresso
+                    </button>
+                  )}
                 </div>
-                <span className="lv-meta max-w-xs">
-                  Quem marca Quero ir recebe lembrete na véspera e o “Como foi?” na manhã seguinte.
-                </span>
+                <dl className="lv-fields mt-6" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
+                  <div>
+                    <dt>{dias === 1 ? 'Dia para o show' : 'Dias para o show'}</dt>
+                    <dd className="lv-num">{dias}</dd>
+                    <span>Quem marca Quero ir recebe lembrete na véspera</span>
+                  </div>
+                </dl>
+                <p className="lv-meta mt-4">O link da ticketeira aparece aqui quando o show vem de uma fonte oficial.</p>
               </div>
-              <p className="lv-meta mt-4 flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5" /> O link da ticketeira aparece aqui quando o show vem de uma fonte oficial.
-              </p>
-            </div>
-          ) : minha ? (
-            <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} />
-          ) : (
-            <div className="mt-7">
-              <button type="button" className="lv-btn lv-btn--cyan lv-btn-block" onClick={euFui}>
-                Eu fui
-              </button>
-              <p className="lv-meta mt-3">Guarde este show na sua história. Leva um toque; as notas você dá logo depois.</p>
-            </div>
-          )}
-
-          {/* Prova social -------------------------------------------------------- */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            {outrasPessoas > 0 ? (
-              <>
-                <span className="lv-av-stack">
-                  {soc.pessoas.slice(0, 4).map((p) => (
-                    <Avatar key={p.usuario} nome={p.nome} tamanho={30} />
-                  ))}
-                </span>
-                <span className="text-[14px] font-bold">
-                  {futuro
-                    ? plural(soc.registros, 'pessoa quer ir', 'pessoas querem ir')
-                    : `${plural(soc.registros, 'pessoa registrou', 'pessoas registraram')} este show${minha ? ', com você' : ''}`}
-                </span>
-                {lv.exemplos && <TagExemplo />}
-              </>
+            ) : minha ? (
+              <div className="lg:mt-7">
+                <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} />
+              </div>
             ) : (
-              !futuro &&
-              !minha && <span className="lv-meta">Ninguém registrou este show ainda. Seja a primeira pessoa.</span>
+              <div className="lg:mt-7">
+                <Stub icone={Check} onClick={euFui} className="w-full sm:w-auto sm:min-w-[240px]">
+                  Eu fui
+                </Stub>
+                <p className="lv-meta mt-3">Guarde este show na sua história. Leva um toque; as notas você dá logo depois.</p>
+              </div>
             )}
-          </div>
 
+            {/* Prova social ------------------------------------------------------- */}
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              {outrasPessoas > 0 ? (
+                <>
+                  <span className="lv-av-stack">
+                    {soc.pessoas.slice(0, 4).map((p) => (
+                      <Avatar key={p.usuario} nome={p.nome} tamanho={28} />
+                    ))}
+                  </span>
+                  <span className="text-[13.5px] font-bold">
+                    {futuro
+                      ? plural(soc.registros, 'pessoa quer ir', 'pessoas querem ir')
+                      : `${plural(soc.registros, 'pessoa registrou', 'pessoas registraram')} este show${minha ? ', com você' : ''}`}
+                  </span>
+                  {lv.exemplos && <TagExemplo />}
+                </>
+              ) : (
+                !futuro && !minha && <span className="lv-meta">Ninguém registrou este show ainda. Seja a primeira pessoa.</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </Bilhete>
+
+      <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
+        <div className="min-w-0">
           {/* Notas da comunidade ------------------------------------------------- */}
           {!futuro && soc.media && (
             <Bloco titulo="Como foi, para quem estava lá" extra={lv.exemplos ? <TagExemplo /> : undefined}>
-              <div className="lv-card p-5">
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <div className="lv-kicker">Show</div>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className="lv-nota-num text-[38px]">{nota(soc.media.show)}</span>
-                      <Discos valor={Math.round(soc.media.show * 2) / 2} tamanho={20} rotulo="Média do show" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="lv-kicker">Organização</div>
-                    <div className="mt-2 flex items-center gap-3">
-                      <span className="lv-nota-num text-[38px]">{nota(soc.media.organizacao)}</span>
-                      <Discos valor={Math.round(soc.media.organizacao * 2) / 2} tamanho={20} rotulo="Média da organização" />
-                    </div>
-                  </div>
+              <dl className="lv-fields lv-fields--notas mt-4" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+                <div>
+                  <dt>Show</dt>
+                  <dd className="lv-nota-num">{nota(soc.media.show)}</dd>
+                  <Discos valor={Math.round(soc.media.show * 2) / 2} tamanho={16} rotulo="Média do show" />
                 </div>
-                {soc.dimensoesMaisCitadas.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {soc.dimensoesMaisCitadas.map((d) => (
-                      <span key={d.rotulo} className={`lv-tag ${d.positiva ? 'lv-tag--teal' : 'lv-tag--next'}`}>
-                        {d.positiva ? '+' : '−'} {d.rotulo}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <p className="lv-meta mt-4">
-                  Média de {plural(soc.media.amostra, 'avaliação', 'avaliações')}. As médias só aparecem a partir de {MIN_AMOSTRA_NOTAS}.
-                </p>
-              </div>
+                <div>
+                  <dt>Organização</dt>
+                  <dd className="lv-nota-num">{nota(soc.media.organizacao)}</dd>
+                  <Discos valor={Math.round(soc.media.organizacao * 2) / 2} tamanho={16} rotulo="Média da organização" />
+                </div>
+              </dl>
+              {soc.dimensoesMaisCitadas.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {soc.dimensoesMaisCitadas.map((d) => (
+                    <span key={d.rotulo} className={`lv-tag ${d.positiva ? 'lv-tag--teal' : 'lv-tag--next'}`}>
+                      {d.positiva ? '+' : '−'} {d.rotulo}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="lv-meta mt-3">
+                Média de {plural(soc.media.amostra, 'avaliação', 'avaliações')}. As médias só aparecem a partir de {MIN_AMOSTRA_NOTAS}.
+              </p>
             </Bloco>
           )}
 
+          {/* Resenhas -------------------------------------------------------------- */}
+          {!futuro && soc.resenhas.length > 0 && (
+            <Bloco titulo={`Resenhas de quem foi · ${soc.resenhas.length}`}>
+              {soc.resenhas.map((r) => (
+                <CardResenha key={r.pessoa.usuario} r={r} exemplo={lv.exemplos} />
+              ))}
+            </Bloco>
+          )}
+
+          {/* Quem foi / quem vai --------------------------------------------------- */}
+          {soc.pessoas.length > 0 && (
+            <Bloco titulo={futuro ? 'Quem vai' : 'Quem foi'} extra={lv.exemplos ? <TagExemplo /> : undefined}>
+              {soc.pessoas.map((p) => (
+                <Linha
+                  key={p.usuario}
+                  avatar
+                  inicio={<Avatar nome={p.nome} tamanho={36} />}
+                  titulo={p.nome}
+                  sub={`@${p.usuario} · ${p.cidade}`}
+                  fim={<BotaoSeguir usuario={p.usuario} />}
+                />
+              ))}
+              <p className="lv-meta mt-2">Só aparece quem deixou a memória pública.</p>
+            </Bloco>
+          )}
+        </div>
+
+        <div className="min-w-0">
           {/* Setlist --------------------------------------------------------------- */}
           {!futuro && (
             <Bloco titulo="Setlist">
-              <div className="lv-card p-5 flex flex-col sm:flex-row sm:items-center gap-4">
-                <ListMusic className="w-7 h-7 text-[#2FB8BA] shrink-0" />
-                <p className="lv-sub flex-1">
-                  {show.setlistUrl
-                    ? 'A lista de músicas deste show está no setlist.fm, a base que alimenta o catálogo do Livvo.'
-                    : 'Ainda sem setlist para este show.'}
+              <div className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
+                <p className="lv-sub flex-1 min-w-[200px]">
+                  {show.setlistUrl ? 'A lista de músicas deste show está no setlist.fm, a base do catálogo do Livvo.' : 'Ainda sem setlist para este show.'}
                 </p>
                 {show.setlistUrl && (
                   <a href={show.setlistUrl} target="_blank" rel="noopener noreferrer" className="lv-ghost shrink-0">
@@ -437,53 +462,15 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
             </Bloco>
           )}
 
-          {/* Resenhas -------------------------------------------------------------- */}
-          {!futuro && soc.resenhas.length > 0 && (
-            <Bloco titulo="Resenhas de quem foi" extra={<span className="lv-meta">{soc.resenhas.length}</span>}>
-              <div className="grid gap-3">
-                {soc.resenhas.map((r) => (
-                  <CardResenha key={r.pessoa.usuario} r={r} exemplo={lv.exemplos} />
-                ))}
-              </div>
-            </Bloco>
-          )}
-
-          {/* Quem foi / quem vai --------------------------------------------------- */}
-          {soc.pessoas.length > 0 && (
-            <Bloco titulo={futuro ? 'Quem vai' : 'Quem foi'} extra={lv.exemplos ? <TagExemplo /> : undefined}>
-              <ul className="lv-card divide-y divide-[#282141]">
-                {soc.pessoas.map((p) => (
-                  <li key={p.usuario} className="flex items-center gap-3 px-4 py-3">
-                    <Avatar nome={p.nome} tamanho={36} />
-                    <div className="min-w-0 flex-1">
-                      <div className="font-bold text-[14px] truncate">{p.nome}</div>
-                      <div className="lv-meta truncate">
-                        @{p.usuario} · {p.cidade}
-                      </div>
-                    </div>
-                    <BotaoSeguir usuario={p.usuario} />
-                  </li>
-                ))}
-              </ul>
-              <p className="lv-meta mt-2">Só aparece quem deixou a memória pública.</p>
-            </Bloco>
-          )}
-
           {/* Com quem ------------------------------------------------------------- */}
           <Bloco titulo={futuro ? 'Vai com alguém?' : 'Foi com alguém?'}>
-            <div className="lv-card p-5 flex flex-col sm:flex-row sm:items-center gap-4">
-              <Users className="w-7 h-7 text-[#2FB8BA] shrink-0" />
-              <p className="lv-sub flex-1">
+            <div className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
+              <p className="lv-sub flex-1 min-w-[200px]">
                 {futuro
                   ? 'Chame quem vai com você. Depois do show, vocês guardam a mesma memória.'
                   : 'Mande para quem estava com você: cada um guarda o show na própria história.'}
               </p>
-              <a
-                className="lv-ghost shrink-0"
-                href={`https://wa.me/?text=${encodeURIComponent(textoWhats)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a className="lv-ghost shrink-0" href={`https://wa.me/?text=${encodeURIComponent(textoWhats)}`} target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
               </a>
             </div>
@@ -499,30 +486,19 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
                 </Link>
               }
             >
-              <div className="lv-scroller">
-                {outrosDoArtista.map((s) => (
-                  <CardShow key={s.id} show={s} fui={Boolean(lv.memoriaDoShow(s.id))} />
-                ))}
-              </div>
+              {outrosDoArtista.slice(0, 6).map((s) => linhaOutroShow(s, 'casa'))}
             </Bloco>
           )}
           {outrosNaCasa.length > 0 && (
             <Bloco
               titulo="Mais shows nesta casa"
               extra={
-                <Link
-                  to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`}
-                  className="lv-link shrink-0"
-                >
+                <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="lv-link shrink-0">
                   Ver todos
                 </Link>
               }
             >
-              <div className="lv-scroller">
-                {outrosNaCasa.map((s) => (
-                  <CardShow key={s.id} show={s} fui={Boolean(lv.memoriaDoShow(s.id))} />
-                ))}
-              </div>
+              {outrosNaCasa.slice(0, 6).map((s) => linhaOutroShow(s, 'artista'))}
             </Bloco>
           )}
         </div>

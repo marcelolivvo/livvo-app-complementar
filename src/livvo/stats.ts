@@ -19,6 +19,7 @@ export interface Passaporte {
   shows: number;
   artistas: number;
   cidades: number;
+  estados: number;
   casas: number;
   faixa: string;
   proximaFaixa?: string;
@@ -42,12 +43,14 @@ export const calcularPassaporte = (memorias: Memoria[], cat: Catalogo | null): P
   const artistas = new Map<string, { nome: string; vezes: number; artistaId: string }>();
   const cidades = new Set<string>();
   const casas = new Set<string>();
+  const estados = new Set<string>();
   memoriasComShow.forEach(({ show }) => {
     const a = artistas.get(show.artistaId) || { nome: show.artista, vezes: 0, artistaId: show.artistaId };
     a.vezes++;
     artistas.set(show.artistaId, a);
     cidades.add(`${show.cidade}|${show.uf}`);
     casas.add(`${show.casa}|${show.cidade}`);
+    if (show.uf) estados.add(show.uf);
   });
 
   const idx = FAIXAS.findIndex((f) => shows <= f.ate);
@@ -63,6 +66,7 @@ export const calcularPassaporte = (memorias: Memoria[], cat: Catalogo | null): P
     shows,
     artistas: artistas.size,
     cidades: cidades.size,
+    estados: estados.size,
     casas: casas.size,
     faixa: faixa.nome,
     proximaFaixa: proxima?.nome,

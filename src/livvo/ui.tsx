@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Check } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Check, type LucideIcon } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { Link } from './router';
 import { dataCartao, hash, iniciais, nota as fmtNota } from './format';
@@ -195,25 +195,164 @@ export const CarimboFui: React.FC<{ animar?: boolean; texto?: string }> = ({ ani
   </span>
 );
 
-/* Progresso em picotes -------------------------------------------------------------- */
+/* Progresso em marcas de picote (.lv-ticks do Estúdio) ------------------------------ */
 
-export const Picotes: React.FC<{ total: number; feitos: number; className?: string }> = ({ total, feitos, className = '' }) => (
-  <div className={`lv-perfs ${className}`} style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }} aria-hidden="true">
+export const Picotes: React.FC<{ total?: number; feitos: number; fino?: boolean; className?: string }> = ({ total = 24, feitos, fino, className = '' }) => (
+  <div
+    className={`lv-ticks ${fino ? 'lv-ticks--thin' : ''} ${className}`}
+    style={total !== 24 ? { gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` } : undefined}
+    aria-hidden="true"
+  >
     {Array.from({ length: total }, (_, i) => (
       <span key={i} data-on={i < feitos} />
     ))}
   </div>
 );
 
-/* Caixa de data -------------------------------------------------------------------- */
+/* Data em coluna (dia em RAYDIS, mês em Barlow), sem caixa ---------------------------- */
 
 export const CaixaData: React.FC<{ ts: number; comAno?: boolean }> = ({ ts, comAno }) => {
   const d = dataCartao(ts);
   return (
-    <span className="lv-datebox" aria-hidden="true">
+    <span className="lv-dt" aria-hidden="true">
       <b>{d.dia}</b>
-      <span>{comAno ? `${d.mes} ${d.ano.slice(2)}` : d.mes}</span>
+      <span>{comAno ? `${d.mes} ${d.ano}` : d.mes}</span>
     </span>
+  );
+};
+
+/* Página-ingresso: papel + tira superior (.lv-ticket + .lv-strip do Estúdio) ---------- */
+
+export const Bilhete: React.FC<{
+  esquerda: React.ReactNode;
+  direita?: React.ReactNode;
+  rotulo?: string;
+  className?: string;
+  children: React.ReactNode;
+}> = ({ esquerda, direita, rotulo, className = '', children }) => (
+  <section className={`lv-ticket ${className}`} aria-label={rotulo}>
+    <div className="lv-strip">
+      <span className="min-w-0 truncate">{esquerda}</span>
+      {direita !== undefined && <span className="shrink-0">{direita}</span>}
+    </div>
+    {children}
+  </section>
+);
+
+/** Cabeçalho de grupo: rótulo ciano em caixa alta + linha (.lv-group do Estúdio). */
+export const Grupo: React.FC<{ titulo: React.ReactNode; extra?: React.ReactNode; className?: string }> = ({ titulo, extra, className = '' }) => (
+  <div className={`lv-grp ${className}`}>
+    <h2 className="lv-group">{titulo}</h2>
+    {extra}
+  </div>
+);
+
+/** Botão-ingresso com canhoto (furos em cima e embaixo, ícone no canhoto): .lv-btn--stub. */
+export const Stub: React.FC<
+  {
+    icone: LucideIcon;
+    cor?: 'cyan' | 'cream' | 'teal';
+    to?: string;
+    className?: string;
+    children: React.ReactNode;
+  } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'className' | 'children'>
+> = ({ icone: Icone, cor = 'cyan', to, className = '', children, ...resto }) => {
+  const cls = `lv-btn lv-btn--stub lv-btn--${cor} ${className}`;
+  const dentro = (
+    <>
+      <Icone className="w-4 h-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />
+      <span>{children}</span>
+    </>
+  );
+  return to ? (
+    <Link to={to} className={cls}>
+      {dentro}
+    </Link>
+  ) : (
+    <button type="button" className={cls} {...resto}>
+      {dentro}
+    </button>
+  );
+};
+
+/** Linha de lista com picote (.lv-show do Estúdio): coluna inicial, texto e um fim. */
+export const Linha: React.FC<{
+  to?: string;
+  onClick?: () => void;
+  inicio: React.ReactNode;
+  titulo: React.ReactNode;
+  sub?: React.ReactNode;
+  nota?: React.ReactNode;
+  fim?: React.ReactNode;
+  avatar?: boolean;
+  rotulo?: string;
+}> = ({ to, onClick, inicio, titulo, sub, nota, fim, avatar, rotulo }) => {
+  const cls = `lv-show ${avatar ? 'lv-show--av' : ''} ${to || onClick ? '' : 'lv-show--fixa'}`;
+  const dentro = (
+    <>
+      <span className="flex items-center">{inicio}</span>
+      <span className="min-w-0">
+        <span className="lv-show-t">{titulo}</span>
+        {sub && <span className="lv-show-s">{sub}</span>}
+        {nota && <span className="lv-show-n">{nota}</span>}
+      </span>
+      <span className="flex items-center gap-2 justify-end text-right">{fim}</span>
+    </>
+  );
+  if (to)
+    return (
+      <Link to={to} className={cls} aria-label={rotulo}>
+        {dentro}
+      </Link>
+    );
+  if (onClick)
+    return (
+      <button type="button" className={cls} onClick={onClick} aria-label={rotulo}>
+        {dentro}
+      </button>
+    );
+  return <div className={cls}>{dentro}</div>;
+};
+
+/**
+ * Ingresso em contorno ciano (mesmo desenho da Carteira de ingressos do Estúdio,
+ * TransparentTicketItem): recortes em cima e embaixo, picote tracejado e canhoto à esquerda.
+ */
+export const IngressoContorno: React.FC<{
+  canhoto: React.ReactNode;
+  children: React.ReactNode;
+  ativo?: boolean;
+  className?: string;
+  rotulo?: string;
+}> = ({ canhoto, children, ativo, className = '', rotulo }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [tam, setTam] = useState({ w: 560, h: 185 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const medir = () => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setTam({ w: Math.round(r.width), h: Math.round(r.height) });
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const { w, h } = tam;
+  const nx = Math.round(Math.max(100, Math.min(175, w * 0.28)));
+  const nr = 16;
+  const cr = 24;
+  const d = `M ${cr},0 L ${nx - nr},0 A ${nr},${nr} 0 0,0 ${nx + nr},0 L ${w - cr},0 A ${cr},${cr} 0 0,1 ${w},${cr} L ${w},${h - cr} A ${cr},${cr} 0 0,1 ${w - cr},${h} L ${nx + nr},${h} A ${nr},${nr} 0 0,0 ${nx - nr},${h} L ${cr},${h} A ${cr},${cr} 0 0,1 0,${h - cr} L 0,${cr} A ${cr},${cr} 0 0,1 ${cr},0 Z`;
+  return (
+    <section ref={ref} className={`lv-contorno ${className}`} data-on={ativo || undefined} aria-label={rotulo} style={{ '--nx': `${nx}px` } as React.CSSProperties}>
+      <svg width={w} height={h} className="lv-contorno-svg" aria-hidden="true">
+        <path d={d} fill="none" stroke="#4FDCDE" strokeWidth="3" strokeLinejoin="round" />
+        <line x1={nx} y1={nr + 3} x2={nx} y2={h - nr - 3} stroke="#4FDCDE" strokeWidth="2.5" strokeDasharray="5 5" />
+      </svg>
+      <div className="lv-contorno-canhoto">{canhoto}</div>
+      <div className="lv-contorno-corpo">{children}</div>
+    </section>
   );
 };
 
@@ -288,10 +427,7 @@ export const Avisos: React.FC = () => {
   return (
     <div className="lv-toast-host" role="status" aria-live="polite">
       {texto && (
-        <div className="lv-toast2">
-          <Check className="w-4 h-4" strokeWidth={3} />
-          {texto}
-        </div>
+        <div className="lv-toast2">{texto}</div>
       )}
     </div>
   );
