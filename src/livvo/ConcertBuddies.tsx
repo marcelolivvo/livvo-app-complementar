@@ -188,8 +188,10 @@ export const MarcarBuddies: React.FC<{
  */
 export const JanelaShowsJuntos: React.FC<{ buddy: Buddy; fechar: () => void; modo?: 'juntos' | 'comum' }> = ({ buddy, fechar, modo = 'juntos' }) => {
   const lv = useLivvo();
-  const shows = buddy.shows.slice().sort((a, b) => b.ts - a.ts);
-  const faltam = shows.filter((s) => lv.memoriaDoShow(s.id)?.notaShow === undefined).length;
+  // Os que ainda não têm a sua nota vêm primeiro, para o convite a avaliar aparecer logo no alto
+  const semNotaDe = (id: string) => lv.memoriaDoShow(id)?.notaShow === undefined;
+  const shows = buddy.shows.slice().sort((a, b) => Number(semNotaDe(b.id)) - Number(semNotaDe(a.id)) || b.ts - a.ts);
+  const faltam = shows.filter((s) => semNotaDe(s.id)).length;
   const ir = (rota: string) => {
     fechar();
     navigate(rota);
