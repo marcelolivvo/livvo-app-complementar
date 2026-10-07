@@ -1,10 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { Camera, Plus, Share2 } from 'lucide-react';
+import React, { Suspense, lazy, useMemo, useRef, useState } from 'react';
+import { BarChart3, Camera, Plus, Share2, Sparkles } from 'lucide-react';
 import { useCatalogo } from '../data/catalog';
 import { dataCartao, nota } from '../format';
 import { Link } from '../router';
 import { calcularPassaporte } from '../stats';
-import { livvo, useLivvo } from '../store';
+import { livvo, personalizacaoDe, useLivvo } from '../store';
 import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagExemplo, TagProxima, avisar } from '../ui';
 import { concertBuddies } from '../data/social';
 import { ListaBuddies } from '../ConcertBuddies';
@@ -12,6 +12,10 @@ import { CamposPassaporte, ProgressoFaixa } from './Inicio';
 import { LivvoCredencialCard, exportarCredencialPNG } from '../../components/LivvoCredencialCard';
 import { PassportIcon } from '../../components/PassportIcon';
 import { BotaoAtualizarFoto } from '../AtualizarFoto';
+
+// Gráficos e Wrapped do Livvo Virtual Poster: carregados só quando a pessoa abre (revisão 5)
+const MeuHistorico = lazy(() => import('../HistoricoWrapped').then((m) => ({ default: m.MeuHistorico })));
+const MeuWrapped = lazy(() => import('../HistoricoWrapped').then((m) => ({ default: m.MeuWrapped })));
 
 /**
  * Minha História — o Passaporte com a mesma cara da Wallet do Estúdio:
@@ -102,7 +106,13 @@ export const MinhaHistoria: React.FC = () => {
   const buddies = useMemo(() => concertBuddies(pass.memoriasComShow, lv.exemplos), [pass, lv.exemplos]);
   const [foto, setFoto] = useState<string | null>(lerFoto);
   const [gerando, setGerando] = useState(false);
+  const [historico, setHistorico] = useState(false);
+  const [wrapped, setWrapped] = useState(false);
   const inputFoto = useRef<HTMLInputElement>(null);
+  const abrirHistorico = () => {
+    setHistorico((v) => !v);
+    window.setTimeout(() => document.getElementById('meu-historico')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+  };
 
   const porAno = useMemo(() => {
     const grupos: Array<{ ano: string; itens: typeof pass.memoriasComShow }> = [];
@@ -228,6 +238,24 @@ export const MinhaHistoria: React.FC = () => {
                 {gerando ? 'Gerando…' : 'Compartilhar credencial'}
               </Stub>
             </div>
+            {/* Do Livvo Virtual Poster: gráficos da Minha história e o Wrapped (07/10/2026) */}
+            <div className="mt-3 flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="lv-btn lv-btn--stub lv-btn--teal"
+                aria-expanded={historico}
+                aria-controls="meu-historico"
+                onClick={abrirHistorico}
+                disabled={!catalogo}
+              >
+                <BarChart3 className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+                <span>Meu histórico</span>
+              </button>
+              <button type="button" className="lv-btn lv-btn--stub lv-btn--cream" onClick={() => setWrapped(true)} disabled={!catalogo || pass.shows === 0}>
+                <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+                <span>Gerar meu Wrapped</span>
+              </button>
+            </div>
           </div>
 
           <div className="lv-badge-slot">
@@ -253,7 +281,17 @@ export const MinhaHistoria: React.FC = () => {
             </div>
           </div>
         </div>
+        {historico && (
+          <Suspense fallback={<div className="lv-skel m-5" style={{ height: 240 }} aria-busy="true" />}>
+            <MeuHistorico pass={pass} fechar={() => setHistorico(false)} />
+          </Suspense>
+        )}
       </Bilhete>
+      {wrapped && (
+        <Suspense fallback={null}>
+          <MeuWrapped pass={pass} usuario={lv.perfil.usuario} fechar={() => setWrapped(false)} />
+        </Suspense>
+      )}
 
       {buddies.length > 0 && (
         <section aria-label="Concert Buddies" className="max-w-[880px]">
@@ -295,12 +333,17 @@ export const MinhaHistoria: React.FC = () => {
                     rotulo={`${show.artista}, ${show.casa}`}
                     canhoto={
                       <Link to={`/show/${show.id}`} tabIndex={-1} aria-hidden="true">
-                        <Poster show={show} usuario={lv.perfil.usuario} />
+                        <Poster
+                          show={show}
+                          usuario={lv.perfil.usuario}
+                          perso={personalizacaoDe(memoria)}
+                          detalhes={{ setor: memoria.setor, comQuem: (memoria.buddies || []).filter((b) => b.status === 'aceita').map((b) => b.usuario) }}
+                        />
                       </Link>
                     }
                   >
                     <Link to={`/show/${show.id}`} className="block group">
-                      <h3 className="lv-display text-[22px] leading-tight truncate group-hover:text-white">{show.artista}</h3>
+                      <h3 className="lv-display text-[22px] leading-tight lv-clamp-2 group-hover:text-white">{show.artista}</h3>
                       <p className="mt-1.5 text-[13px] font-bold text-[#ECE5D1]">
                         {d.dia} {d.mes.toLowerCase()} {d.ano}
                       </p>

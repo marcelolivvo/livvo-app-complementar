@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, type LucideIcon } from 'lucide-react';
+import { Check, Music, type LucideIcon } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { Link } from './router';
 import { dataCartao, hash, iniciais, nota as fmtNota } from './format';
 import { useFoto, useFotoAutomatica } from './fotos';
+import type { CarimboPresenca as TipoCarimbo, CorDestaque, FonteNome, Personalizacao } from './store';
 
 /* Pôster do show ---------------------------------------------------------------------
  * Imagem (decisões de 07/10/2026): foto da pessoa (memória) → foto definida pelo admin → foto
@@ -23,14 +24,64 @@ const PALETAS = [
 
 export const paletaDoArtista = (artistaIdOuNome: string) => PALETAS[hash(artistaIdOuNome) % PALETAS.length]!;
 
-export const tamanhoNome = (nome: string): string => {
+/** Largura média de uma letra (em em) de cada fonte do nome, para a palavra mais longa caber inteira. */
+export const LARGURA_LETRA: Record<FonteNome, number> = { alfa: 0.72, barlow: 0.56, raydis: 0.8 };
+export const ESCALA_TAMANHO = { p: 0.8, m: 0.9, g: 1 } as const;
+export const COR_DESTAQUE: Record<CorDestaque, string> = { ciano: '#4FDCDE', teal: '#2FB8BA', offwhite: '#ECE5D1' };
+export const FAMILIA_FONTE: Record<FonteNome, string> = {
+  alfa: "'Alfa Slab One', Georgia, serif",
+  barlow: "'Barlow', sans-serif",
+  raydis: "'RAYDIS', 'Alfa Slab One', sans-serif",
+};
+/** RAYDIS não tem acentos: só vale para nomes sem acento. */
+export const nomeAceitaRaydis = (nome: string) => !/[^\x00-\x7F]/.test(nome);
+
+/**
+ * Tamanho do nome no pôster. Nunca quebra uma palavra no meio (07/10/2026): se o nome não cabe numa
+ * linha, cada palavra vai para a linha seguinte, e a fonte diminui até a palavra mais longa caber inteira.
+ * A largura útil do pôster é ~85cqw.
+ */
+export const tamanhoNome = (nome: string, fonte: FonteNome = 'alfa', tamanho: keyof typeof ESCALA_TAMANHO = 'g'): string => {
   const maior = Math.max(...nome.split(/\s+/).map((p) => p.length));
   const n = nome.length;
-  if (n <= 6 && maior <= 6) return '18cqw';
-  if (n <= 12 && maior <= 9) return '14cqw';
-  if (n <= 20 && maior <= 11) return '11.5cqw';
-  if (n <= 30) return '9.5cqw';
-  return '8cqw';
+  const base = n <= 6 && maior <= 6 ? 18 : n <= 12 && maior <= 9 ? 14 : n <= 20 && maior <= 11 ? 11.5 : n <= 30 ? 9.5 : 8;
+  const cabe = 85 / (Math.max(maior, 1) * LARGURA_LETRA[fonte]);
+  const ajuste = fonte === 'barlow' ? 1.15 : 1;
+  return `${Math.floor(Math.min(base * ajuste * ESCALA_TAMANHO[tamanho], cabe) * 10) / 10}cqw`;
+};
+
+/* Carimbos de presença (do Livvo Virtual Poster, só os de presença) ---------------------
+ * "Eu fui" em Ciano e "Show da minha vida" no amarelo das notas. O vermelho do Estúdio
+ * saiu porque não faz parte da paleta oficial.
+ */
+export const CARIMBOS: Record<Exclude<TipoCarimbo, 'nenhum'>, { titulo: string; sub: string; cor: string }> = {
+  eu_fui: { titulo: 'EU FUI!', sub: 'Presença registrada', cor: '#4FDCDE' },
+  show_da_minha_vida: { titulo: 'SHOW DA MINHA VIDA', sub: 'Memória inesquecível', cor: '#FFD60A' },
+};
+export const ROTULO_CARIMBO: Record<TipoCarimbo, string> = { nenhum: 'Sem carimbo', eu_fui: 'Eu fui', show_da_minha_vida: 'Show da minha vida' };
+
+export const Carimbo: React.FC<{ tipo: TipoCarimbo; className?: string; style?: React.CSSProperties }> = ({ tipo, className = '', style }) => {
+  if (tipo === 'nenhum') return null;
+  const c = CARIMBOS[tipo];
+  return (
+    <span className={`lv-carimbo ${className}`} style={{ ...style, '--c': c.cor } as React.CSSProperties}>
+      <b>{c.titulo}</b>
+      <small>{c.sub}</small>
+    </span>
+  );
+};
+
+/** O que a memória acrescenta ao card: faixa marcante, setor e com quem foi. */
+export interface DetalhesCard {
+  faixa?: string;
+  setor?: string;
+  comQuem?: string[];
+}
+export const linhaDetalhes = (perso: Personalizacao, det?: DetalhesCard) => {
+  const partes: string[] = [];
+  if (perso.mostrarSetor && det?.setor) partes.push(det.setor);
+  if (perso.mostrarComQuem && det?.comQuem?.length) partes.push(`com ${det.comQuem.slice(0, 2).map((u) => `@${u}`).join(', ')}${det.comQuem.length > 2 ? ` +${det.comQuem.length - 2}` : ''}`);
+  return partes.join(' · ');
 };
 
 /** Fica true quando o elemento chega perto da tela (para buscar a foto automática só do que aparece). */
@@ -70,9 +121,12 @@ export const Poster: React.FC<{
   fotosSalvas?: boolean;
   /** @ da pessoa sob o logo (só em memórias e no que é compartilhado). */
   usuario?: string;
+  /** Personalização da memória (Personalizar): carimbo, fonte, tamanho, posição, cor, frase, casa e @. */
+  perso?: Personalizacao;
+  detalhes?: DetalhesCard;
   className?: string;
   children?: React.ReactNode;
-}> = ({ show, fotoUsuario, fotosSalvas = true, usuario, className = '', children }) => {
+}> = ({ show, fotoUsuario, fotosSalvas = true, usuario, perso, detalhes, className = '', children }) => {
   const ref = useRef<HTMLDivElement>(null);
   const visivel = useVisivel(ref);
   const p = paletaDoArtista(show.artistaId || show.artista);
@@ -89,10 +143,26 @@ export const Poster: React.FC<{
     '--p-fg': foto ? '#ECE5D1' : p.fg,
     '--p-x': `${55 + (h % 35)}%`,
     '--p-y': `${-42 + ((h >>> 6) % 30)}%`,
-    '--p-name': tamanhoNome(show.artista),
+    '--p-name': tamanhoNome(show.artista, perso?.fonte === 'raydis' && !nomeAceitaRaydis(show.artista) ? 'alfa' : perso?.fonte, perso?.tamanho),
+    ...(perso
+      ? {
+          '--p-dest': COR_DESTAQUE[perso.cor],
+          '--p-font': FAMILIA_FONTE[perso.fonte === 'raydis' && !nomeAceitaRaydis(show.artista) ? 'alfa' : perso.fonte],
+        }
+      : {}),
   } as React.CSSProperties;
+  const mostrarUsuario = usuario && (!perso || perso.mostrarUsuario);
+  const extra = perso ? linhaDetalhes(perso, detalhes) : '';
+  const faixa = perso?.faixa?.trim();
   return (
-    <div ref={ref} className={`lv-poster ${foto ? 'lv-poster--foto' : ''} ${className}`} style={style} aria-hidden="true">
+    <div
+      ref={ref}
+      className={`lv-poster ${foto ? 'lv-poster--foto' : ''} ${perso ? 'lv-poster--perso' : ''} ${className}`}
+      data-pos={perso?.posicao}
+      data-fonte={perso?.fonte}
+      style={style}
+      aria-hidden="true"
+    >
       {foto ? (
         <>
           <img
@@ -114,7 +184,8 @@ export const Poster: React.FC<{
       <div className="lv-poster-top">
         <span className="lv-poster-marca">
           <img src="/livvo/livvo-icon-128.png" alt="" width={64} height={64} />
-          {usuario && <span>@{usuario}</span>}
+          {mostrarUsuario && <span>@{usuario}</span>}
+          {perso?.frase?.trim() && <em className="lv-poster-frase">{perso.frase.trim()}</em>}
         </span>
         <span className="lv-poster-data">
           <span className="lv-poster-day">{d.dia}</span>
@@ -124,22 +195,86 @@ export const Poster: React.FC<{
       </div>
       <div className="lv-poster-bottom">
         <div className="lv-poster-name">{show.artista}</div>
-        <div className="lv-poster-venue">{show.casa}</div>
+        {perso && <span className="lv-poster-barra" />}
+        {(!perso || perso.mostrarCasa) && <div className="lv-poster-venue">{show.casa}</div>}
+        {faixa && (
+          <div className="lv-poster-extra">
+            <Music /> {faixa}
+          </div>
+        )}
+        {extra && <div className="lv-poster-extra">{extra}</div>}
       </div>
+      {perso && perso.carimbo !== 'nenhum' && <Carimbo tipo={perso.carimbo} className="lv-poster-carimbo" />}
       {children}
     </div>
   );
 };
 
-/* Notas em ingressos (decisão de 07/10/2026): meio a cinco ------------------------------
- * Desenho do ícone enviado pelo Edmir: ingresso vertical com recortes laterais, código de barras,
- * picote e palheta com nota musical. Off-white onde o ícone é branco, Teal onde é preto.
- * Meio ponto = metade esquerda preenchida (como nos discos).
+/* Notas em ingressos (decisões de 07/10/2026): meio a cinco ------------------------------
+ * Modelo em teste (16h11): ingresso inclinado com estrela e recorte, enviado pelo Edmir.
+ * Teal onde o ícone é preto, transparente onde é branco (só traço). Sem nota: o mesmo desenho
+ * em tom apagado. Meio ponto = metade esquerda em Teal (como nos discos).
+ * O modelo anterior (ingresso vertical com código de barras e palheta) fica em `IngressoVerticalAnterior`.
  */
 
 const TEAL = '#2FB8BA';
 const OFFWHITE = '#ECE5D1';
 const APAGADO = '#3A3159';
+
+/** Contorno do ingresso, antes de girar −45° em torno do centro (viewBox 24 × 24). */
+export const INGRESSO_ESTRELA =
+  'M5.5,7 H18.5 A2.5,2.5 0 0 1 21,9.5 V14.5 A2.5,2.5 0 0 1 18.5,17 H5.5 A2.5,2.5 0 0 1 3,14.5 V14.3 A2.3,2.3 0 0 0 3,9.7 V9.5 A2.5,2.5 0 0 1 5.5,7 Z';
+/** Marcas do picote, nas bordas longas perto do recorte (antes de girar). */
+export const INGRESSO_PICOTE = 'M7.6,7 V8.5 M7.6,15.5 V17';
+/** Estrela em pé (já na posição final, fora do giro). */
+export const ESTRELA = (() => {
+  const cx = 13.7;
+  const cy = 10.3;
+  const pts: string[] = [];
+  for (let k = 0; k < 10; k++) {
+    const r = k % 2 === 0 ? 3.1 : 1.4;
+    const a = -Math.PI / 2 + (k * Math.PI) / 5;
+    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+  }
+  return `M${pts.join(' L')} Z`;
+})();
+
+const DesenhoIngresso: React.FC<{ cor: string }> = ({ cor }) => (
+  <g fill="none" stroke={cor} strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
+    <g transform="rotate(-45 12 12)">
+      <path d={INGRESSO_ESTRELA} />
+      <path d={INGRESSO_PICOTE} />
+    </g>
+    <path d={ESTRELA} strokeWidth="1.5" />
+  </g>
+);
+
+const Disco: React.FC<{ fill: 0 | 0.5 | 1; id: string; interativo?: boolean }> = ({ fill, id, interativo }) => {
+  const vazio = interativo ? 'rgba(47,184,186,0.38)' : APAGADO;
+  return (
+    <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
+      <defs>
+        <clipPath id={id}>
+          <rect x="0" y="0" width="12" height="24" />
+        </clipPath>
+      </defs>
+      {fill === 1 ? (
+        <DesenhoIngresso cor={TEAL} />
+      ) : (
+        <>
+          <DesenhoIngresso cor={vazio} />
+          {fill === 0.5 && (
+            <g clipPath={`url(#${id})`}>
+              <DesenhoIngresso cor={TEAL} />
+            </g>
+          )}
+        </>
+      )}
+    </svg>
+  );
+};
+
+/* Modelo anterior das notas (ingresso vertical), guardado para voltar se o teste não agradar. */
 export const CONTORNO_INGRESSO =
   'M4,1 H16 A3,3 0 0 1 19,4 V13 A2,2 0 0 0 19,17 V26 A3,3 0 0 1 16,29 H4 A3,3 0 0 1 1,26 V17 A2,2 0 0 0 1,13 V4 A3,3 0 0 1 4,1 Z';
 export const BARRAS: Array<[number, number]> = [
@@ -152,33 +287,22 @@ export const BARRAS: Array<[number, number]> = [
   [15, 0.7],
 ];
 export const PALHETA = 'M10,26.4 C7.7,24.5 5.7,21.9 6,19.9 C6.2,18.6 7.9,18.1 10,18.1 C12.1,18.1 13.8,18.6 14,19.9 C14.3,21.9 12.3,24.5 10,26.4 Z';
-
-const Disco: React.FC<{ fill: 0 | 0.5 | 1; id: string; interativo?: boolean }> = ({ fill, id, interativo }) => {
-  const traco = fill ? TEAL : interativo ? 'rgba(47,184,186,0.55)' : APAGADO;
-  const detalhe = fill ? TEAL : APAGADO;
-  return (
-    <svg viewBox="0 0 20 30" width="100%" height="100%" aria-hidden="true">
-      <defs>
-        <clipPath id={id}>
-          <rect x="0" y="0" width="10" height="30" />
-        </clipPath>
-      </defs>
-      {fill === 1 && <path d={CONTORNO_INGRESSO} fill={OFFWHITE} />}
-      {fill === 0.5 && <path d={CONTORNO_INGRESSO} fill={OFFWHITE} clipPath={`url(#${id})`} />}
-      <path d={CONTORNO_INGRESSO} fill="none" stroke={traco} strokeWidth="1.7" strokeLinejoin="round" />
-      {BARRAS.map(([x, w]) => (
-        <rect key={x} x={x} y="4.4" width={w} height="6.6" rx="0.25" fill={detalhe} />
-      ))}
-      <line x1="4.6" y1="15" x2="15.6" y2="15" stroke={detalhe} strokeWidth="1.1" strokeLinecap="round" strokeDasharray="1.2 1.3" />
-      <path d={PALHETA} fill={detalhe} />
-      <g fill={fill ? OFFWHITE : '#100C1F'} stroke={fill ? OFFWHITE : '#100C1F'}>
-        <path d="M9.3,22.7 V20.3 L11.9,19.8 V22.2" fill="none" strokeWidth="0.6" strokeLinejoin="round" />
-        <circle cx="8.75" cy="22.75" r="0.75" stroke="none" />
-        <circle cx="11.35" cy="22.25" r="0.75" stroke="none" />
-      </g>
-    </svg>
-  );
-};
+export const IngressoVerticalAnterior: React.FC<{ fill: 0 | 0.5 | 1; id: string }> = ({ fill, id }) => (
+  <svg viewBox="0 0 20 30" width="100%" height="100%" aria-hidden="true">
+    <defs>
+      <clipPath id={id}>
+        <rect x="0" y="0" width="10" height="30" />
+      </clipPath>
+    </defs>
+    {fill === 1 && <path d={CONTORNO_INGRESSO} fill={OFFWHITE} />}
+    {fill === 0.5 && <path d={CONTORNO_INGRESSO} fill={OFFWHITE} clipPath={`url(#${id})`} />}
+    <path d={CONTORNO_INGRESSO} fill="none" stroke={fill ? TEAL : APAGADO} strokeWidth="1.7" strokeLinejoin="round" />
+    {BARRAS.map(([x, w]) => (
+      <rect key={x} x={x} y="4.4" width={w} height="6.6" rx="0.25" fill={fill ? TEAL : APAGADO} />
+    ))}
+    <path d={PALHETA} fill={fill ? TEAL : APAGADO} />
+  </svg>
+);
 
 let discosSeq = 0;
 
@@ -191,11 +315,12 @@ export const Discos: React.FC<{
 }> = ({ valor = 0, onChange, tamanho = 22, rotulo, className = '' }) => {
   const [uid] = useState(() => `lvd${++discosSeq}`);
   const interativo = Boolean(onChange);
-  // tamanho = altura de referência; o ingresso é vertical (20 × 30)
+  // tamanho = altura de referência; o ingresso inclinado ocupa um quadrado
+  const lado = Math.round(tamanho * 1.1);
   const style = {
-    '--d-w': `${Math.round(tamanho * 0.8)}px`,
-    '--d-h': `${Math.round(tamanho * 1.2)}px`,
-    '--d-gap': `${Math.max(2, Math.round(tamanho / 5))}px`,
+    '--d-w': `${lado}px`,
+    '--d-h': `${lado}px`,
+    '--d-gap': `${Math.max(1, Math.round(tamanho / 7))}px`,
   } as React.CSSProperties;
   const discos = [1, 2, 3, 4, 5].map((i) => {
     const fill: 0 | 0.5 | 1 = valor >= i ? 1 : valor >= i - 0.5 ? 0.5 : 0;

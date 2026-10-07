@@ -385,8 +385,8 @@ export const BotaoAtualizarFoto: React.FC<{
   return (
     <>
       {botao ? (
-        <button type="button" className={`lv-ghost w-full !py-2.5 !px-2 whitespace-nowrap ${className}`} onClick={() => setAberto(true)}>
-          <ImagePlus className="w-4 h-4" /> Atualizar foto
+        <button type="button" className={`lv-btn lv-btn--stub lv-btn--cream w-full whitespace-nowrap ${className}`} onClick={() => setAberto(true)}>
+          <ImagePlus className="w-4 h-4 shrink-0" strokeWidth={2.2} /> <span>Atualizar foto</span>
         </button>
       ) : (
         <button type="button" className={`lv-link ${compacto ? '!text-[12px]' : ''} ${className}`} onClick={() => setAberto(true)}>

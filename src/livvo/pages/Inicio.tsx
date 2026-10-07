@@ -128,7 +128,7 @@ export const textoFaltam = (pass: Passaporte) =>
   );
 
 export const CamposPassaporte: React.FC<{ pass: Passaporte }> = ({ pass }) => (
-  <dl className="lv-fields">
+  <dl className="lv-fields lv-fields--passaporte">
     <div>
       <dt>Shows</dt>
       <dd className="lv-num">{pass.shows}</dd>

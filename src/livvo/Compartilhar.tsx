@@ -3,8 +3,23 @@ import { Copy, MessageCircle, Share2 } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { aplicarDuotone, carregarParaCanvas, recorte45 } from './fotos';
 import { dataCartao, dataLonga, nota } from './format';
-import type { Memoria } from './store';
-import { BARRAS, CONTORNO_INGRESSO, PALHETA, avisar, paletaDoArtista, useImagemDoPoster } from './ui';
+import { PERSONALIZACAO_PADRAO, personalizacaoDe, type Memoria, type Personalizacao } from './store';
+import {
+  CARIMBOS,
+  COR_DESTAQUE,
+  ESCALA_TAMANHO,
+  ESTRELA,
+  FAMILIA_FONTE,
+  INGRESSO_ESTRELA,
+  INGRESSO_PICOTE,
+  avisar,
+  linhaDetalhes,
+  nomeAceitaRaydis,
+  paletaDoArtista,
+  useImagemDoPoster,
+  type DetalhesCard,
+} from './ui';
+import { CAMINHO_INGRESSO, H as H_ING, RECORTE_R, RECORTE_X, W as W_ING, tamanhoNomeIngresso } from './Ingresso';
 import { hash } from './format';
 
 /**
@@ -60,10 +75,25 @@ const retArredondado = (c: CanvasRenderingContext2D, x: number, y: number, w: nu
 };
 
 /** Quebra o nome do artista em até 3 linhas, diminuindo a fonte até caber. */
-const linhasDoNome = (c: CanvasRenderingContext2D, nome: string, largura: number, tamanhoInicial: number) => {
-  for (let t = tamanhoInicial; t >= 40; t -= 4) {
-    c.font = `400 ${t}px "Alfa Slab One", Georgia, serif`;
-    const palavras = nome.split(/\s+/);
+const fonteCanvas = (perso: Personalizacao, nome: string, t: number) => {
+  const f = perso.fonte === 'raydis' && !nomeAceitaRaydis(nome) ? 'alfa' : perso.fonte;
+  const peso = f === 'alfa' ? 400 : f === 'raydis' ? 700 : 800;
+  return { css: `${peso} ${t}px ${FAMILIA_FONTE[f]}`, caixaAlta: f === 'barlow' };
+};
+
+/** Quebra o nome do artista palavra por palavra (nunca no meio da palavra), diminuindo a fonte até caber. */
+const linhasDoNome = (
+  c: CanvasRenderingContext2D,
+  nome: string,
+  largura: number,
+  tamanhoInicial: number,
+  perso: Personalizacao = PERSONALIZACAO_PADRAO,
+  maxLinhas = 3,
+) => {
+  const texto = fonteCanvas(perso, nome, 10).caixaAlta ? nome.toUpperCase() : nome;
+  for (let t = tamanhoInicial; t >= 24; t -= 3) {
+    c.font = fonteCanvas(perso, nome, t).css;
+    const palavras = texto.split(/\s+/);
     const linhas: string[] = [];
     let atual = '';
     let coube = true;
@@ -71,7 +101,7 @@ const linhasDoNome = (c: CanvasRenderingContext2D, nome: string, largura: number
       const teste = atual ? `${atual} ${p}` : p;
       if (c.measureText(teste).width <= largura) atual = teste;
       else {
-        if (!atual) {
+        if (!atual || c.measureText(p).width > largura) {
           coube = false;
           break;
         }
@@ -80,9 +110,43 @@ const linhasDoNome = (c: CanvasRenderingContext2D, nome: string, largura: number
       }
     }
     if (atual) linhas.push(atual);
-    if (coube && linhas.length <= 3 && linhas.every((l) => c.measureText(l).width <= largura)) return { linhas, tamanho: t };
+    if (coube && linhas.length <= maxLinhas && linhas.every((l) => c.measureText(l).width <= largura)) return { linhas, tamanho: t };
   }
-  return { linhas: [nome], tamanho: 40 };
+  c.font = fonteCanvas(perso, nome, 24).css;
+  return { linhas: texto.split(/\s+/), tamanho: 24 };
+};
+
+/** Carimbo de presença no canvas (mesmo desenho do componente Carimbo). */
+const desenharCarimbo = (c: CanvasRenderingContext2D, tipo: Personalizacao['carimbo'], cx: number, cy: number, escala: number, angulo = -12) => {
+  if (tipo === 'nenhum') return;
+  const k = CARIMBOS[tipo];
+  c.save();
+  c.translate(cx, cy);
+  c.rotate((angulo * Math.PI) / 180);
+  const ft = Math.round(34 * escala);
+  const fs = Math.round(17 * escala);
+  c.font = `800 ${ft}px Barlow, sans-serif`;
+  const l1 = c.measureText(k.titulo.split('').join('\u200A')).width;
+  c.font = `700 ${fs}px Barlow, sans-serif`;
+  const l2 = c.measureText(k.sub.toUpperCase()).width;
+  const w = Math.max(l1, l2) + 40 * escala;
+  const h = ft + fs + 34 * escala;
+  c.fillStyle = 'rgba(16,12,31,0.78)';
+  retArredondado(c, -w / 2, -h / 2, w, h, 10 * escala);
+  c.fill();
+  c.setLineDash([10 * escala, 7 * escala]);
+  c.strokeStyle = k.cor;
+  c.lineWidth = 4 * escala;
+  c.stroke();
+  c.setLineDash([]);
+  c.fillStyle = k.cor;
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  c.font = `800 ${ft}px Barlow, sans-serif`;
+  c.fillText(k.titulo, 0, -h / 2 + 13 * escala);
+  c.font = `700 ${fs}px Barlow, sans-serif`;
+  c.fillText(k.sub.toUpperCase(), 0, -h / 2 + 13 * escala + ft + 6 * escala);
+  c.restore();
 };
 
 /** Pôster do show desenhado no canvas (mesma regra visual do componente Poster). */
@@ -95,8 +159,11 @@ const desenharPoster = async (
   y: number,
   w: number,
   h: number,
+  perso: Personalizacao = PERSONALIZACAO_PADRAO,
+  detalhes?: DetalhesCard,
 ) => {
   const p = paletaDoArtista(show.artistaId || show.artista);
+  const dest = COR_DESTAQUE[perso.cor];
   c.save();
   retArredondado(c, x, y, w, h, 26);
   c.clip();
@@ -157,10 +224,19 @@ const desenharPoster = async (
     /* sem logo: segue */
   }
   c.textBaseline = 'top';
-  c.fillStyle = CIANO;
-  c.font = `700 ${Math.round(w * 0.036)}px Barlow, sans-serif`;
   c.textAlign = 'left';
-  c.fillText(`@${usuario}`, x + m, y + m + w * 0.165);
+  let yTopo = y + m + w * 0.165;
+  if (perso.mostrarUsuario && usuario) {
+    c.fillStyle = CIANO;
+    c.font = `700 ${Math.round(w * 0.036)}px Barlow, sans-serif`;
+    c.fillText(`@${usuario}`, x + m, yTopo);
+    yTopo += w * 0.05;
+  }
+  if (perso.frase.trim()) {
+    c.fillStyle = dest;
+    c.font = `700 ${Math.round(w * 0.033)}px Barlow, sans-serif`;
+    c.fillText(perso.frase.trim().toUpperCase(), x + m, yTopo + w * 0.006);
+  }
   // data e UF
   const d = dataCartao(show.ts);
   c.textAlign = 'right';
@@ -170,57 +246,82 @@ const desenharPoster = async (
   c.font = `700 ${Math.round(w * 0.044)}px Barlow, sans-serif`;
   c.fillText(`${d.mes} ${d.ano}`.toUpperCase(), x + w - m, y + m + w * 0.115);
   c.fillText(show.uf.toUpperCase(), x + w - m, y + m + w * 0.17);
-  // nome e casa
+  // nome, traço, casa e detalhes (posição: em cima, no meio ou embaixo)
   c.textAlign = 'left';
   c.textBaseline = 'alphabetic';
-  const { linhas, tamanho } = linhasDoNome(c, show.artista, w - 2 * m, Math.round(w * 0.16));
-  const baseCasa = y + h - m;
-  c.font = `600 ${Math.round(w * 0.042)}px Barlow, sans-serif`;
+  const base = Math.round(w * 0.16 * ESCALA_TAMANHO[perso.tamanho]);
+  const { linhas, tamanho } = linhasDoNome(c, show.artista, w - 2 * m, base, perso);
+  const faixa = perso.faixa.trim();
+  const extra = linhaDetalhes(perso, detalhes);
+  const fsCasa = Math.round(w * 0.042);
+  const fsExtra = Math.round(w * 0.036);
+  const altNome = linhas.length * tamanho * 0.98;
+  const altBloco = altNome + w * 0.045 + (perso.mostrarCasa ? fsCasa * 1.4 : 0) + (faixa ? fsExtra * 1.45 : 0) + (extra ? fsExtra * 1.45 : 0);
+  const topoBloco =
+    perso.posicao === 'cima' ? y + w * 0.4 : perso.posicao === 'meio' ? y + h * 0.58 - altBloco / 2 : y + h - m - altBloco;
+  c.font = fonteCanvas(perso, show.artista, tamanho).css;
   c.fillStyle = fg;
-  c.globalAlpha = 0.85;
-  c.fillText(show.casa.toUpperCase().slice(0, 40), x + m, baseCasa);
-  c.globalAlpha = 1;
-  c.font = `400 ${tamanho}px "Alfa Slab One", Georgia, serif`;
-  linhas
-    .slice()
-    .reverse()
-    .forEach((l, i) => c.fillText(l, x + m, baseCasa - w * 0.06 - i * tamanho * 0.98));
+  linhas.forEach((l, i) => c.fillText(l, x + m, topoBloco + tamanho * 0.82 + i * tamanho * 0.98));
+  let yy = topoBloco + altNome + w * 0.012;
+  c.fillStyle = dest;
+  c.fillRect(x + m, yy, w * 0.16, Math.max(3, w * 0.009));
+  yy += w * 0.03;
+  c.textBaseline = 'top';
+  if (perso.mostrarCasa) {
+    c.font = `600 ${fsCasa}px Barlow, sans-serif`;
+    c.fillStyle = dest;
+    c.fillText(show.casa.toUpperCase().slice(0, 40), x + m, yy);
+    yy += fsCasa * 1.4;
+  }
+  c.font = `600 ${fsExtra}px Barlow, sans-serif`;
+  c.fillStyle = fg;
+  if (faixa) {
+    c.fillText(`\u266A ${faixa}`, x + m, yy);
+    yy += fsExtra * 1.45;
+  }
+  if (extra) c.fillText(extra, x + m, yy);
+  // carimbo de presença
+  if (perso.carimbo !== 'nenhum') {
+    const cyC = perso.posicao === 'baixo' ? y + w * 0.44 : y + h - w * 0.16;
+    desenharCarimbo(c, perso.carimbo, x + w - m - w * 0.26, cyC, w / 820);
+  }
   c.restore();
 };
 
-/** Um ingresso de nota (mesmo desenho do componente de notas), preenchido 0, metade ou inteiro. */
+/** Um ingresso de nota (mesmo desenho do componente de notas): Teal, apagado ou metade esquerda Teal. */
 const desenharIngresso = (c: CanvasRenderingContext2D, x: number, y: number, escala: number, fill: 0 | 0.5 | 1) => {
+  const tracar = (cor: string) => {
+    c.save();
+    c.strokeStyle = cor;
+    c.lineWidth = 1.7;
+    c.lineJoin = 'round';
+    c.lineCap = 'round';
+    c.save();
+    c.translate(12, 12);
+    c.rotate((-45 * Math.PI) / 180);
+    c.translate(-12, -12);
+    c.stroke(new Path2D(INGRESSO_ESTRELA));
+    c.stroke(new Path2D(INGRESSO_PICOTE));
+    c.restore();
+    c.lineWidth = 1.5;
+    c.stroke(new Path2D(ESTRELA));
+    c.restore();
+  };
   c.save();
   c.translate(x, y);
   c.scale(escala, escala);
-  const contorno = new Path2D(CONTORNO_INGRESSO);
-  if (fill) {
-    c.save();
+  if (fill === 1) tracar(TEAL);
+  else {
+    tracar('#3A3159');
     if (fill === 0.5) {
+      c.save();
       c.beginPath();
-      c.rect(0, 0, 10, 30);
+      c.rect(0, 0, 12, 24);
       c.clip();
+      tracar(TEAL);
+      c.restore();
     }
-    c.fillStyle = OFF;
-    c.fill(contorno);
-    c.restore();
   }
-  c.strokeStyle = fill ? TEAL : '#3A3159';
-  c.lineWidth = 1.7;
-  c.lineJoin = 'round';
-  c.stroke(contorno);
-  const detalhe = fill ? TEAL : '#3A3159';
-  c.fillStyle = detalhe;
-  BARRAS.forEach(([bx, bw]) => c.fillRect(bx, 4.4, bw, 6.6));
-  c.setLineDash([1.2, 1.3]);
-  c.lineWidth = 1.1;
-  c.beginPath();
-  c.moveTo(4.6, 15);
-  c.lineTo(15.6, 15);
-  c.strokeStyle = detalhe;
-  c.stroke();
-  c.setLineDash([]);
-  c.fill(new Path2D(PALHETA));
   c.restore();
 };
 
@@ -233,12 +334,12 @@ const desenharNota = (c: CanvasRenderingContext2D, rotulo: string, valor: number
   for (let i = 1; i <= 5; i++) {
     const v = valor || 0;
     const fill: 0 | 0.5 | 1 = v >= i ? 1 : v >= i - 0.5 ? 0.5 : 0;
-    desenharIngresso(c, x + (i - 1) * 62, y + 46, 2.6, fill);
+    desenharIngresso(c, x + (i - 1) * 64, y + 40, 2.6, fill);
   }
   if (valor !== undefined) {
     c.fillStyle = AMARELO;
     c.font = '700 64px RAYDIS, "Alfa Slab One", sans-serif';
-    c.fillText(nota(valor), x + 5 * 62 + 14, y + 52);
+    c.fillText(nota(valor), x + 5 * 64 + 14, y + 52);
   }
 };
 
@@ -256,14 +357,210 @@ const garantirFontes = async () => {
   }
 };
 
+/** Ingresso da memória desenhado no canvas (mesmo desenho do componente IngressoMemoria, 960 × 352). */
+const desenharIngressoMemoria = async (
+  c: CanvasRenderingContext2D,
+  show: Pick<Show, 'artista' | 'artistaId' | 'casa' | 'cidade' | 'uf' | 'ts'>,
+  imagem: Imagem,
+  usuario: string,
+  memoria: Pick<Memoria, 'notaShow'>,
+  perso: Personalizacao,
+  detalhes: DetalhesCard | undefined,
+  x: number,
+  y: number,
+  k: number,
+) => {
+  const dest = COR_DESTAQUE[perso.cor];
+  c.save();
+  c.translate(x, y);
+  c.scale(k, k);
+  const contorno = new Path2D(CAMINHO_INGRESSO);
+  c.fillStyle = INK;
+  c.fill(contorno);
+  // canhoto com foto
+  const fx = 16;
+  const fy = 16;
+  const fw = RECORTE_X - 40;
+  const fh = H_ING - 32;
+  c.save();
+  retArredondado(c, fx, fy, fw, fh, 12);
+  c.clip();
+  c.fillStyle = '#171226';
+  c.fillRect(fx, fy, fw, fh);
+  let temFoto = false;
+  if (imagem) {
+    try {
+      const img = await carregarParaCanvas(imagem.url);
+      temFoto = true;
+      const r = fw / fh;
+      const ir = img.naturalWidth / img.naturalHeight;
+      const sw = ir > r ? img.naturalHeight * r : img.naturalWidth;
+      const sh = ir > r ? img.naturalHeight : img.naturalWidth / r;
+      const sx = (img.naturalWidth - sw) / 2;
+      const sy = Math.max(0, (img.naturalHeight - sh) * 0.28);
+      c.drawImage(img, sx, sy, sw, sh, fx, fy, fw, fh);
+      // o duotone trabalha em pixels reais do canvas
+      if (!imagem.tratada) {
+        const t = c.getTransform();
+        c.save();
+        c.setTransform(1, 0, 0, 1, 0, 0);
+        aplicarDuotone(c, t.e + fx * t.a, t.f + fy * t.d, fw * t.a, fh * t.d);
+        c.restore();
+      }
+    } catch {
+      /* sem foto: fica o fundo */
+    }
+  }
+  if (!temFoto) {
+    // sem foto liberada: retícula Teal, como no pôster gerado
+    c.fillStyle = TEAL;
+    for (let py = fy; py < fy + fh; py += 9) {
+      for (let px = fx; px < fx + fw; px += 9) {
+        const dist = Math.hypot(px - (fx + fw * 0.7), py - (fy + fh * 0.2)) / (fw * 0.95);
+        const kk = dist < 0.3 ? 1 : dist < 0.75 ? 1 - (dist - 0.3) / 0.45 : 0;
+        if (kk <= 0.03) continue;
+        c.beginPath();
+        c.arc(px + 4.5, py + 4.5, 3.1 * Math.sqrt(kk), 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+  }
+  const g = c.createLinearGradient(0, fy, 0, fy + fh);
+  g.addColorStop(0, 'rgba(16,12,31,0.6)');
+  g.addColorStop(0.34, 'rgba(16,12,31,0)');
+  g.addColorStop(0.52, 'rgba(16,12,31,0)');
+  g.addColorStop(1, 'rgba(16,12,31,0.92)');
+  c.fillStyle = g;
+  c.fillRect(fx, fy, fw, fh);
+  c.restore();
+  try {
+    const logo = await carregar('/livvo/livvo-icon-256.png');
+    c.drawImage(logo, fx + 14, fy + 14, 52, 52);
+  } catch {
+    /* segue sem logo */
+  }
+  c.textAlign = 'left';
+  c.textBaseline = 'top';
+  if (perso.mostrarUsuario && usuario) {
+    c.fillStyle = CIANO;
+    c.font = '700 13px Barlow, sans-serif';
+    c.fillText(`@${usuario}`, fx + 14, fy + 72);
+  }
+  const d = dataCartao(show.ts);
+  c.fillStyle = CIANO;
+  c.font = '700 10.5px Barlow, sans-serif';
+  c.fillText('D A T A', fx + 16, fy + fh - 66);
+  c.fillStyle = OFF;
+  c.font = '700 44px RAYDIS, "Alfa Slab One", sans-serif';
+  c.fillText(d.dia, fx + 16, fy + fh - 52);
+  const wd = c.measureText(d.dia).width;
+  c.font = '700 15px Barlow, sans-serif';
+  c.fillText(`${d.mes} ${d.ano}`.toUpperCase(), fx + 16 + wd + 8, fy + fh - 30);
+  // contorno e picote por cima
+  c.strokeStyle = TEAL;
+  c.lineWidth = 3;
+  c.lineJoin = 'round';
+  c.stroke(contorno);
+  c.setLineDash([8, 9]);
+  c.beginPath();
+  c.moveTo(RECORTE_X, RECORTE_R + 8);
+  c.lineTo(RECORTE_X, H_ING - RECORTE_R - 8);
+  c.stroke();
+  c.setLineDash([]);
+  // corpo
+  const bx = RECORTE_X + 38;
+  const bw = W_ING - bx - 34;
+  c.fillStyle = dest;
+  c.font = '700 12px Barlow, sans-serif';
+  c.fillText((perso.frase.trim() || 'Livvo · Ingresso de memória').toUpperCase(), bx, 26);
+  const { tamanho: tIni, largura } = tamanhoNomeIngresso(show.artista, perso);
+  const { linhas, tamanho } = linhasDoNome(c, show.artista, largura, tIni, perso, 2);
+  const faixa = perso.faixa.trim();
+  const extra = linhaDetalhes(perso, detalhes);
+  const altNome = linhas.length * tamanho * 1.02 + 14 + (faixa || extra ? 26 : 0);
+  const areaTopo = 56;
+  const areaBase = H_ING - 20 - 44 - 60;
+  const topo = perso.posicao === 'cima' ? areaTopo : perso.posicao === 'meio' ? (areaTopo + areaBase - altNome) / 2 : areaBase - altNome;
+  c.fillStyle = OFF;
+  c.font = fonteCanvas(perso, show.artista, tamanho).css;
+  c.textBaseline = 'alphabetic';
+  linhas.forEach((l, i) => c.fillText(l, bx, topo + tamanho * 0.85 + i * tamanho * 1.02));
+  let yy = topo + linhas.length * tamanho * 1.02 + 6;
+  c.fillStyle = dest;
+  c.fillRect(bx, yy, 96, 4);
+  yy += 14;
+  c.textBaseline = 'top';
+  if (faixa || extra) {
+    c.font = '600 14px Barlow, sans-serif';
+    c.fillStyle = OFF;
+    c.fillText([faixa ? `\u266A ${faixa}` : '', extra].filter(Boolean).join('  ·  ').slice(0, 70), bx, yy);
+  }
+  // local e cidade
+  const ly = H_ING - 20 - 44 - 50;
+  c.font = '700 10.5px Barlow, sans-serif';
+  c.fillStyle = '#8A8577';
+  const cx2 = perso.mostrarCasa ? bx + bw * 0.6 : bx;
+  if (perso.mostrarCasa) {
+    c.fillText('L O C A L', bx, ly);
+    c.font = '700 17px Barlow, sans-serif';
+    c.fillStyle = OFF;
+    c.fillText(show.casa.slice(0, 30), bx, ly + 16);
+    c.strokeStyle = '#3A3159';
+    c.lineWidth = 1.5;
+    c.setLineDash([4, 4]);
+    c.beginPath();
+    c.moveTo(cx2 - 18, ly);
+    c.lineTo(cx2 - 18, ly + 38);
+    c.stroke();
+    c.setLineDash([]);
+    c.font = '700 10.5px Barlow, sans-serif';
+    c.fillStyle = '#8A8577';
+  }
+  c.fillText('C I D A D E', cx2, ly);
+  c.font = '700 17px Barlow, sans-serif';
+  c.fillStyle = dest;
+  c.fillText(`${show.cidade} · ${show.uf}`.slice(0, 26), cx2, ly + 16);
+  // rodapé: nota e site
+  const ry = H_ING - 20 - 32;
+  c.strokeStyle = '#3A3159';
+  c.lineWidth = 1.5;
+  c.setLineDash([4, 4]);
+  c.beginPath();
+  c.moveTo(bx, ry);
+  c.lineTo(bx + bw, ry);
+  c.stroke();
+  c.setLineDash([]);
+  c.font = '700 10.5px Barlow, sans-serif';
+  c.fillStyle = '#8A8577';
+  c.fillText('N O T A', bx, ry + 13);
+  for (let i = 1; i <= 5; i++) {
+    const v = memoria.notaShow || 0;
+    desenharIngresso(c, bx + 52 + (i - 1) * 21, ry + 8, 0.8, v >= i ? 1 : v >= i - 0.5 ? 0.5 : 0);
+  }
+  if (memoria.notaShow !== undefined) {
+    c.fillStyle = AMARELO;
+    c.font = '700 18px RAYDIS, "Alfa Slab One", sans-serif';
+    c.fillText(nota(memoria.notaShow), bx + 52 + 5 * 21 + 6, ry + 9);
+  }
+  c.textAlign = 'right';
+  c.fillStyle = OFF;
+  c.font = '700 12px Barlow, sans-serif';
+  c.fillText(SITE, bx + bw, ry + 13);
+  c.restore();
+  if (perso.carimbo !== 'nenhum') desenharCarimbo(c, perso.carimbo, x + (W_ING - 30 - 110) * k, y + 52 * k, (k * 16) / 34, -8);
+};
+
 export const gerarImagem = async (opcoes: {
   show: Show;
   memoria: Memoria;
   usuario: string;
   imagem: Imagem;
   formato: Formato;
+  perso?: Personalizacao;
+  detalhes?: DetalhesCard;
 }): Promise<Blob> => {
-  const { show, memoria, usuario, imagem, formato } = opcoes;
+  const { show, memoria, usuario, imagem, formato, detalhes } = opcoes;
+  const perso = opcoes.perso || personalizacaoDe(memoria);
   await garantirFontes();
   const W = 1080;
   const H = formato === 'stories' ? 1920 : 1350;
@@ -279,34 +576,27 @@ export const gerarImagem = async (opcoes: {
   for (let y = 0; y < H; y += 18) for (let x = 0; x < W; x += 18) c.fillRect(x, y, 2, 2);
 
   const stories = formato === 'stories';
-  const pw = stories ? 820 : 660;
-  const ph = pw * 1.25;
-  const px = (W - pw) / 2;
-  const py = stories ? 170 : 70;
-  await desenharPoster(c, show, imagem, usuario, px, py, pw, ph);
-  c.strokeStyle = '#3A3159';
-  c.lineWidth = 2;
-  retArredondado(c, px, py, pw, ph, 26);
-  c.stroke();
-
-  // carimbo "Eu fui"
-  c.save();
-  c.translate(px + pw - 40, py + ph + 4);
-  c.rotate((-6 * Math.PI) / 180);
-  c.strokeStyle = CIANO;
-  c.lineWidth = 5;
-  c.font = '700 34px Barlow, sans-serif';
-  const carimbo = 'EU FUI';
-  const cw = c.measureText(carimbo).width + 48;
-  c.fillStyle = INK;
-  retArredondado(c, -cw, -34, cw, 68, 8);
-  c.fill();
-  c.stroke();
-  c.fillStyle = CIANO;
-  c.textAlign = 'center';
-  c.textBaseline = 'middle';
-  c.fillText(carimbo, -cw / 2, 1);
-  c.restore();
+  let fimArte: number;
+  if (perso.formato === 'ingresso') {
+    // ingresso horizontal: 1000 px de largura, centralizado
+    const k = 1000 / W_ING;
+    const iy = stories ? 360 : 150;
+    await desenharIngressoMemoria(c, show, imagem, usuario, memoria, perso, detalhes, (W - 1000) / 2, iy, k);
+    fimArte = iy + H_ING * k + (stories ? 60 : 30);
+  } else {
+    const pw = stories ? 820 : 660;
+    const ph = pw * 1.25;
+    const px = (W - pw) / 2;
+    const py = stories ? 170 : 70;
+    await desenharPoster(c, show, imagem, usuario, px, py, pw, ph, perso, detalhes);
+    c.strokeStyle = '#3A3159';
+    c.lineWidth = 2;
+    retArredondado(c, px, py, pw, ph, 26);
+    c.stroke();
+    fimArte = py + ph;
+  }
+  const py = 0;
+  const ph = fimArte;
 
   // notas
   const ny = py + ph + (stories ? 90 : 56);
@@ -359,12 +649,17 @@ const baixarOuCompartilhar = async (blob: Blob, nome: string, destino: string) =
 };
 
 /** Botão "Compartilhar" com as opções (fica no canto inferior direito da Sua memória). */
-export const BotaoCompartilhar: React.FC<{ show: Show; memoria: Memoria; usuario: string; className?: string }> = ({
-  show,
-  memoria,
-  usuario,
-  className = '',
-}) => {
+export const BotaoCompartilhar: React.FC<{
+  show: Show;
+  memoria: Memoria;
+  usuario: string;
+  /** Personalização em uso (a imagem sai igual ao que está na tela). */
+  perso?: Personalizacao;
+  detalhes?: DetalhesCard;
+  /** Botão Teal sob o pôster (07/10/2026); o menu abre para baixo. */
+  botao?: boolean;
+  className?: string;
+}> = ({ show, memoria, usuario, perso, detalhes, botao, className = '' }) => {
   const [aberto, setAberto] = useState(false);
   const [gerando, setGerando] = useState<Formato | null>(null);
   const ref = useRef<HTMLDivElement>(null);
@@ -389,7 +684,15 @@ export const BotaoCompartilhar: React.FC<{ show: Show; memoria: Memoria; usuario
     if (gerando) return;
     setGerando(formato);
     try {
-      const blob = await gerarImagem({ show, memoria, usuario, imagem: imagem ? { url: imagem.url, tratada: imagem.tratada } : null, formato });
+      const blob = await gerarImagem({
+        show,
+        memoria,
+        usuario,
+        imagem: imagem ? { url: imagem.url, tratada: imagem.tratada } : null,
+        formato,
+        perso: perso || personalizacaoDe(memoria),
+        detalhes,
+      });
       const nome = `Livvo_${show.artista.replace(/[^\w]+/g, '_')}_${formato === 'stories' ? 'Stories' : 'Feed'}.png`;
       await baixarOuCompartilhar(blob, nome, formato === 'stories' ? 'Stories' : 'Feed');
       setAberto(false);
@@ -412,11 +715,17 @@ export const BotaoCompartilhar: React.FC<{ show: Show; memoria: Memoria; usuario
 
   return (
     <div className={`relative ${className}`} ref={ref}>
-      <button type="button" className="lv-ghost" aria-haspopup="menu" aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>
-        <Share2 className="w-4 h-4" /> Compartilhar
+      <button
+        type="button"
+        className={botao ? 'lv-btn lv-btn--stub lv-btn--teal w-full whitespace-nowrap' : 'lv-ghost'}
+        aria-haspopup="menu"
+        aria-expanded={aberto}
+        onClick={() => setAberto((v) => !v)}
+      >
+        <Share2 className="w-4 h-4 shrink-0" strokeWidth={botao ? 2.2 : 2} /> <span>Compartilhar</span>
       </button>
       {aberto && (
-        <div className="lv-menu lv-menu--cima" role="menu" aria-label="Compartilhar">
+        <div className={`lv-menu ${botao ? 'lv-menu--baixo' : 'lv-menu--cima'}`} role="menu" aria-label="Compartilhar">
           <div className="lv-kicker px-2.5 pt-1 pb-1">Instagram</div>
           <button type="button" className="lv-menu-item" role="menuitem" onClick={() => instagram('stories')} disabled={Boolean(gerando)}>
             <Instagram /> {gerando === 'stories' ? 'Gerando imagem…' : 'Stories (imagem 9:16)'}

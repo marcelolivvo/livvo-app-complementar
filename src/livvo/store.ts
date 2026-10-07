@@ -34,6 +34,46 @@ export interface Convite {
   exemplo?: boolean;
 }
 
+/**
+ * Personalização do pôster/ingresso de uma memória (revisão 5, 07/10/2026). Vem do Livvo Virtual Poster (A),
+ * só com os carimbos de presença. Vale para o pôster, o ingresso da Carteira e as imagens de compartilhar.
+ */
+export type FormatoMemoria = 'poster' | 'ingresso';
+export type CarimboPresenca = 'nenhum' | 'eu_fui' | 'show_da_minha_vida';
+export type CorDestaque = 'ciano' | 'teal' | 'offwhite';
+export type FonteNome = 'alfa' | 'barlow' | 'raydis';
+export interface Personalizacao {
+  formato: FormatoMemoria;
+  carimbo: CarimboPresenca;
+  cor: CorDestaque;
+  fonte: FonteNome;
+  tamanho: 'p' | 'm' | 'g';
+  posicao: 'cima' | 'meio' | 'baixo';
+  /** Frase curta no alto do card (tagline do Estúdio). */
+  frase: string;
+  /** Faixa marcante do show. */
+  faixa: string;
+  mostrarSetor: boolean;
+  mostrarComQuem: boolean;
+  mostrarCasa: boolean;
+  mostrarUsuario: boolean;
+}
+export const PERSONALIZACAO_PADRAO: Personalizacao = {
+  formato: 'poster',
+  carimbo: 'eu_fui',
+  cor: 'ciano',
+  fonte: 'alfa',
+  tamanho: 'g',
+  posicao: 'baixo',
+  frase: '',
+  faixa: '',
+  mostrarSetor: true,
+  mostrarComQuem: true,
+  mostrarCasa: true,
+  mostrarUsuario: true,
+};
+export const personalizacaoDe = (m?: Pick<Memoria, 'personalizacao'> | null): Personalizacao => ({ ...PERSONALIZACAO_PADRAO, ...(m?.personalizacao || {}) });
+
 /** Quem pode marcar você como Concert Buddy. */
 export type QuemPodeMarcar = 'todos' | 'seguindo' | 'ninguem';
 
@@ -53,6 +93,8 @@ export interface Memoria {
   ingressoAnexado?: boolean;
   presencaConfirmadaPor?: string;
   relato?: string;
+  /** Pôster ou ingresso, carimbo, cor, fonte e o que aparece no card. */
+  personalizacao?: Partial<Personalizacao>;
   visibilidade: Visibilidade;
   origem: 'demo' | 'usuario';
 }

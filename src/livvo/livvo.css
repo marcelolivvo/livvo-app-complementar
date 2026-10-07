@@ -778,8 +778,10 @@
   font-weight: 400;
   line-height: 0.98;
   font-size: var(--p-name, 13cqw);
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  /* Nunca quebra palavra no meio: o nome passa para a linha seguinte palavra por palavra. */
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
 }
 .lv-poster-venue {
   margin-top: 2.4cqw;
@@ -1194,4 +1196,137 @@
 .lv-sugestao[data-off] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Passaporte: mais espaço entre Artistas e Cidades e coluna de Artistas mais larga (07/10/2026) */
+.lv-app .lv-fields--passaporte {
+  max-width: 780px;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.45fr) minmax(0, 1fr);
+}
+.lv-app .lv-fields--passaporte > div {
+  padding: 2px 30px;
+}
+.lv-app .lv-fields--passaporte > div:first-child {
+  padding-left: 0;
+}
+.lv-app .lv-fields--passaporte > div > span {
+  white-space: normal;
+  line-height: 1.3;
+}
+@media (max-width: 480px) {
+  .lv-app .lv-fields--passaporte > div {
+    padding: 2px 12px;
+  }
+}
+
+/* Nomes de artista e títulos de card: nunca partir uma palavra entre linhas (07/10/2026). */
+.lv-app h1, .lv-app h2, .lv-app h3, .lv-app .lv-row-title, .lv-app .lv-showcard-title, .lv-app .lv-show-t, .lv-app .lv-poster-name { hyphens: none; word-break: keep-all; overflow-wrap: normal; }
+
+/* Personalizar (revisão 5, 07/10/2026) ------------------------------------------------ */
+.lv-poster--perso .lv-poster-name { font-family: var(--p-font, 'Alfa Slab One'), Georgia, serif; }
+.lv-poster--perso[data-fonte='barlow'] .lv-poster-name { font-weight: 800; line-height: 0.95; text-transform: uppercase; letter-spacing: -0.01em; }
+.lv-poster--perso[data-fonte='raydis'] .lv-poster-name { font-weight: 700; line-height: 0.95; }
+.lv-poster--perso .lv-poster-venue { color: var(--p-dest); opacity: 1; }
+.lv-poster-barra { display: block; width: 16cqw; height: max(2px, 0.9cqw); margin-top: 2.2cqw; background: var(--p-dest, #4fdcde); }
+.lv-poster-frase {
+  display: block;
+  margin-top: 0.4cqw;
+  max-width: 46cqw;
+  font-style: normal;
+  font-size: max(7px, 3.3cqw);
+  letter-spacing: 0.1em;
+  color: var(--p-dest, #4fdcde);
+  white-space: normal;
+  line-height: 1.2;
+}
+.lv-poster-extra {
+  display: flex;
+  align-items: center;
+  gap: 1.4cqw;
+  margin-top: 1.4cqw;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 600;
+  font-size: max(8px, 3.6cqw);
+  color: var(--p-fg);
+  opacity: 0.9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lv-poster-extra svg { width: 1.1em; height: 1.1em; color: var(--p-dest, #4fdcde); flex-shrink: 0; }
+/* Posição do nome: em cima (abaixo do logo), no meio ou embaixo (padrão) */
+.lv-poster--perso[data-pos='cima'] .lv-poster-bottom { bottom: auto; top: 40cqw; }
+.lv-poster--perso[data-pos='meio'] .lv-poster-bottom { bottom: auto; top: 58%; transform: translateY(-50%); }
+.lv-poster--perso[data-pos='cima'] .lv-poster-shade,
+.lv-poster--perso[data-pos='meio'] .lv-poster-shade {
+  background:
+    radial-gradient(rgba(16, 12, 31, 0.22) 0.7px, transparent 1.1px) 0 0 / 1.4cqw 1.4cqw,
+    linear-gradient(180deg, rgba(16, 12, 31, 0.6) 0%, rgba(16, 12, 31, 0.45) 40%, rgba(16, 12, 31, 0.55) 75%, rgba(16, 12, 31, 0.7) 100%);
+}
+/* Carimbo de presença */
+.lv-carimbo {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5em 0.9em 0.45em;
+  border: 2px dashed var(--c);
+  border-radius: 6px;
+  color: var(--c);
+  background: rgba(16, 12, 31, 0.72);
+  font-family: 'Barlow', sans-serif;
+  text-align: center;
+  transform: rotate(-12deg);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+.lv-carimbo b { font-weight: 800; letter-spacing: 0.12em; font-size: 1em; line-height: 1.1; }
+.lv-carimbo small { font-weight: 700; letter-spacing: 0.12em; font-size: 0.55em; text-transform: uppercase; opacity: 0.9; margin-top: 0.2em; }
+.lv-poster-carimbo { position: absolute; z-index: 3; right: 6cqw; top: 36cqw; font-size: max(7px, 4.6cqw); }
+.lv-poster--perso[data-pos='cima'] .lv-poster-carimbo,
+.lv-poster--perso[data-pos='meio'] .lv-poster-carimbo { top: auto; bottom: 8cqw; }
+.lv-carimbo--ingresso { transform: rotate(-8deg); }
+.lv-ingresso-nome { overflow-wrap: normal; word-break: keep-all; hyphens: none; }
+.lv-ingresso-halftone {
+  background: radial-gradient(circle, #2fb8ba 0 34%, transparent 36%) 0 0 / 9px 9px;
+  -webkit-mask-image: radial-gradient(circle at 70% 20%, #000 0 30%, transparent 75%);
+  mask-image: radial-gradient(circle at 70% 20%, #000 0 30%, transparent 75%);
+}
+/* Menu de compartilhar sob o pôster: abre para baixo, na largura do botão */
+.lv-menu--baixo { left: 0; right: auto; top: calc(100% + 8px); min-width: 100%; }
+@media (max-width: 640px) {
+  .lv-menu--baixo {
+    position: fixed;
+    top: auto;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    min-width: 0;
+    bottom: calc(var(--lv-tabbar-h) + 12px + env(safe-area-inset-bottom));
+  }
+}
+/* Botões sob o pôster: Atualizar foto (Off-white), Compartilhar (Teal), Personalizar (contorno) */
+.lv-app .lv-stage .lv-btn--stub.w-full { justify-content: flex-start; }
+.lv-btn-perso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 15px;
+  border: 1.5px solid var(--lv-cyan);
+  border-radius: 4px;
+  color: var(--lv-cyan);
+  font-size: 13.5px;
+  font-weight: 800;
+  background: rgba(16, 12, 31, 0.55);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.lv-btn-perso:hover { background: rgba(79, 220, 222, 0.08); }
+.lv-btn-perso[aria-expanded='true'] { background: var(--lv-cyan); color: var(--lv-ink); }
+.lv-perso { scroll-margin-top: 80px; }
+
+.lv-perso .lv-row-head > div:first-child > div:last-child { min-width: 0; }
+/* Meu histórico e Wrapped do Estúdio dentro do Livvo final: rótulos em Barlow, não em DM Mono (identidade oficial) */
+.lv-app :is(.font-mono, .lv-hist-close, .lv-hist-readout, .lv-hist-stamp, .lv-hist-rank) {
+  font-family: 'Barlow', 'Plus Jakarta Sans', sans-serif;
 }

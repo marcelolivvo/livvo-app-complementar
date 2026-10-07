@@ -74,7 +74,7 @@ export const Registrar: React.FC = () => {
               <FotoArtista a={artista} tamanho={60} />
               <div className="min-w-0">
                 <div className="lv-kicker lv-kicker--cyan">Qual destes você viveu?</div>
-                <h1 className="lv-h1 mt-1 !text-[clamp(26px,5.6vw,38px)] break-words">{artista.nome}</h1>
+                <h1 className="lv-h1 mt-1 !text-[clamp(26px,5.6vw,38px)]">{artista.nome}</h1>
                 <p className="lv-meta mt-1">
                   {plural(passados.length, 'show no catálogo', 'shows no catálogo')}
                   {fuiAqui ? ` · você foi a ${fuiAqui}` : ''}

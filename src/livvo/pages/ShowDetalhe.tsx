@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ExternalLink, MessageCircle, Share2, Ticket, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, MessageCircle, Share2, SlidersHorizontal, Ticket, UserCheck, UserPlus } from 'lucide-react';
 import { ehFuturo, useCatalogo, type Show } from '../data/catalog';
 import { MIN_AMOSTRA_NOTAS, concertBuddies, socialDoShow, type ResenhaExemplo } from '../data/social';
 import { dataCartao, dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
 import { Link, navigate, useRoute } from '../router';
-import { livvo, nivelVerificacao, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
+import { livvo, nivelVerificacao, personalizacaoDe, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
 import { BotaoAtualizarFoto } from '../AtualizarFoto';
 import { BotaoCompartilhar } from '../Compartilhar';
 import { MarcarBuddies } from '../ConcertBuddies';
+import { IngressoMemoria } from '../Ingresso';
+import { PainelPersonalizar, type RascunhoPersonalizacao } from '../Personalizar';
+import { RetroTicketStage } from '../../components/RetroTicket';
 import { calcularPassaporte } from '../stats';
 import { useImagemDoPoster } from '../ui';
 import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
@@ -22,7 +25,7 @@ const Bloco: React.FC<{ titulo: string; extra?: React.ReactNode; children: React
 );
 
 /** A memória do usuário, como canhoto de ingresso: notas em 1 toque e escada de verificação. */
-const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focarOrg: boolean; usuario: string }> = ({ memoria, show, recem, focarOrg, usuario }) => {
+const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focarOrg: boolean }> = ({ memoria, show, recem, focarOrg }) => {
   const orgRef = useRef<HTMLDivElement>(null);
   const nivel = nivelVerificacao(memoria);
   const [confirmar, setConfirmar] = useState(false);
@@ -95,9 +98,6 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
             {confirmar ? 'Toque de novo para tirar da sua história' : 'Desfazer registro'}
           </button>
         </div>
-        <div className="mt-4 flex justify-end">
-          <BotaoCompartilhar show={show} memoria={memoria} usuario={usuario} />
-        </div>
       </div>
     </div>
   );
@@ -106,13 +106,8 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
 /** Legenda do pôster: de onde vem a imagem. */
 const LegendaPoster: React.FC<{ show: Show }> = ({ show }) => {
   const img = useImagemDoPoster(show);
-  const texto = !img
-    ? 'Pôster gerado pelos dados do show'
-    : img.origem === 'memoria'
-      ? `Sua foto no padrão Livvo${img.fonte && img.fonte !== 'Sua foto' ? ` · ${img.fonte.replace(/ \(.*\)$/, '')}` : ''}`
-      : img.origem === 'admin'
-        ? `Foto do artista · ${img.fonte || 'Livvo'}`
-        : `Foto automática do artista · ${img.fonte || 'Deezer'}`;
+  // Só o tipo da foto, sem a fonte (07/10/2026: "manter apenas Foto automática").
+  const texto = !img ? 'Pôster gerado pelos dados do show' : img.origem === 'memoria' ? 'Sua foto no padrão Livvo' : img.origem === 'admin' ? 'Foto do artista' : 'Foto automática';
   return <p className="lv-eyebrow mt-3 text-center hidden lg:block">{texto}</p>;
 };
 
@@ -177,7 +172,11 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
   const { catalogo, erro, tentarDeNovo } = useCatalogo();
   const lv = useLivvo();
   const [recem, setRecem] = useState(false);
-  useEffect(() => setRecem(false), [id]);
+  const [rascunho, setRascunho] = useState<RascunhoPersonalizacao | null>(null);
+  useEffect(() => {
+    setRecem(false);
+    setRascunho(null);
+  }, [id]);
 
   const show = catalogo?.porId.get(id);
   const minha = lv.memoriaDoShow(id);
@@ -241,6 +240,26 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
   const dias = diasAte(show.ts);
   const outrasPessoas = soc.registros - (minha ? 1 : 0);
 
+  // Personalizar: prévia ao vivo do rascunho; sem rascunho, o que está salvo na memória
+  const salva = personalizacaoDe(minha);
+  const perso = rascunho?.perso || salva;
+  const comQuem = [...(minha?.buddies || []).filter((b) => b.status === 'aceita').map((b) => b.usuario), ...(minha?.comQuem || [])];
+  const detalhes = { setor: rascunho ? rascunho.setor : minha?.setor, comQuem };
+  const ingresso = Boolean(minha) && perso.formato === 'ingresso';
+  const alterado = Boolean(rascunho) && (JSON.stringify(rascunho!.perso) !== JSON.stringify(salva) || (rascunho!.setor || '') !== (minha?.setor || ''));
+  const abrirPersonalizar = () => {
+    if (!minha) return;
+    if (rascunho) return setRascunho(null);
+    setRascunho({ perso: { ...salva }, setor: minha.setor || '' });
+    window.setTimeout(() => document.getElementById('painel-personalizar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+  const salvarPersonalizacao = () => {
+    if (!minha || !rascunho) return;
+    livvo.atualizar(minha.id, { personalizacao: rascunho.perso, setor: rascunho.setor || undefined });
+    setRascunho(null);
+    avisar('Personalização salva');
+  };
+
   const euFui = () => {
     const m = livvo.registrar(show.id);
     if (m) {
@@ -265,7 +284,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         <span className="lv-kicker lv-kicker--cyan">{show.turne || (futuro ? 'Show que vem aí' : 'Show ao vivo')}</span>
         {show.exemplo && <TagExemplo texto="Show de exemplo" title="O catálogo real ainda não tem shows futuros. Este show e a data são fictícios." />}
       </div>
-      <h1 className="lv-h1 mt-2 break-words">{show.artista}</h1>
+      <h1 className="lv-h1 mt-2">{show.artista}</h1>
       <div className="mt-3 space-y-1 text-[14px] sm:text-[14.5px] text-[#B3AE9F]">
         <p>
           <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="text-[#ECE5D1] font-bold hover:underline">
@@ -306,7 +325,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         >
           <ArrowLeft className="w-4 h-4" /> Voltar
         </button>
-        {/* Com memória, o Compartilhar fica dentro do box "Sua memória" (canto inferior direito) */}
+        {/* Com memória, o Compartilhar fica sob o pôster (07/10/2026) */}
         {!minha && (
           <button
             type="button"
@@ -327,19 +346,56 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         }
         direita={dataCurta(show.ts)}
       >
-        <div className="lv-split lv-split--palco-esq">
+        <div className="lv-split lv-split--palco-esq" style={ingresso ? ({ '--lv-split-esq': '540px' } as React.CSSProperties) : undefined}>
           <div className="lv-stage p-4 sm:p-6 lg:p-8">
-            <div className="grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block">
-              <div>
-                <Poster show={show} usuario={minha ? lv.perfil.usuario : undefined} />
-                {minha && <BotaoAtualizarFoto show={show} memoria={minha} fotoCatalogo={show.foto} botao className="mt-3" />}
+            <div
+              className={
+                ingresso || rascunho
+                  ? 'grid grid-cols-1 gap-4 sm:gap-6 lg:block'
+                  : 'grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block'
+              }
+            >
+              <div className={rascunho && !ingresso ? 'w-full max-w-[340px] mx-auto lg:max-w-none' : ''}>
+                {ingresso && minha ? (
+                  <RetroTicketStage>
+                    <IngressoMemoria show={show} memoria={minha} usuario={lv.perfil.usuario} perso={perso} detalhes={detalhes} />
+                  </RetroTicketStage>
+                ) : (
+                  <Poster show={show} usuario={minha ? lv.perfil.usuario : undefined} perso={minha ? perso : undefined} detalhes={detalhes} />
+                )}
+              </div>
+              <div className={`min-w-0 lg:hidden ${rascunho ? 'hidden' : ''}`}>{cabecalho}</div>
+              {/* Botões sob o pôster (07/10/2026): Atualizar foto, Compartilhar e Personalizar */}
+              {minha && (
+                <div className={`${ingresso || rascunho ? '' : 'col-span-2'} lg:mt-4 grid gap-2.5 sm:max-w-[420px] lg:max-w-none`}>
+                  <BotaoAtualizarFoto show={show} memoria={minha} fotoCatalogo={show.foto} botao />
+                  <BotaoCompartilhar show={show} memoria={minha} usuario={lv.perfil.usuario} perso={perso} detalhes={detalhes} botao />
+                  <button type="button" className="lv-btn-perso" aria-expanded={Boolean(rascunho)} aria-controls="painel-personalizar" onClick={abrirPersonalizar}>
+                    <SlidersHorizontal className="w-4 h-4" />
+                    <span>Personalizar</span>
+                    <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${rascunho ? 'rotate-180 lg:-rotate-90' : 'lg:-rotate-90'}`} />
+                  </button>
+                </div>
+              )}
+              <div className={minha && !ingresso && !rascunho ? 'col-span-2 lg:col-span-1' : ''}>
                 <LegendaPoster show={show} />
               </div>
-              <div className="min-w-0 lg:hidden">{cabecalho}</div>
             </div>
           </div>
           <div className="lv-perf" aria-hidden="true" />
-          <div className="p-4 sm:p-6 lg:p-8 min-w-0">
+          <div className="p-4 sm:p-6 lg:p-8 min-w-0" id="painel-personalizar">
+            {rascunho && minha ? (
+              <PainelPersonalizar
+                show={show}
+                rascunho={rascunho}
+                mudar={setRascunho}
+                salvar={salvarPersonalizacao}
+                fechar={() => setRascunho(null)}
+                alterado={alterado}
+                comQuem={comQuem}
+              />
+            ) : (
+            <>
             <div className="hidden lg:block">{cabecalho}</div>
 
             {/* Ação principal: uma por estado ------------------------------------- */}
@@ -382,7 +438,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
               </div>
             ) : minha ? (
               <div className="lg:mt-7">
-                <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} usuario={lv.perfil.usuario} />
+                <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} />
               </div>
             ) : (
               <div className="lg:mt-7">
@@ -413,6 +469,8 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
                 !futuro && !minha && <span className="lv-meta">Ninguém registrou este show ainda. Seja a primeira pessoa.</span>
               )}
             </div>
+            </>
+            )}
           </div>
         </div>
       </Bilhete>
