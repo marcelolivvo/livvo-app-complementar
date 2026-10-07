@@ -1,6 +1,6 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 3: notas em ingressos e fotos padronizadas) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 4: logo e foto automática nos pôsteres, Compartilhar, Concert Buddies e Comunidade) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
@@ -8,6 +8,8 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 > **Revisão 2 (07/10/2026, à tarde):** o visual foi refeito nos parâmetros do Estúdio (app A), que valem para tudo. O plano de fusão vale para estrutura e fluxos. Em conflito, vale o documento da identidade oficial. Detalhes na seção 4 e nas decisões 9 a 13 da seção 9.
 
 > **Revisão 3 (07/10/2026, pedido às 13h11 e respostas às 13h32):** as notas passam a usar o **ingresso** (ícone enviado pelo Edmir) no lugar dos discos; botão **Atualizar foto** na memória, com toda foto no padrão Livvo (corte 4:5 + halftone da marca); botão de admin **Atualizar todas as fotos**, com as fontes que o Estúdio já usava (Deezer, Wikimedia Commons, Wikipédia). Decisões 14 a 18 da seção 9 e seção 5.1.
+
+> **Revisão 4 (07/10/2026, pedido às 14h58 e respostas às 15h09):** todo pôster e ingresso com o logo Livvo (padrão do Estúdio); foto automática de cada artista em todo card, pôster e ingresso; tratamento de foto trocado por um duotone suave que mostra os detalhes; Compartilhar dentro da "Sua memória" com Instagram (Stories e Feed), Facebook, WhatsApp e link; Concert Buddies com marcação de @ e aceite; Comunidade funcionando. Seções 5.1 a 5.4, 6.3, 6.5, 6.6, 7 e decisões 21 a 29.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -40,7 +42,8 @@ Os endereços de show precisam ser definidos agora e nunca mais mudar, porque v�
 | `/show/:id` | Detalhe do show. `:id` = Setlist ID do catálogo (ex.: `/show/435f27c7`) | Sim, para ler |
 | `/registrar` e `/registrar?artista=:mbid` | Registrar: artista → data → Eu fui | Sim, mas Eu fui pede login |
 | `/minha-historia` | Minha História (provisória nesta parte) | Não |
-| `/comunidade`, `/alertas` | Páginas de espera (partes 4) | Sim |
+| `/comunidade` e `/comunidade?aba=buddies\|convites\|comum\|pessoas` | Comunidade: Seguindo, Concert Buddies, Convites, Shows em comum e Pessoas | Não (pede para entrar) |
+| `/alertas` | Página de espera (parte 4) | Sim |
 | `/estudio` | Laboratório do redesign | Sim |
 | `/admin` | Redireciona para `/estudio` (menu de admin só com `?admin=1`) | Não |
 
@@ -119,7 +122,7 @@ Regras visuais aplicadas:
 
 | Componente | O que faz | Detalhes para implementar |
 | --- | --- | --- |
-| **Pôster Halftone** (`Poster`) | Capa de cada show, gerada pelos dados: dia em RAYDIS, mês e ano, UF, nome do artista em Alfa Slab One, casa de show. Fundo com retícula ("sol" halftone) | 5 paletas da marca escolhidas por hash do artista (o mesmo artista sempre tem a mesma cor); posição do sol varia por artista; tamanho do nome se ajusta ao comprimento (unidades `cqw`). Prioridade de imagem: foto da memória da pessoa (`show:<id>`) → foto do artista (`artista:<id>`, atualizada pelo admin) → pôster gerado pelos dados. Fotos salvas já vêm padronizadas (seção 5.1) e aparecem sem filtro extra, só com o degradê que garante a leitura do texto |
+| **Pôster** (`Poster`) | Capa de cada show: **logo Livvo** no canto superior esquerdo (ícone oficial, como no Estúdio), o **@ da pessoa** embaixo do logo só nas memórias e no que é compartilhado, data (dia em RAYDIS, mês e ano) e UF à direita, nome do artista em Alfa Slab One e casa de show embaixo | Imagem, nesta ordem: foto da memória da pessoa (`show:<id>`) → foto definida pelo admin (`artista:<id>`) → **foto automática do artista** (seção 5.1) → pôster halftone gerado pelos dados (5 paletas por hash do artista, "sol" de retícula). A foto automática só é buscada quando o card chega perto da tela. Toda foto aparece com o duotone suave e uma retícula leve por cima, com escurecido em cima e embaixo para o texto |
 | **Card de show** (`CardShow`) | Pôster + artista + casa · cidade + data + linha social | Linha social: avatares + "N registraram" (passado) ou "N querem ir" (futuro) ou a etiqueta Quero ir / Tenho ingresso. Carimbo "Você foi" ou etiqueta "Exemplo" no canto do pôster |
 | **Carimbo "Você foi"** (`CarimboFui`) | Marca de presença | Borda Ciano, inclinado −6°, animação de carimbo de 0,42 s ao registrar (desligada com "reduzir movimento") |
 | **Notas em ingressos** (`Discos`, nome mantido por compatibilidade) | Nota de meio a cinco em 5 ingressos verticais (desenho do ícone enviado pelo Edmir: recortes laterais, código de barras, picote, palheta com nota musical), em SVG 20 × 30 | Preenchido: Off-white com contorno e detalhes Teal. Meio ponto: metade esquerda preenchida (toque na metade esquerda vale meio ponto, como nos discos). Sem nota: contorno apagado (`#3A3159`), ou Teal a 55% quando dá para tocar. Acessível como `role="slider"` (setas mudam 0,5). `tamanho` = referência; o ingresso mede 0,8 × 1,2 desse valor |
@@ -140,8 +143,9 @@ Regras visuais aplicadas:
 
 | Peça | Como funciona |
 | --- | --- |
-| **Padrão Livvo** (`padronizar`) | Toda foto, de qualquer fonte, vira um JPEG 640 × 800 (4:5): recorte centralizado e puxado para cima (rostos), contraste automático (percentis 3 e 97) e retícula halftone com células de 7 px sobre Preto Profundo, pontos em Ciano que clareiam para Off-white nas luzes. Feito no `<canvas>` do navegador |
-| **Atualizar foto** (memória) | Botão logo abaixo do pôster na página do show, link em "Sua memória" e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar ao pôster gerado" (ou à foto do artista). Só a foto enviada pela pessoa sobe a memória para "Com foto" na escada de verificação |
+| **Padrão Livvo** (`padronizar`) | Toda foto enviada ou escolhida vira um JPEG 640 × 800 (4:5): recorte centralizado e puxado para cima (rostos) e **duotone suave** (mapa de cores Preto Profundo → azul-petróleo escuro → Teal → Teal claro → Off-white, com ajuste leve de níveis), que mantém os detalhes da foto. Feito no `<canvas>` do navegador. Fotos salvas com o halftone antigo são ignoradas (`v` do tratamento) |
+| **Foto automática** (`/api/foto-artista?nome=` e `useFotoAutomatica`) | Todo artista busca sozinho a foto principal, pela mesma regra da "foto certa do artista" abaixo. Resposta com cache na CDN (7 dias) e no navegador (3 dias), até 4 pedidos ao mesmo tempo. A foto aparece com o mesmo duotone por um filtro SVG (`#lv-duotone`, em `AppShell.tsx`), sem copiar a imagem |
+| **Atualizar foto** (memória) | Botão logo abaixo do pôster na página do show, link em "Sua memória" e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar à foto automática" (ou à foto do artista). Só a foto enviada pela pessoa sobe a memória para "Com foto" na escada de verificação |
 | **Atualizar todas as fotos** (admin) | Menu da conta, só com `?admin=1`. Escopo: artistas da conta e da agenda (rápido) ou todo o catálogo da prévia (653 artistas). Para cada artista: foto do catálogo (Deezer) ou a melhor foto do `/api/artist-search` (só nome exato), padronizada e salva para todos os pôsteres e ingressos do artista. 3 em paralelo, progresso em picotes com %, Parar, opção de refazer quem já tem foto, lista de quem ficou sem foto nas fontes e "Voltar todos aos pôsteres gerados" (pede segundo toque) |
 | **`GET /api/foto?url=`** | Busca a imagem pelo próprio domínio para o canvas poder tratá-la. Só HTTPS e só os domínios das fontes (`*.dzcdn.net`, `*.deezer.com`, `upload.wikimedia.org`, `thumb.wikimedia.org`, `*.mzstatic.com`), só `image/*`, até 6 MB, cache de 7 dias. Qualquer outro endereço responde 403 |
 | **Armazenamento na prévia** | IndexedDB do navegador (`livvo_final_fotos`), chaves `show:<id>` e `artista:<id>`, com origem e fonte. No site final: armazenamento de arquivos de B, com a foto do artista compartilhada por todos e a da memória só da pessoa |
@@ -149,6 +153,31 @@ Regras visuais aplicadas:
 **Foto certa do artista** (`/api/artist-search` e `buscarFotosDoArtista`): só entram nomes iguais ao do catálogo; homônimos do Deezer são ordenados por fãs e fica só o principal (ex.: há vários "Oasis"); homônimo com menos de 1.000 fãs sai quando há fonte melhor (ex.: "Biquini" com 34 fãs, enquanto a banda está na Wikipédia como "Biquini (banda)"); a silhueta vazia do Deezer sai; páginas da Wikipédia cuja descrição não é de música saem (ex.: "Oasis", o oásis do deserto). Conferido na prévia publicada com Oasis, Keane, Biquini, Vanguart, Dave Matthews Band e Nenhum de Nós.
 
 Bancos de imagem genéricos (Unsplash, usados como reserva no Estúdio) ficam fora: não são fotos do artista. Antes de produção, o Greg deve conferir os termos de uso das fontes (API do Deezer, licenças por arquivo do Wikimedia) e guardar a fonte de cada foto.
+
+### 5.2 Compartilhar (`src/livvo/Compartilhar.tsx`)
+
+| Peça | Como funciona |
+| --- | --- |
+| **Onde fica** | Botão "Compartilhar" no canto inferior direito da "Sua memória", abaixo do "Atualizar foto". O "Compartilhar" do topo da página do show só aparece quando a pessoa não foi ao show (não há memória). No celular, as opções abrem numa folha presa embaixo da tela |
+| **Instagram Stories e Feed** | O site não consegue postar direto no Instagram. O Livvo gera a imagem pronta no `<canvas>`: 1080 × 1920 (Stories) ou 1080 × 1350 (Feed), com o pôster (mesma imagem e tratamento da tela, logo, @ da pessoa), carimbo "Eu fui", Nota do Show e da Organização em ingressos com o número em RAYDIS amarelo, data por extenso e o endereço livvomusic.com.br (#12). No celular abre o menu do aparelho (Web Share com arquivo) e a pessoa escolhe o Instagram; no computador a imagem é baixada com o aviso "Abra o Instagram e publique" |
+| **Facebook** | Abre a janela de compartilhar do Facebook com o link do show |
+| **WhatsApp e link** | WhatsApp com texto pronto e link; "Copiar link" |
+
+**Para o Greg (prévia do link no Facebook):** para o post mostrar a foto e o nome do show, a página `/show/:id` precisa devolver as meta tags `og:title`, `og:description` e `og:image` geradas no servidor (o app é uma página única e hoje tem tags genéricas). Na prévia da Vercel isso não dá para conferir, porque o Facebook não consegue ler uma página que pede login na Vercel.
+
+### 5.3 Concert Buddies (`src/livvo/ConcertBuddies.tsx`, `src/livvo/store.ts`)
+
+| Peça | Como funciona |
+| --- | --- |
+| **Marcar no "Foi com alguém?"** | Na página de um show que a pessoa foi: campo "Marcar quem foi com você" com sugestões (primeiro quem foi a este show, depois quem ela segue, depois as demais pessoas). Ao escolher, vira um convite "Aguardando aceite"; dá para desmarcar. Cada marcado mostra quantos shows vocês viram juntos. O WhatsApp continua para quem ainda não está no Livvo. Em show futuro ou sem memória, o bloco convida a registrar primeiro |
+| **Aceite** | O show só entra na história do amigo se ele aceitar. Na prévia, as pessoas de exemplo aceitam sozinhas depois de alguns segundos, para mostrar o fluxo |
+| **Quem pode marcar você** | Todos, Quem eu sigo (padrão proposto) ou Ninguém, na aba Convites da Comunidade. Uma pessoa de exemplo (@igornunes) não aceita marcações, para mostrar a regra na sugestão |
+| **Convites recebidos ("Fomos juntos")** | Aceitar cria a memória do show (ou liga a pessoa à memória que já existe); Recusar só arquiva. A conta de demonstração recebe 3 convites de exemplo |
+| **Mais shows juntos** | Lista pessoal (sem ranking geral) na Minha História (4 primeiros) e na Comunidade (todos) |
+
+### 5.4 Comunidade (`src/livvo/pages/Comunidade.tsx`)
+
+Abas em texto: **Seguindo** (o que quem você segue registrou, com notas), **Concert Buddies** (mais shows juntos), **Convites** (quem pode marcar você + convites "Fomos juntos" para aceitar ou recusar, e os respondidos), **Shows em comum** (pessoas que foram aos mesmos shows, com Seguir) e **Pessoas** (para seguir). Com a "Comunidade de exemplo" desligada no menu, cada aba mostra o estado vazio real. Visitante vê o convite para entrar.
 
 ---
 
@@ -219,7 +248,7 @@ As abas Números, Coleção (medalhas, desafios, stickers), Agenda e Listas entr
 
 ### 6.6 Comunidade e Alertas
 
-Páginas de espera em página-ingresso com palco, lista "O que entra aqui" em linhas com picote e um caminho útil (Explorar, Próximos).
+Comunidade: seção 5.4 (adiantada da parte 4 em 07/10/2026). Alertas continua como página de espera: página em página-ingresso com palco, lista "O que entra aqui" em linhas com picote e um caminho útil (Explorar, Próximos).
 
 ---
 
@@ -232,9 +261,13 @@ Nesta prévia tudo fica no navegador (`localStorage`, chave `livvo_final_v1`), c
 | **Memória** | `id`, `showId`, `criadaEm`, `atualizadaEm`, `notaShow` (0,5–5), `notaOrganizacao` (0,5–5), `dimensoes` (mapa id → nota), `setor`, `comQuem` (@), `fotoUrl`, `ingressoAnexado`, `presencaConfirmadaPor`, `relato`, `visibilidade` (`privado` / `seguidores` / `publico`) | Uma memória por pessoa e show. O nível da escada de verificação é calculado, não gravado |
 | **Interesse** | `showId` → `quero_ir` ou `tenho_ingresso` | Some quando a pessoa registra o show (vira memória) |
 | **Seguindo** | lista de @ | Base da Comunidade |
+| **Concert Buddy (marcação)** | na memória: `buddies` = lista de `{ usuario, status (pendente / aceita / recusada), em }` | A marcação gera um convite para a outra pessoa. `comQuem` fica para compatibilidade com B |
+| **Convite "Fomos juntos"** | `id`, `de` (@ de quem marcou), `showId`, `em`, `status` (`pendente` / `aceito` / `recusado`) | Aceitar cria a memória ou liga a pessoa à memória existente |
+| **Preferência de marcação** | `quemPodeMarcar`: `todos` / `seguindo` / `ninguem` | Proposta de padrão: `seguindo` |
+| **Foto** | por memória (`show:<id>`) e por artista (`artista:<id>`, admin): imagem tratada, `origem`, `fonte`, versão do tratamento | No site final, armazenamento de arquivos de B; a foto automática é só uma referência (endereço e fonte), não uma cópia |
 | **Dimensões (IDs fixos)** | `entrada_saida`, `seguranca`, `som`, `visao_palco`, `clima_publico`, `bares_banheiros` | Fixar os IDs agora evita quebrar séries históricas (decisão irreversível nº 2). As três últimas são propostas do plano, a aprovar |
 
-Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem: detalhe, registrar, momento), `nota_show`, `nota_organizacao` (origem), `interesse_marcado` (tipo), `link_compartilhado`, `whatsapp_aberto`, `seguir`, `filtro_explorar` (tipo).
+Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem: detalhe, registrar, momento, convite), `nota_show`, `nota_organizacao` (origem), `interesse_marcado` (tipo), `link_compartilhado`, `imagem_compartilhada` (stories, feed), `whatsapp_aberto`, `seguir`, `buddy_marcado`, `convite_respondido` (aceito, recusado), `foto_atualizada` (origem), `filtro_explorar` (tipo).
 
 ---
 
@@ -247,6 +280,8 @@ Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem:
 | Shows futuros | **Exemplo:** 12 shows com datas fictícias contadas a partir de hoje (o catálogo real não tem shows futuros). Marcados "Show de exemplo" e "Datas de exemplo" |
 | Pessoas, contagens, médias, resenhas e atividade | **Exemplo:** 14 pessoas fictícias e números gerados de forma estável a partir do ID do show (`src/livvo/data/social.ts`). Nenhum nome ou texto de beta tester real. Desligáveis no menu |
 | Agenda da conta de demonstração | **Exemplo:** Vanguart (Tenho ingresso) e Dave Matthews Band (Quero ir) |
+| Concert Buddies, convites e quem a demonstração segue | **Exemplo:** buddies nas memórias da demonstração (ex.: Helena nos shows de Dave Matthews Band), 3 convites "Fomos juntos" e 4 pessoas seguidas. Somem com a comunidade de exemplo desligada |
+| Fotos dos artistas | Reais: fotos públicas do Deezer, Wikimedia Commons e Wikipédia, buscadas na hora (só o artista certo). Termos de uso a conferir antes de produção |
 
 ---
 
@@ -279,6 +314,18 @@ Decisões do Edmir em 07/10/2026, 13h11 e 13h32 (revisão 3):
 19. **Números de nota em RAYDIS amarelo `#FFD60A`** (07/10, 13h41); os ingressos de nota seguem Off-white e Teal. Fica dentro da regra da identidade oficial (amarelo só para notas).
 20. **Botão "Atualizar foto" visível logo abaixo do pôster** na página do show (07/10, 13h41).
 
+Decisões do Edmir em 07/10/2026, 14h58 e 15h09 (revisão 4):
+
+21. **Todo pôster ou ingresso gerado pelo Livvo leva o logo Livvo**, como no Estúdio.
+22. **O @ da pessoa** aparece só nas memórias e no que é compartilhado; nos cards públicos do catálogo, não.
+23. **Todo artista puxa uma foto automaticamente** e todo card, pôster e ingresso tem foto (o pôster gerado fica só como reserva).
+24. **Tratamento de foto mais suave**: duotone que deixa ver os detalhes, no lugar da retícula pesada.
+25. **Compartilhar dentro da "Sua memória"**, no canto inferior direito, abaixo do "Atualizar foto"; no topo só quando não há memória.
+26. **Opções de Instagram e Facebook** no Compartilhar (além de WhatsApp e link).
+27. **Concert Buddies** na página do show (dentro do "Foi com alguém?"), na Comunidade e na Minha História.
+28. **Marcar o @ de quem foi junto**, que recebe o mesmo card no perfil se autorizar (aceite) e se a preferência dele permitir.
+29. **Comunidade funcionando** já nesta prévia, com dados de exemplo marcados.
+
 Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
 
 ---
@@ -305,6 +352,7 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/livvo/stats.ts` | Passaporte: números, faixa, progresso, pendências |
 | `src/livvo/format.ts` | Datas, notas, plural e hash em pt-BR |
 | `src/livvo/ui.tsx` | Componentes da seção 5 |
+| `src/livvo/Compartilhar.tsx`, `src/livvo/ConcertBuddies.tsx`, `src/livvo/pages/Comunidade.tsx` | Compartilhar e imagens (5.2), Concert Buddies (5.3), Comunidade (5.4) |
 | `src/livvo/fotos.ts`, `src/livvo/AtualizarFoto.tsx` | Padrão de foto, armazenamento, fontes, janela Atualizar foto e janela de admin (seção 5.1) |
 | `server.ts` | Rota `/api/foto` (seção 5.1); `/api/artist-search` do Estúdio reaproveitada |
 | `src/livvo/livvo.css` | Tokens `.lv-app`, troca de DM Mono por Barlow nas classes do Estúdio e os estilos que faltavam (linhas, data, contorno, busca sublinhada) |
@@ -318,6 +366,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 4 (07/10/2026, commits `d150ed5` e `7449220`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página (Comunidade nas 5 abas, marcar Concert Buddy até o aceite, convites, imagens de Stories e Feed geradas, menu de compartilhar). Na prévia publicada, pelo navegador do app: fotos automáticas com o duotone suave no Explorar e na página do show, logo e @ no pôster, menu de compartilhar no computador e no celular. Gerar e baixar a imagem do Instagram não foi feito na prévia publicada (baixaria um arquivo no seu computador); foi conferido no ambiente de teste.
 
 Ajustes de 07/10 à tarde (commits `46522c8` e `020fb4e`), conferidos na prévia publicada da Vercel pelo navegador do app: botão sob o pôster, números em amarelo, escolha e tratamento de foto do Deezer e do Wikimedia (as do Wikimedia vinham de `thumb.wikimedia.org` e não eram tratadas antes da correção), salvar e "Voltar ao pôster gerado".
 
