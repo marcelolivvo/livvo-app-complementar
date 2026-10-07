@@ -1,11 +1,13 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 2: visual no padrão do Estúdio) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 3: notas em ingressos e fotos padronizadas) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
 
 > **Revisão 2 (07/10/2026, à tarde):** o visual foi refeito nos parâmetros do Estúdio (app A), que valem para tudo. O plano de fusão vale para estrutura e fluxos. Em conflito, vale o documento da identidade oficial. Detalhes na seção 4 e nas decisões 9 a 13 da seção 9.
+
+> **Revisão 3 (07/10/2026, 13h13):** as notas passam a usar o **ingresso** (ícone enviado pelo Edmir) no lugar dos discos; botão **Atualizar foto** na memória, com toda foto no padrão Livvo (corte 4:5 + halftone da marca); botão de admin **Atualizar todas as fotos**, com as fontes que o Estúdio já usava (Deezer, Wikimedia Commons, Wikipédia). Decisões 14 a 18 da seção 9 e seção 5.1.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -58,7 +60,7 @@ Toda ação que grava (Eu fui, notas, Quero ir, Seguir) sem login abre a tela de
 
 ## 4. Tokens e tipografia
 
-Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e o amarelo das notas. Definidos em `src/livvo/livvo.css` na classe `.lv-app`.
+Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e a cor dos números de nota. Definidos em `src/livvo/livvo.css` na classe `.lv-app`.
 
 | Token | Valor | Uso |
 | --- | --- | --- |
@@ -70,7 +72,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e o amarelo
 | `--lv-teal` | `#2FB8BA` | Ícones de apoio, selo de verificação |
 | `--lv-cream` | `#ECE5D1` | Texto principal, botão selecionado |
 | `--lv-muted` / `--lv-dim` | `#B3AE9F` / `#8A8577` | Texto secundário e rótulos |
-| `--lv-nota` | `#FFD60A` | **Somente** notas (discos e números de nota) |
+| `--lv-nota` | `#ECE5D1` | Números de nota. Os ingressos de nota usam Off-white `#ECE5D1` (preenchimento) e Teal `#2FB8BA` (contorno e detalhes). **O amarelo `#FFD60A` saiu das notas** (decisão de 07/10/2026; a identidade oficial ainda o reserva para notas e precisa ser atualizada pelo Edmir) |
 
 | Fonte | Uso |
 | --- | --- |
@@ -87,7 +89,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e o amarelo
 | Tira superior: "LIVVO · SEÇÃO" à esquerda, dado à direita (titular, data, passo, total) | `.lv-strip` | Em toda página-ingresso |
 | Palco com retícula halftone | `.lv-stage` | Pôster no Detalhe do show, entrada do visitante, páginas de espera |
 | Picote com meias-luas: horizontal no celular, vertical a partir de 1024 px | `.lv-perf` | Entre o palco (pôster) e o canhoto (ações) no Detalhe do show |
-| Campos de identificação: rótulo + número RAYDIS + nota em Ciano, separados por picote vertical | `.lv-fields` | Passaporte (Shows · Artistas · Cidades com "desde 1998", "mais visto: …", "em 3 estados"), contagem regressiva, médias da comunidade (número em amarelo) |
+| Campos de identificação: rótulo + número RAYDIS + nota em Ciano, separados por picote vertical | `.lv-fields` | Passaporte (Shows · Artistas · Cidades com "desde 1998", "mais visto: …", "em 3 estados"), contagem regressiva, médias da comunidade (número em Off-white + ingressos) |
 | Marcas de picote como progresso (24 marcas) + percentual | `.lv-ticks` | Faixa do Passaporte, missões (versão fina) |
 | Botão-ingresso com canhoto (furos em cima e embaixo, ícone no canhoto, picote tracejado) | `.lv-btn--stub` (+ `--cyan`, `--cream`, `--teal`) | Ações principais: Eu fui, Quero ir/Tenho ingresso marcado, Minha História, Registrar, Compartilhar credencial |
 | Botão com recortes laterais | `.lv-btn` | Eu fui nas linhas do Registrar, Registrar show no topo |
@@ -105,7 +107,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e o amarelo
 Regras visuais aplicadas:
 - **Nada de cards dentro de cards.** Listas são linhas com picote sob um cabeçalho de grupo; o papel do ingresso fica para a página e para o que é da pessoa.
 - **Uma ação principal por estado (#9).** Quando a pessoa já marcou Quero ir ou Tenho ingresso, o escolhido vira botão-canhoto Creme com ✓ e o outro vira contorno.
-- **Amarelo só nas notas.** Destaques e progresso usam Ciano.
+- **Notas em ingressos** Off-white com contorno Teal; destaques e progresso usam Ciano.
 - **Etiquetas retas** (raio 3 px), nunca pílulas. Etiqueta "Exemplo" tracejada.
 - **Ícones Lucide** (padrão do Estúdio, decisão de 07/10/2026), só em botões e links. **Sem ícones de data, local e casa nos cards e linhas (#15):** a informação vai em texto.
 - **Sem a linha estilo passaporte (MRZ)** (decisão de 07/10/2026).
@@ -117,10 +119,10 @@ Regras visuais aplicadas:
 
 | Componente | O que faz | Detalhes para implementar |
 | --- | --- | --- |
-| **Pôster Halftone** (`Poster`) | Capa de cada show, gerada pelos dados: dia em RAYDIS, mês e ano, UF, nome do artista em Alfa Slab One, casa de show. Fundo com retícula ("sol" halftone) | 5 paletas da marca escolhidas por hash do artista (o mesmo artista sempre tem a mesma cor); posição do sol varia por artista; tamanho do nome se ajusta ao comprimento (unidades `cqw`). Prioridade de imagem do plano: foto do usuário → foto licenciada → pôster gerado. **As fotos de artista do catálogo (Deezer) não são usadas**: não há licença para peças públicas. O componente aceita `fotoUsuario` e `fotoLicenciada` para quando houver |
+| **Pôster Halftone** (`Poster`) | Capa de cada show, gerada pelos dados: dia em RAYDIS, mês e ano, UF, nome do artista em Alfa Slab One, casa de show. Fundo com retícula ("sol" halftone) | 5 paletas da marca escolhidas por hash do artista (o mesmo artista sempre tem a mesma cor); posição do sol varia por artista; tamanho do nome se ajusta ao comprimento (unidades `cqw`). Prioridade de imagem: foto da memória da pessoa (`show:<id>`) → foto do artista (`artista:<id>`, atualizada pelo admin) → pôster gerado pelos dados. Fotos salvas já vêm padronizadas (seção 5.1) e aparecem sem filtro extra, só com o degradê que garante a leitura do texto |
 | **Card de show** (`CardShow`) | Pôster + artista + casa · cidade + data + linha social | Linha social: avatares + "N registraram" (passado) ou "N querem ir" (futuro) ou a etiqueta Quero ir / Tenho ingresso. Carimbo "Você foi" ou etiqueta "Exemplo" no canto do pôster |
 | **Carimbo "Você foi"** (`CarimboFui`) | Marca de presença | Borda Ciano, inclinado −6°, animação de carimbo de 0,42 s ao registrar (desligada com "reduzir movimento") |
-| **Discos de nota** (`Discos`) | Nota de meio a cinco, em discos de vinil amarelos | Interativo: metade esquerda do disco = meio ponto. Acessível como `role="slider"` (setas mudam 0,5). Sem nota: contorno amarelo fraco no interativo, cinza no só-leitura |
+| **Notas em ingressos** (`Discos`, nome mantido por compatibilidade) | Nota de meio a cinco em 5 ingressos verticais (desenho do ícone enviado pelo Edmir: recortes laterais, código de barras, picote, palheta com nota musical), em SVG 20 × 30 | Preenchido: Off-white com contorno e detalhes Teal. Meio ponto: metade esquerda preenchida (toque na metade esquerda vale meio ponto, como nos discos). Sem nota: contorno apagado (`#3A3159`), ou Teal a 55% quando dá para tocar. Acessível como `role="slider"` (setas mudam 0,5). `tamanho` = referência; o ingresso mede 0,8 × 1,2 desse valor |
 | **Página-ingresso** (`Bilhete`) | `.lv-ticket` + `.lv-strip` com texto à esquerda e à direita | Envolve o topo de cada tela |
 | **Grupo** (`Grupo`) | `.lv-group` com ação à direita (ex.: "Ver todos", etiqueta Exemplo) | Cabeçalho de toda lista |
 | **Linha** (`Linha`) | `.lv-show`: coluna inicial (data em RAYDIS ou avatar), título, linha de apoio, nota em Ciano e fim (etiqueta, carimbo, botão ou seta) | Coluna inicial de 58 px no celular e 72 px a partir de 640 px |
@@ -133,6 +135,18 @@ Regras visuais aplicadas:
 | **Aviso rápido** (`avisar`) | Confirmação curta em Creme (raio 4 px, como o do Estúdio), acima da barra inferior | "Show guardado na sua história", "Link copiado", notas dadas |
 | **Silhuetas** (`.lv-skel`) | Carregamento sem "Carregando…" | Grade, detalhe do show, cartão de momento |
 | **Compartilhar** (`compartilharLink`) | Menu nativo do celular; no computador copia o link | Página do show é pública, então o link funciona para quem não tem conta |
+
+### 5.1 Fotos padronizadas (`src/livvo/fotos.ts`, `src/livvo/AtualizarFoto.tsx`, `server.ts`)
+
+| Peça | Como funciona |
+| --- | --- |
+| **Padrão Livvo** (`padronizar`) | Toda foto, de qualquer fonte, vira um JPEG 640 × 800 (4:5): recorte centralizado e puxado para cima (rostos), contraste automático (percentis 3 e 97) e retícula halftone com células de 7 px sobre Preto Profundo, pontos em Ciano que clareiam para Off-white nas luzes. Feito no `<canvas>` do navegador |
+| **Atualizar foto** (memória) | Link em "Sua memória" (detalhe do show) e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar ao pôster gerado" (ou à foto do artista). Só a foto enviada pela pessoa sobe a memória para "Com foto" na escada de verificação |
+| **Atualizar todas as fotos** (admin) | Menu da conta, só com `?admin=1`. Escopo: artistas da conta e da agenda (rápido) ou todo o catálogo da prévia (653 artistas). Para cada artista: foto do catálogo (Deezer) ou a melhor foto do `/api/artist-search` (só nome exato), padronizada e salva para todos os pôsteres e ingressos do artista. 3 em paralelo, progresso em picotes com %, Parar, opção de refazer quem já tem foto, lista de quem ficou sem foto nas fontes e "Voltar todos aos pôsteres gerados" (pede segundo toque) |
+| **`GET /api/foto?url=`** | Busca a imagem pelo próprio domínio para o canvas poder tratá-la. Só HTTPS e só os domínios das fontes (`*.dzcdn.net`, `*.deezer.com`, `upload.wikimedia.org`, `*.mzstatic.com`), só `image/*`, até 6 MB, cache de 7 dias. Qualquer outro endereço responde 403 |
+| **Armazenamento na prévia** | IndexedDB do navegador (`livvo_final_fotos`), chaves `show:<id>` e `artista:<id>`, com origem e fonte. No site final: armazenamento de arquivos de B, com a foto do artista compartilhada por todos e a da memória só da pessoa |
+
+Bancos de imagem genéricos (Unsplash, usados como reserva no Estúdio) ficam fora: não são fotos do artista. Antes de produção, o Greg deve conferir os termos de uso das fontes (API do Deezer, licenças por arquivo do Wikimedia) e guardar a fonte de cada foto.
 
 ---
 
@@ -180,7 +194,7 @@ Página-ingresso com tira "Livvo · Shows / 23 nov 2025". Computador: **palco** 
    - Futuro: **Quero ir** e **Tenho ingresso** (um ou outro, tocar de novo desmarca), contagem regressiva no campo "DIAS PARA O SHOW", explicação do lembrete e "O link da ticketeira aparece aqui quando o show vem de uma fonte oficial."
    - O link `?avaliar=org` rola até a Nota da Organização e coloca o foco nela (usado pela missão).
 4. Prova social: avatares + "133 pessoas registraram este show, com você" (ou "querem ir"), etiqueta Exemplo. Sem ninguém: "Ninguém registrou este show ainda. Seja a primeira pessoa."
-5. **Como foi, para quem estava lá** (só passado e só com amostra mínima): médias de Show e Organização nos campos `.lv-fields` em RAYDIS amarelo + discos, até 3 dimensões mais citadas (+ ou −), "Média de N avaliações. As médias só aparecem a partir de 3." Abaixo da amostra, o bloco some (nunca "Sem avaliações" em destaque).
+5. **Como foi, para quem estava lá** (só passado e só com amostra mínima): médias de Show e Organização nos campos `.lv-fields` em RAYDIS Off-white + ingressos, até 3 dimensões mais citadas (+ ou −), "Média de N avaliações. As médias só aparecem a partir de 3." Abaixo da amostra, o bloco some (nunca "Sem avaliações" em destaque).
 6. **Setlist:** link real para o setlist.fm do show (base do catálogo).
 7. **Resenhas de quem foi:** avatar, nome, @, setor, notas de Show e Organização, texto de até 3 linhas, dimensões.
 8. **Quem foi / Quem vai:** pessoas com Seguir/Seguindo e "Só aparece quem deixou a memória pública."
@@ -241,7 +255,7 @@ Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem:
 3. **Amostra mínima para mostrar médias: 3 avaliações** nesta prévia. O plano sugere 30 para relatórios de parceiros; para a página pública do show, o número final é decisão do Edmir.
 4. **Faixas do Passaporte** iguais às da Credencial Backstage: Pista até 10, Pista Premium 11–25, Camarote 26–50, Backstage 51–100, All Access 101+. Shows resgatados do passado contam igual.
 5. **Cartão de momento:** contagem regressiva só aparece no topo quando faltam até 3 dias; antes disso o show fica na Agenda.
-6. **Fotos de artista do catálogo fora** até haver licença; o pôster gerado pelos dados é o padrão.
+6. ~~Fotos de artista do catálogo fora até haver licença~~ (substituída pela decisão 16).
 7. **Nome da área de shows na navegação: "Shows"** (como em B); o título da página é "Shows" com o rótulo "Explorar".
 8. **Registrar já funciona** em versão simples nesta parte, para o botão central não levar a uma página vazia.
 
@@ -252,6 +266,14 @@ Decisões do Edmir em 07/10/2026 (revisão 2):
 11. **Sem a linha estilo passaporte (MRZ).**
 12. **Ícones: padrão do Estúdio (Lucide)**, no lugar dos Material Symbols citados na identidade oficial.
 13. **Todo documento que existir só no Claude ganha cópia em Markdown na pasta Livvo**, para o ChatGPT e o Codex lerem.
+
+Decisões do Edmir em 07/10/2026, 13h13 (revisão 3):
+
+14. **Notas em ingressos** no lugar dos discos: Off-white onde o ícone é branco, Teal onde é preto. Meio ponto como nos discos (metade esquerda).
+15. **Padrão de foto: halftone** nas cores da marca, para pôsteres e ingressos.
+16. **Fontes de foto: o mesmo método do Estúdio** (Deezer e as demais fontes de uso permitido: Wikimedia Commons e Wikipédia).
+17. **Botão "Atualizar foto"** na memória e **botão de admin para atualizar todas as fotos de uma vez**.
+18. Consequência: o amarelo `#FFD60A` deixa de ser a cor das notas. Atualizar o documento da identidade oficial depende do Edmir.
 
 Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
 
@@ -279,6 +301,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/livvo/stats.ts` | Passaporte: números, faixa, progresso, pendências |
 | `src/livvo/format.ts` | Datas, notas, plural e hash em pt-BR |
 | `src/livvo/ui.tsx` | Componentes da seção 5 |
+| `src/livvo/fotos.ts`, `src/livvo/AtualizarFoto.tsx` | Padrão de foto, armazenamento, fontes, janela Atualizar foto e janela de admin (seção 5.1) |
+| `server.ts` | Rota `/api/foto` (seção 5.1); `/api/artist-search` do Estúdio reaproveitada |
 | `src/livvo/livvo.css` | Tokens `.lv-app`, troca de DM Mono por Barlow nas classes do Estúdio e os estilos que faltavam (linhas, data, contorno, busca sublinhada) |
 | `src/index.css` | Classes "Bilheteria" do Estúdio, usadas sem alteração |
 | `src/components/LivvoCredencialCard.tsx`, `src/components/PassportIcon.tsx`, `public/credencial/` | Credencial Backstage e ícone de passaporte do Estúdio, reaproveitados no Passaporte |
@@ -290,6 +314,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 3 (07/10/2026, commit `d7a24f8`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900: notas em ingressos em todas as telas, Atualizar foto com foto enviada (prévia, salvar, pôster e ingresso da Carteira atualizados, verificação "Com foto"), janela de admin com o escopo da conta (16 artistas) do começo ao fim, `/api/foto` recusando domínio fora da lista e HTTP. Neste ambiente de teste a rede externa é bloqueada, então as fotos do Deezer, Wikimedia e Wikipédia só podem ser conferidas na prévia publicada.
 
 Verificação da revisão 2 (07/10/2026, commit `2f3e3f8`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 em todas as telas e nos 6 fluxos, sem erro de página e sem rolagem lateral em 390 px em nenhuma rota.
 
