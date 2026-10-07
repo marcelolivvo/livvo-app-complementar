@@ -71,7 +71,7 @@ export const LoginModal: React.FC = () => {
         <p className="text-[13.5px] text-[#ECE5D1] leading-relaxed">
           {reachedLimit
             ? `Você já criou ${GUEST_CARD_LIMIT} cards sem login. Entre para continuar criando, salvando e compartilhando quantos quiser.`
-            : 'Entre para guardar seus cards e criar quantos quiser.'}
+            : 'Entre para guardar os shows que você viveu, dar suas notas e ver o seu Passaporte crescer.'}
         </p>
 
         <form
@@ -118,7 +118,7 @@ export const LoginModal: React.FC = () => {
         </button>
 
         <p className="lv-mono text-[10.5px] text-[#8A8577] border-t border-dashed border-[#282141] pt-3">
-          Prévia de teste: o login é simulado neste navegador e nenhum dado é enviado. No livvomusic.com.br, esta tela usa o login real.
+          Prévia de teste: o login é simulado neste navegador e nenhum dado é enviado. Qualquer e-mail abre a conta de demonstração. No livvomusic.com.br, esta tela usa o login real.
         </p>
       </div>
     </div>
