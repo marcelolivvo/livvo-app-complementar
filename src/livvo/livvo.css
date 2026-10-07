@@ -619,6 +619,16 @@
   top: auto;
   bottom: calc(100% + 8px);
 }
+/* No celular, o menu de compartilhar vira uma folha presa embaixo da tela */
+@media (max-width: 640px) {
+  .lv-menu--cima {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(var(--lv-tabbar-h) + 12px + env(safe-area-inset-bottom));
+  }
+}
 .lv-menu-item:disabled {
   opacity: 0.6;
   cursor: progress;
