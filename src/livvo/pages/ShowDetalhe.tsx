@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, MessageCircle, Share2, SlidersHorizontal, Ticket, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, Image as ImageIcon, MessageCircle, Share2, SlidersHorizontal, Ticket, UserCheck, UserPlus } from 'lucide-react';
 import { ehFuturo, useCatalogo, type Show } from '../data/catalog';
-import { MIN_AMOSTRA_NOTAS, concertBuddies, socialDoShow, type ResenhaExemplo } from '../data/social';
+import { MIN_AMOSTRA_NOTAS, concertBuddies, socialDoShow, type Buddy, type ResenhaExemplo } from '../data/social';
 import { dataCartao, dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
 import { Link, navigate, useRoute } from '../router';
 import { livvo, nivelVerificacao, personalizacaoDe, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
@@ -12,7 +12,7 @@ import { IngressoMemoria } from '../Ingresso';
 import { PainelPersonalizar, type RascunhoPersonalizacao } from '../Personalizar';
 import { RetroTicketStage } from '../../components/RetroTicket';
 import { calcularPassaporte } from '../stats';
-import { useImagemDoPoster } from '../ui';
+import { useCelular, useImagemDoPoster } from '../ui';
 import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
 
 const ROTULO_VISIBILIDADE = { privado: 'Só você vê', seguidores: 'Visível para quem te segue', publico: 'Visível para todos' };
@@ -24,9 +24,49 @@ const Bloco: React.FC<{ titulo: string; extra?: React.ReactNode; children: React
   </section>
 );
 
+/** Bloco da faixa de baixo: no computador, título + conteúdo; no celular, linha que abre e fecha (drop down). */
+const BlocoFaixa: React.FC<{ titulo: string; resumo?: string; extra?: React.ReactNode; celular: boolean; children: React.ReactNode }> = ({
+  titulo,
+  resumo,
+  extra,
+  celular,
+  children,
+}) => {
+  const [aberto, setAberto] = useState(false);
+  if (!celular) {
+    return (
+      <Bloco titulo={titulo} extra={extra}>
+        {children}
+      </Bloco>
+    );
+  }
+  return (
+    <section aria-label={titulo} className="lv-row lv-faixa-row" data-open={aberto}>
+      <button type="button" className="lv-row-head" aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>
+        <div>
+          <div>
+            <span className="lv-row-title">{titulo}</span>
+          </div>
+        </div>
+        <div>
+          {resumo && <span className="lv-row-val">{resumo}</span>}
+          <ChevronDown className="lv-row-chev" />
+        </div>
+      </button>
+      {aberto && (
+        <div className="lv-row-body !pl-0">
+          {children}
+          {extra && <div className="mt-3">{extra}</div>}
+        </div>
+      )}
+    </section>
+  );
+};
+
 /** A memória do usuário, como canhoto de ingresso: notas em 1 toque e escada de verificação. */
-const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focarOrg: boolean }> = ({ memoria, show, recem, focarOrg }) => {
+const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focar: 'show' | 'org' | null }> = ({ memoria, show, recem, focar }) => {
   const orgRef = useRef<HTMLDivElement>(null);
+  const showRef = useRef<HTMLDivElement>(null);
   const nivel = nivelVerificacao(memoria);
   const [confirmar, setConfirmar] = useState(false);
   useEffect(() => {
@@ -35,10 +75,12 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
     return () => window.clearTimeout(t);
   }, [confirmar]);
   useEffect(() => {
-    if (!focarOrg || !orgRef.current) return;
-    orgRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    (orgRef.current.querySelector('[role="slider"]') as HTMLElement | null)?.focus({ preventScroll: true });
-  }, [focarOrg]);
+    // ?avaliar=org ou ?avaliar=show (vindo da missão ou da janela "Shows juntos") leva direto à nota
+    const alvo = focar === 'org' ? orgRef.current : focar === 'show' ? showRef.current : null;
+    if (!alvo) return;
+    alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    (alvo.querySelector('[role="slider"]') as HTMLElement | null)?.focus({ preventScroll: true });
+  }, [focar]);
 
   const salvarNota = (campo: 'notaShow' | 'notaOrganizacao', v: number) => {
     livvo.atualizar(memoria.id, { [campo]: v });
@@ -58,7 +100,7 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
       </div>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        <div>
+        <div ref={showRef}>
           <div className="lv-label">Nota do show</div>
           <div className="mt-2 flex items-center gap-3">
             <Discos valor={memoria.notaShow} onChange={(v) => salvarNota('notaShow', v)} tamanho={28} rotulo="Nota do show" />
@@ -173,6 +215,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
   const lv = useLivvo();
   const [recem, setRecem] = useState(false);
   const [rascunho, setRascunho] = useState<RascunhoPersonalizacao | null>(null);
+  const celular = useCelular();
   useEffect(() => {
     setRecem(false);
     setRascunho(null);
@@ -190,8 +233,8 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
     return (catalogo.artistas.get(show.artistaId)?.shows || []).filter((s) => s.id !== show.id).slice(0, 10);
   }, [show, catalogo]);
   const juntos = useMemo(() => {
-    const m = new Map<string, number>();
-    concertBuddies(calcularPassaporte(lv.memorias, catalogo).memoriasComShow, lv.exemplos).forEach((b) => m.set(b.pessoa.usuario, b.shows.length));
+    const m = new Map<string, Buddy>();
+    concertBuddies(calcularPassaporte(lv.memorias, catalogo).memoriasComShow, lv.exemplos).forEach((b) => m.set(b.pessoa.usuario, b));
     return m;
   }, [lv.memorias, catalogo, lv.exemplos]);
   const outrosNaCasa = useMemo(() => {
@@ -252,6 +295,12 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
     if (rascunho) return setRascunho(null);
     setRascunho({ perso: { ...salva }, setor: minha.setor || '' });
     window.setTimeout(() => document.getElementById('painel-personalizar')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  };
+  // Pôster | Ingresso fica acima do pôster e grava na hora (revisão 6)
+  const mudarFormato = (formato: 'poster' | 'ingresso') => {
+    if (!minha || formato === salva.formato) return;
+    livvo.atualizar(minha.id, { personalizacao: { ...(minha.personalizacao || {}), formato } });
+    if (rascunho) setRascunho({ ...rascunho, perso: { ...rascunho.perso, formato } });
   };
   const salvarPersonalizacao = () => {
     if (!minha || !rascunho) return;
@@ -355,6 +404,20 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
                   : 'grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block'
               }
             >
+              {minha && (
+                <div className={`${ingresso || rascunho ? '' : 'col-span-2'} flex justify-center lg:mb-4`}>
+                  <div className="lv-seg" role="group" aria-label="Formato da memória">
+                    <button type="button" data-on={!ingresso} aria-pressed={!ingresso} onClick={() => mudarFormato('poster')}>
+                      <ImageIcon className="w-3.5 h-3.5" />
+                      <span>Pôster</span>
+                    </button>
+                    <button type="button" data-on={ingresso} aria-pressed={ingresso} onClick={() => mudarFormato('ingresso')}>
+                      <Ticket className="w-3.5 h-3.5" />
+                      <span>Ingresso</span>
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className={rascunho && !ingresso ? 'w-full max-w-[340px] mx-auto lg:max-w-none' : ''}>
                 {ingresso && minha ? (
                   <RetroTicketStage>
@@ -438,7 +501,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
               </div>
             ) : minha ? (
               <div className="lg:mt-7">
-                <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} />
+                <MinhaMemoria memoria={minha} show={show} recem={recem} focar={query.get('avaliar') === 'org' ? 'org' : query.get('avaliar') === 'show' ? 'show' : null} />
               </div>
             ) : (
               <div className="lg:mt-7">
@@ -475,126 +538,135 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         </div>
       </Bilhete>
 
-      <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)]">
-        <div className="min-w-0">
-          {/* Notas da comunidade ------------------------------------------------- */}
-          {!futuro && soc.media && (
-            <Bloco titulo="Como foi, para quem estava lá" extra={lv.exemplos ? <TagExemplo /> : undefined}>
-              <dl className="lv-fields lv-fields--notas mt-4" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
-                <div>
-                  <dt>Show</dt>
-                  <dd className="lv-nota-num">{nota(soc.media.show)}</dd>
-                  <Discos valor={Math.round(soc.media.show * 2) / 2} tamanho={16} rotulo="Média do show" />
-                </div>
-                <div>
-                  <dt>Organização</dt>
-                  <dd className="lv-nota-num">{nota(soc.media.organizacao)}</dd>
-                  <Discos valor={Math.round(soc.media.organizacao * 2) / 2} tamanho={16} rotulo="Média da organização" />
-                </div>
-              </dl>
-              {soc.dimensoesMaisCitadas.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {soc.dimensoesMaisCitadas.map((d) => (
-                    <span key={d.rotulo} className={`lv-tag ${d.positiva ? 'lv-tag--teal' : 'lv-tag--next'}`}>
-                      {d.positiva ? '+' : '−'} {d.rotulo}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <p className="lv-meta mt-3">
-                Média de {plural(soc.media.amostra, 'avaliação', 'avaliações')}. As médias só aparecem a partir de {MIN_AMOSTRA_NOTAS}.
-              </p>
-            </Bloco>
-          )}
-
-          {/* Resenhas -------------------------------------------------------------- */}
-          {!futuro && soc.resenhas.length > 0 && (
-            <Bloco titulo={`Resenhas de quem foi · ${soc.resenhas.length}`}>
-              {soc.resenhas.map((r) => (
-                <CardResenha key={r.pessoa.usuario} r={r} exemplo={lv.exemplos} />
+      {/* Como foi, na largura toda --------------------------------------------- */}
+      {!futuro && soc.media && (
+        <Bloco titulo="Como foi, para quem estava lá" extra={lv.exemplos ? <TagExemplo /> : undefined}>
+          <dl className="lv-fields lv-fields--notas mt-4" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', maxWidth: 640 }}>
+            <div>
+              <dt>Show</dt>
+              <dd className="lv-nota-num">{nota(soc.media.show)}</dd>
+              <Discos valor={Math.round(soc.media.show * 2) / 2} tamanho={16} rotulo="Média do show" />
+            </div>
+            <div>
+              <dt>Organização</dt>
+              <dd className="lv-nota-num">{nota(soc.media.organizacao)}</dd>
+              <Discos valor={Math.round(soc.media.organizacao * 2) / 2} tamanho={16} rotulo="Média da organização" />
+            </div>
+          </dl>
+          {soc.dimensoesMaisCitadas.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {soc.dimensoesMaisCitadas.map((d) => (
+                <span key={d.rotulo} className={`lv-tag ${d.positiva ? 'lv-tag--teal' : 'lv-tag--next'}`}>
+                  {d.positiva ? '+' : '−'} {d.rotulo}
+                </span>
               ))}
-            </Bloco>
+            </div>
           )}
+          <p className="lv-meta mt-3">
+            Média de {plural(soc.media.amostra, 'avaliação', 'avaliações')}. As médias só aparecem a partir de {MIN_AMOSTRA_NOTAS}.
+          </p>
+        </Bloco>
+      )}
 
-          {/* Quem foi / quem vai --------------------------------------------------- */}
-          {soc.pessoas.length > 0 && (
-            <Bloco titulo={futuro ? 'Quem vai' : 'Quem foi'} extra={lv.exemplos ? <TagExemplo /> : undefined}>
-              {soc.pessoas.map((p) => (
-                <Linha
-                  key={p.usuario}
-                  avatar
-                  inicio={<Avatar nome={p.nome} tamanho={36} />}
-                  titulo={p.nome}
-                  sub={`@${p.usuario} · ${p.cidade}`}
-                  fim={<BotaoSeguir usuario={p.usuario} />}
-                />
-              ))}
-              <p className="lv-meta mt-2">Só aparece quem deixou a memória pública.</p>
-            </Bloco>
-          )}
-        </div>
-
-        <div className="min-w-0">
-          {/* Setlist --------------------------------------------------------------- */}
-          {!futuro && (
-            <Bloco titulo="Setlist">
-              <div className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
-                <p className="lv-sub flex-1 min-w-[200px]">
-                  {show.setlistUrl ? 'A lista de músicas deste show está no setlist.fm, a base do catálogo do Livvo.' : 'Ainda sem setlist para este show.'}
-                </p>
-                {show.setlistUrl && (
-                  <a href={show.setlistUrl} target="_blank" rel="noopener noreferrer" className="lv-ghost shrink-0">
-                    Ver setlist <ExternalLink className="w-4 h-4" />
-                  </a>
-                )}
-              </div>
-            </Bloco>
-          )}
-
-          {/* Com quem / Concert Buddies -------------------------------------------- */}
-          <Bloco titulo={futuro ? 'Vai com alguém?' : 'Foi com alguém? · Concert Buddies'}>
-            {!futuro && minha ? (
-              <MarcarBuddies show={show} memoria={minha} pessoasDoShow={soc.pessoas} juntos={juntos} textoWhats={textoWhats} />
-            ) : (
-              <div className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
-                <p className="lv-sub flex-1 min-w-[200px]">
-                  {futuro
-                    ? 'Chame quem vai com você. Depois do show, vocês marcam um ao outro e guardam a mesma memória.'
-                    : 'Registre que você foi para marcar o @ de quem estava com você (Concert Buddies).'}
-                </p>
-                <a className="lv-ghost shrink-0" href={`https://wa.me/?text=${encodeURIComponent(textoWhats)}`} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
-                </a>
-              </div>
+      {/* Resenhas e Quem foi, lado a lado ------------------------------------- */}
+      {((!futuro && soc.resenhas.length > 0) || soc.pessoas.length > 0) && (
+        <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
+          <div className="min-w-0">
+            {!futuro && soc.resenhas.length > 0 && (
+              <Bloco titulo={`Resenhas de quem foi · ${soc.resenhas.length}`}>
+                {soc.resenhas.map((r) => (
+                  <CardResenha key={r.pessoa.usuario} r={r} exemplo={lv.exemplos} />
+                ))}
+              </Bloco>
             )}
-          </Bloco>
-
-          {/* Mais shows ------------------------------------------------------------ */}
-          {outrosDoArtista.length > 0 && (
-            <Bloco
-              titulo={`Mais shows de ${show.artista}`}
-              extra={
-                <Link to={`/explorar?q=${encodeURIComponent(show.artista)}`} className="lv-link shrink-0">
-                  Ver todos
-                </Link>
-              }
-            >
-              {outrosDoArtista.slice(0, 6).map((s) => linhaOutroShow(s, 'casa'))}
-            </Bloco>
-          )}
-          {outrosNaCasa.length > 0 && (
-            <Bloco
-              titulo="Mais shows nesta casa"
-              extra={
-                <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="lv-link shrink-0">
-                  Ver todos
-                </Link>
-              }
-            >
-              {outrosNaCasa.slice(0, 6).map((s) => linhaOutroShow(s, 'artista'))}
-            </Bloco>
-          )}
+          </div>
+          <div className="min-w-0">
+            {soc.pessoas.length > 0 && (
+              <Bloco titulo={futuro ? 'Quem vai' : 'Quem foi'} extra={lv.exemplos ? <TagExemplo /> : undefined}>
+                {soc.pessoas.map((p) => (
+                  <Linha
+                    key={p.usuario}
+                    avatar
+                    inicio={<Avatar nome={p.nome} tamanho={36} />}
+                    titulo={p.nome}
+                    sub={`@${p.usuario} · ${p.cidade}`}
+                    fim={<BotaoSeguir usuario={p.usuario} />}
+                  />
+                ))}
+                <p className="lv-meta mt-2">Só aparece quem deixou a memória pública.</p>
+              </Bloco>
+            )}
+          </div>
         </div>
+      )}
+
+      {/* Faixa: Setlist · Foi com alguém? · Mais shows do artista · Mais shows nesta casa (revisão 6).
+          Lado a lado no computador; no celular, em drop down. */}
+      <div className="lv-faixa-show">
+        {!futuro && (
+          <BlocoFaixa titulo="Setlist" resumo={show.setlistUrl ? 'setlist.fm' : 'Ainda sem setlist'} celular={celular}>
+            <div className="py-4 border-b border-dashed border-[#282141]">
+              <p className="lv-sub">
+                {show.setlistUrl ? 'A lista de músicas deste show está no setlist.fm, a base do catálogo do Livvo.' : 'Ainda sem setlist para este show.'}
+              </p>
+              {show.setlistUrl && (
+                <a href={show.setlistUrl} target="_blank" rel="noopener noreferrer" className="lv-ghost mt-3">
+                  Ver setlist <ExternalLink className="w-4 h-4" />
+                </a>
+              )}
+            </div>
+          </BlocoFaixa>
+        )}
+
+        <BlocoFaixa
+          titulo={futuro ? 'Vai com alguém?' : 'Foi com alguém?'}
+          resumo={!futuro && minha ? `${comQuem.length ? `${comQuem.length} marcado${comQuem.length > 1 ? 's' : ''}` : 'Concert Buddies'}` : 'WhatsApp'}
+          celular={celular}
+        >
+          {!futuro && minha ? (
+            <MarcarBuddies show={show} memoria={minha} pessoasDoShow={soc.pessoas} juntos={juntos} textoWhats={textoWhats} />
+          ) : (
+            <div className="py-4 border-b border-dashed border-[#282141]">
+              <p className="lv-sub">
+                {futuro
+                  ? 'Chame quem vai com você. Depois do show, vocês marcam um ao outro e guardam a mesma memória.'
+                  : 'Registre que você foi para marcar o @ de quem estava com você (Concert Buddies).'}
+              </p>
+              <a className="lv-ghost mt-3" href={`https://wa.me/?text=${encodeURIComponent(textoWhats)}`} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
+              </a>
+            </div>
+          )}
+        </BlocoFaixa>
+
+        {outrosDoArtista.length > 0 && (
+          <BlocoFaixa
+            titulo={`Mais shows de ${show.artista}`}
+            resumo={`${outrosDoArtista.length}${outrosDoArtista.length >= 10 ? '+' : ''}`}
+            celular={celular}
+            extra={
+              <Link to={`/explorar?q=${encodeURIComponent(show.artista)}`} className="lv-link shrink-0">
+                Ver todos
+              </Link>
+            }
+          >
+            {outrosDoArtista.slice(0, 6).map((s) => linhaOutroShow(s, 'casa'))}
+          </BlocoFaixa>
+        )}
+        {outrosNaCasa.length > 0 && (
+          <BlocoFaixa
+            titulo="Mais shows nesta casa"
+            resumo={`${outrosNaCasa.length}${outrosNaCasa.length >= 10 ? '+' : ''}`}
+            celular={celular}
+            extra={
+              <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="lv-link shrink-0">
+                Ver todos
+              </Link>
+            }
+          >
+            {outrosNaCasa.slice(0, 6).map((s) => linhaOutroShow(s, 'artista'))}
+          </BlocoFaixa>
+        )}
       </div>
     </div>
   );

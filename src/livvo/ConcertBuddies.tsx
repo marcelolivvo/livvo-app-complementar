@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { AtSign, MessageCircle, X } from 'lucide-react';
+import { ArrowRight, AtSign, MessageCircle, Star, X } from 'lucide-react';
+import { Modal } from './AtualizarFoto';
 import type { Show } from './data/catalog';
 import { PESSOAS_EXEMPLO, type PessoaExemplo } from './data/demo';
 import { buddiesExemplo, pessoaAceitaMarcacao, pessoaPorUsuario, type Buddy } from './data/social';
-import { normalizar } from './format';
-import { Link } from './router';
-import { livvo, useLivvo, type Marcacao, type Memoria } from './store';
-import { Avatar, Linha, TagExemplo, avisar } from './ui';
+import { dataCartao, nota as fmtNota, normalizar } from './format';
+import { Link, navigate } from './router';
+import { livvo, personalizacaoDe, useLivvo, type Marcacao, type Memoria } from './store';
+import { Avatar, Bilhete, Discos, IngressoContorno, Linha, Poster, TagExemplo, avisar } from './ui';
 
 /**
  * Concert Buddies (decisões de 07/10/2026): no "Foi com alguém?" a pessoa marca o @ de quem foi com ela.
@@ -21,12 +22,13 @@ const ROTULO_STATUS: Record<Marcacao['status'], string> = {
 };
 
 const plural = (n: number) => (n === 1 ? '1 show juntos' : `${n} shows juntos`);
+const pluralComum = (n: number) => (n === 1 ? '1 show em comum' : `${n} shows em comum`);
 
 export const MarcarBuddies: React.FC<{
   show: Show;
   memoria: Memoria;
   pessoasDoShow: PessoaExemplo[];
-  juntos: Map<string, number>;
+  juntos: Map<string, Buddy>;
   textoWhats: string;
 }> = ({ show, memoria, pessoasDoShow, juntos, textoWhats }) => {
   const lv = useLivvo();
@@ -72,7 +74,8 @@ export const MarcarBuddies: React.FC<{
                 avatar
                 inicio={<Avatar nome={p.nome} tamanho={36} />}
                 titulo={p.nome}
-                sub={`@${u} · ${plural(juntos.get(u) || 1)}`}
+                sub={`@${u}`}
+                nota={<BotaoJuntos buddy={juntos.get(u)} />}
                 fim={
                   <>
                     <span className="lv-tag lv-tag--teal">Aceitou</span>
@@ -84,14 +87,15 @@ export const MarcarBuddies: React.FC<{
           })}
           {marcados.map((m) => {
             const p = pessoaPorUsuario(m.usuario);
-            const n = juntos.get(m.usuario);
+            const b = juntos.get(m.usuario);
             return (
               <Linha
                 key={m.usuario}
                 avatar
                 inicio={<Avatar nome={p.nome} tamanho={36} />}
                 titulo={p.nome}
-                sub={`@${m.usuario}${m.status === 'aceita' && n ? ` · ${plural(n)}` : ''}`}
+                sub={`@${m.usuario}`}
+                nota={m.status === 'aceita' && b ? <BotaoJuntos buddy={b} /> : undefined}
                 fim={
                   <>
                     <span className={`lv-tag ${m.status === 'aceita' ? 'lv-tag--teal' : 'lv-tag--next'}`}>{ROTULO_STATUS[m.status]}</span>
@@ -178,8 +182,145 @@ export const MarcarBuddies: React.FC<{
   );
 };
 
-/** Lista "Mais shows juntos" (Minha História e Comunidade). */
+/**
+ * Janela "Shows juntos" (revisão 6): ao tocar em "N shows juntos", abre a lista com os ingressos virtuais de todos os
+ * shows que vocês viram juntos. O que ainda não tem a sua nota aparece com "Falta a sua nota" e o botão Avaliar.
+ */
+export const JanelaShowsJuntos: React.FC<{ buddy: Buddy; fechar: () => void; modo?: 'juntos' | 'comum' }> = ({ buddy, fechar, modo = 'juntos' }) => {
+  const lv = useLivvo();
+  const shows = buddy.shows.slice().sort((a, b) => b.ts - a.ts);
+  const faltam = shows.filter((s) => lv.memoriaDoShow(s.id)?.notaShow === undefined).length;
+  const ir = (rota: string) => {
+    fechar();
+    navigate(rota);
+  };
+  return (
+    <Modal rotulo={`Shows com ${buddy.pessoa.nome}`} fechar={fechar}>
+      <Bilhete
+        esquerda={
+          <>
+            Livvo · <b>Concert Buddies</b>
+          </>
+        }
+        direita={
+          <button type="button" className="lv-iconbtn !w-8 !h-8 -my-2 -mr-2" aria-label="Fechar" onClick={fechar}>
+            <X className="w-4 h-4" />
+          </button>
+        }
+      >
+        <div className="lv-pad">
+          <div className="flex items-center gap-3">
+            <Avatar nome={buddy.pessoa.nome} tamanho={46} />
+            <div className="min-w-0 flex-1">
+              <h2 className="lv-display text-[24px] leading-tight">Você e {buddy.pessoa.nome.split(' ')[0]}</h2>
+              <p className="lv-meta">
+                @{buddy.pessoa.usuario} · {modo === 'comum' ? pluralComum(shows.length) : plural(shows.length)}
+              </p>
+            </div>
+            {buddy.exemplo && <TagExemplo />}
+          </div>
+
+          {faltam > 0 ? (
+            <div className="lv-aviso-nota mt-5">
+              <Star className="w-5 h-5 shrink-0" />
+              <p>
+                <b>{faltam === 1 ? 'Falta a sua nota em 1 show.' : `Falta a sua nota em ${faltam} shows.`}</b> Avalie e deixe a história de vocês completa: leva um toque em cada um.
+              </p>
+            </div>
+          ) : (
+            <p className="lv-meta mt-4">Todos os shows de vocês já têm a sua nota.</p>
+          )}
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {shows.map((show) => {
+              const m = lv.memoriaDoShow(show.id);
+              const d = dataCartao(show.ts);
+              const semNota = m?.notaShow === undefined;
+              return (
+                <IngressoContorno
+                  key={show.id}
+                  ativo={semNota}
+                  rotulo={`${show.artista}, ${show.casa}`}
+                  canhoto={
+                    <button type="button" tabIndex={-1} aria-hidden="true" className="block w-full" onClick={() => ir(`/show/${show.id}`)}>
+                      <Poster
+                        show={show}
+                        usuario={lv.perfil.usuario}
+                        perso={m ? personalizacaoDe(m) : undefined}
+                        detalhes={m ? { setor: m.setor } : undefined}
+                      />
+                    </button>
+                  }
+                >
+                  <button type="button" className="block text-left group w-full" onClick={() => ir(`/show/${show.id}`)}>
+                    <h3 className="lv-display text-[20px] leading-tight lv-clamp-2 group-hover:text-white">{show.artista}</h3>
+                    <p className="mt-1.5 text-[13px] font-bold text-[#ECE5D1]">
+                      {d.dia} {d.mes.toLowerCase()} {d.ano}
+                    </p>
+                    <p className="lv-meta truncate">
+                      {show.casa} · {show.cidade}
+                    </p>
+                  </button>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                    {semNota ? (
+                      <>
+                        <span className="lv-tag lv-tag--next">Falta a sua nota</span>
+                        <button type="button" className="lv-btn lv-btn--cyan !py-2 !px-3 !text-[12.5px]" onClick={() => ir(`/show/${show.id}?avaliar=show`)}>
+                          Avaliar <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <Discos valor={m!.notaShow} tamanho={15} rotulo="Nota do show" />
+                        <span className="lv-nota-num text-[15px]">{fmtNota(m!.notaShow!)}</span>
+                        {m!.notaOrganizacao === undefined && (
+                          <button type="button" className="lv-link !text-[12.5px]" onClick={() => ir(`/show/${show.id}?avaliar=org`)}>
+                            Falta a organização
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </IngressoContorno>
+              );
+            })}
+          </div>
+        </div>
+      </Bilhete>
+    </Modal>
+  );
+};
+
+/** "N shows juntos" clicável: abre a janela com os ingressos de vocês. */
+export const BotaoJuntos: React.FC<{ buddy?: Buddy; className?: string; modo?: 'juntos' | 'comum'; children?: React.ReactNode }> = ({
+  buddy,
+  className = '',
+  modo = 'juntos',
+  children,
+}) => {
+  const [aberta, setAberta] = useState(false);
+  if (!buddy) return <span className={className}>{children || plural(1)}</span>;
+  return (
+    <>
+      <button
+        type="button"
+        className={className || 'lv-juntos'}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setAberta(true);
+        }}
+      >
+        {children || (modo === 'comum' ? pluralComum(buddy.shows.length) : plural(buddy.shows.length))}
+      </button>
+      {aberta && <JanelaShowsJuntos buddy={buddy} modo={modo} fechar={() => setAberta(false)} />}
+    </>
+  );
+};
+
+/** Lista "Mais shows juntos" (Comunidade): cada linha abre a janela com os shows de vocês. */
 export const ListaBuddies: React.FC<{ buddies: Buddy[]; limite?: number; vazio?: React.ReactNode }> = ({ buddies, limite, vazio }) => {
+  const [aberto, setAberto] = useState<Buddy | null>(null);
   const lista = limite ? buddies.slice(0, limite) : buddies;
   if (!lista.length) return <>{vazio}</>;
   return (
@@ -190,12 +331,13 @@ export const ListaBuddies: React.FC<{ buddies: Buddy[]; limite?: number; vazio?:
           <Linha
             key={b.pessoa.usuario}
             avatar
-            to={`/show/${ultimo.id}`}
+            onClick={() => setAberto(b)}
             inicio={<Avatar nome={b.pessoa.nome} tamanho={38} />}
             titulo={b.pessoa.nome}
             sub={`@${b.pessoa.usuario} · último: ${ultimo.artista}`}
-            nota={plural(b.shows.length)}
+            nota={<span className="lv-juntos">{plural(b.shows.length)}</span>}
             fim={b.exemplo ? <TagExemplo /> : undefined}
+            rotulo={`${b.pessoa.nome}: ${plural(b.shows.length)}. Ver os ingressos`}
           />
         );
       })}
@@ -204,6 +346,34 @@ export const ListaBuddies: React.FC<{ buddies: Buddy[]; limite?: number; vazio?:
           Ver todos os Concert Buddies
         </Link>
       )}
+      {aberto && <JanelaShowsJuntos buddy={aberto} fechar={() => setAberto(null)} />}
     </div>
+  );
+};
+
+/** Concert Buddies em caixas lado a lado (Minha História): foto, nome e shows juntos; os 5 com mais shows. */
+export const CaixasBuddies: React.FC<{ buddies: Buddy[]; limite?: number }> = ({ buddies, limite = 5 }) => {
+  const [aberto, setAberto] = useState<Buddy | null>(null);
+  return (
+    <>
+      <div className="lv-buddies-caixas">
+        {buddies.slice(0, limite).map((b) => (
+          <button
+            key={b.pessoa.usuario}
+            type="button"
+            className="lv-buddy-caixa"
+            onClick={() => setAberto(b)}
+            aria-label={`${b.pessoa.nome}: ${plural(b.shows.length)}. Ver os ingressos`}
+          >
+            <Avatar nome={b.pessoa.nome} tamanho={56} />
+            <span className="lv-buddy-nome">{b.pessoa.nome}</span>
+            <span className="lv-buddy-n">
+              <b>{b.shows.length}</b> {b.shows.length === 1 ? 'show junto' : 'shows juntos'}
+            </span>
+          </button>
+        ))}
+      </div>
+      {aberto && <JanelaShowsJuntos buddy={aberto} fechar={() => setAberto(null)} />}
+    </>
   );
 };

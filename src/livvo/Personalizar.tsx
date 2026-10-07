@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AtSign, Award, ChevronDown, Image as ImageIcon, MapPin, Music, Palette, Quote, Ruler, Rows3, Type, X } from 'lucide-react';
+import { AtSign, Award, ChevronDown, MapPin, Music, Palette, Quote, Ruler, Rows3, Type, X } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { PERSONALIZACAO_PADRAO, type Personalizacao } from './store';
 import { COR_DESTAQUE, ROTULO_CARIMBO, nomeAceitaRaydis } from './ui';
@@ -99,7 +99,7 @@ export const PainelPersonalizar: React.FC<{
   alterado: boolean;
   comQuem: string[];
 }> = ({ show, rascunho, mudar, salvar, fechar, alterado, comQuem }) => {
-  const [aberta, setAberta] = useState<string | null>('formato');
+  const [aberta, setAberta] = useState<string | null>('carimbo');
   const alternar = (id: string) => setAberta((a) => (a === id ? null : id));
   const p = rascunho.perso;
   const set = (patch: Partial<Personalizacao>) => mudar({ ...rascunho, perso: { ...p, ...patch } });
@@ -114,31 +114,20 @@ export const PainelPersonalizar: React.FC<{
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="lv-eyebrow !text-[#4FDCDE]">Personalizar</div>
-          <p className="lv-meta mt-1">A prévia muda ao vivo. Vale para o pôster, a Carteira e as imagens de compartilhar.</p>
+          <p className="lv-meta mt-1">A prévia muda ao vivo. Vale para o pôster, a Carteira e as imagens de compartilhar. Pôster ou Ingresso fica acima da foto.</p>
         </div>
         <button type="button" className="lv-iconbtn shrink-0" aria-label="Fechar personalização" onClick={fechar}>
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="lv-group mt-5">Formato</div>
-      <Linha id="formato" aberta={aberta} alternar={alternar} icone={<ImageIcon />} titulo="Pôster ou ingresso" valor={p.formato === 'poster' ? 'Pôster' : 'Ingresso'}>
-        <Opcoes
-          colunas={2}
-          valor={p.formato}
-          mudar={(formato) => set({ formato })}
-          opcoes={[
-            { id: 'poster', rotulo: 'Pôster', desc: 'Vertical 4:5, para Stories e Feed' },
-            { id: 'ingresso', rotulo: 'Ingresso', desc: 'Horizontal, com canhoto e picote' },
-          ]}
-        />
-      </Linha>
+      <div className="lv-group mt-5">Carimbo</div>
       <Linha id="carimbo" aberta={aberta} alternar={alternar} icone={<Award />} titulo="Carimbo de presença" valor={ROTULO_CARIMBO[p.carimbo]}>
         <Opcoes
           valor={p.carimbo}
           mudar={(carimbo) => set({ carimbo })}
           opcoes={[
-            { id: 'nenhum', rotulo: 'Sem carimbo', desc: 'Card limpo' },
+            { id: 'nenhum', rotulo: 'Sem carimbo', desc: 'Padrão' },
             { id: 'eu_fui', rotulo: 'Eu fui', desc: 'Presença registrada' },
             { id: 'show_da_minha_vida', rotulo: 'Show da minha vida', desc: 'Memória inesquecível' },
           ]}
@@ -261,7 +250,7 @@ export const PainelPersonalizar: React.FC<{
         <button type="button" className="lv-ghost !py-[13px]" onClick={fechar}>
           {alterado ? 'Descartar e fechar' : 'Fechar'}
         </button>
-        <button type="button" className="lv-link" onClick={() => mudar({ perso: { ...PERSONALIZACAO_PADRAO }, setor: rascunho.setor })}>
+        <button type="button" className="lv-link" onClick={() => mudar({ perso: { ...PERSONALIZACAO_PADRAO, formato: p.formato }, setor: rascunho.setor })}>
           Voltar ao padrão
         </button>
       </div>

@@ -60,7 +60,7 @@ export interface Personalizacao {
 }
 export const PERSONALIZACAO_PADRAO: Personalizacao = {
   formato: 'poster',
-  carimbo: 'eu_fui',
+  carimbo: 'nenhum', // revisão 6: sem carimbo por padrão; só aparece se escolhido no Personalizar
   cor: 'ciano',
   fonte: 'alfa',
   tamanho: 'g',

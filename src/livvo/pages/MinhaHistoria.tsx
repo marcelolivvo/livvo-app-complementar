@@ -1,14 +1,14 @@
-import React, { Suspense, lazy, useMemo, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { BarChart3, Camera, Plus, Share2, Sparkles } from 'lucide-react';
 import { useCatalogo } from '../data/catalog';
 import { dataCartao, nota } from '../format';
-import { Link } from '../router';
+import { Link, useRoute } from '../router';
 import { calcularPassaporte } from '../stats';
 import { livvo, personalizacaoDe, useLivvo } from '../store';
 import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagExemplo, TagProxima, avisar } from '../ui';
 import { concertBuddies } from '../data/social';
-import { ListaBuddies } from '../ConcertBuddies';
-import { CamposPassaporte, ProgressoFaixa } from './Inicio';
+import { CaixasBuddies } from '../ConcertBuddies';
+import { CamposPassaporte, ProgressoFaixa, type AlvoPassaporte } from './Inicio';
 import { LivvoCredencialCard, exportarCredencialPNG } from '../../components/LivvoCredencialCard';
 import { PassportIcon } from '../../components/PassportIcon';
 import { BotaoAtualizarFoto } from '../AtualizarFoto';
@@ -113,6 +113,33 @@ export const MinhaHistoria: React.FC = () => {
     setHistorico((v) => !v);
     window.setTimeout(() => document.getElementById('meu-historico')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   };
+
+  // Números do passaporte (revisão 6): Shows → Carteira; Artistas e Cidades → gráficos do Meu histórico
+  const { query } = useRoute();
+  const irPara = (alvo: AlvoPassaporte) => {
+    if (alvo === 'carteira') {
+      document.getElementById('carteira')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    setHistorico(true);
+    const titulo = alvo === 'artistas' ? 'Artistas mais vistos' : 'Cidades';
+    let tentativas = 0;
+    const procurar = () => {
+      const h4 = Array.from(document.querySelectorAll('#meu-historico .lv-hist-block h4')).find((h) => h.textContent?.trim() === titulo);
+      const bloco = h4?.closest('.lv-hist-block') as HTMLElement | null;
+      if (bloco) {
+        bloco.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        bloco.classList.add('lv-hist-alvo');
+        window.setTimeout(() => bloco.classList.remove('lv-hist-alvo'), 2200);
+      } else if (tentativas++ < 30) window.setTimeout(procurar, 100);
+    };
+    window.setTimeout(procurar, 80);
+  };
+  const ver = query.get('ver') as AlvoPassaporte | null;
+  useEffect(() => {
+    if (ver && catalogo && ['carteira', 'artistas', 'cidades'].includes(ver)) window.setTimeout(() => irPara(ver), 150);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ver, Boolean(catalogo)]);
 
   const porAno = useMemo(() => {
     const grupos: Array<{ ano: string; itens: typeof pass.memoriasComShow }> = [];
@@ -222,7 +249,7 @@ export const MinhaHistoria: React.FC = () => {
             ) : (
               <>
                 <div className="mt-7">
-                  <CamposPassaporte pass={pass} />
+                  <CamposPassaporte pass={pass} ir={irPara} />
                 </div>
                 <div className="mt-7">
                   <ProgressoFaixa pass={pass} />
@@ -234,12 +261,7 @@ export const MinhaHistoria: React.FC = () => {
               <Stub icone={Plus} to="/registrar">
                 Registrar show
               </Stub>
-              <Stub icone={Share2} cor="cream" onClick={compartilharCredencial} disabled={gerando}>
-                {gerando ? 'Gerando…' : 'Compartilhar credencial'}
-              </Stub>
-            </div>
-            {/* Do Livvo Virtual Poster: gráficos da Minha história e o Wrapped (07/10/2026) */}
-            <div className="mt-3 flex flex-wrap gap-3">
+              {/* Do Livvo Virtual Poster: gráficos da Minha história e o Wrapped (07/10/2026) */}
               <button
                 type="button"
                 className="lv-btn lv-btn--stub lv-btn--teal"
@@ -294,13 +316,25 @@ export const MinhaHistoria: React.FC = () => {
       )}
 
       {buddies.length > 0 && (
-        <section aria-label="Concert Buddies" className="max-w-[880px]">
-          <Grupo titulo="Concert Buddies · mais shows juntos" extra={buddies.some((b) => b.exemplo) ? <TagExemplo /> : undefined} />
-          <ListaBuddies buddies={buddies} limite={4} />
+        <section aria-label="Concert Buddies">
+          <Grupo
+            titulo="Concert Buddies · mais shows juntos"
+            extra={
+              <span className="flex items-center gap-3">
+                {buddies.some((b) => b.exemplo) && <TagExemplo />}
+                {buddies.length > 5 && (
+                  <Link to="/comunidade?aba=buddies" className="lv-link shrink-0">
+                    Ver todos
+                  </Link>
+                )}
+              </span>
+            }
+          />
+          <CaixasBuddies buddies={buddies} limite={5} />
         </section>
       )}
 
-      <div className="mt-8 flex flex-wrap items-baseline justify-between gap-3">
+      <div id="carteira" className="mt-8 flex flex-wrap items-baseline justify-between gap-3 scroll-mt-24">
         <h2 className="lv-display text-[24px] sm:text-[28px]">
           Carteira de ingressos <span className="lv-num text-[#4FDCDE] ml-1">{pass.shows}</span>
         </h2>

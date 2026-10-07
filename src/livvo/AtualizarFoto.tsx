@@ -19,7 +19,7 @@ import { Bilhete, Grupo, Picotes, Poster, Stub, avisar } from './ui';
 /** Marca na memória de que a foto foi enviada pela pessoa (sobe a escada de verificação para "Com foto"). */
 const marcaUpload = (showId: string) => `livvo-foto:show:${showId}`;
 
-const Modal: React.FC<{ rotulo: string; fechar: () => void; children: React.ReactNode }> = ({ rotulo, fechar, children }) => {
+export const Modal: React.FC<{ rotulo: string; fechar: () => void; children: React.ReactNode }> = ({ rotulo, fechar, children }) => {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && fechar();
     document.addEventListener('keydown', esc);

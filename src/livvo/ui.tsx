@@ -84,6 +84,19 @@ export const linhaDetalhes = (perso: Personalizacao, det?: DetalhesCard) => {
   return partes.join(' · ');
 };
 
+/** true em telas de celular (até 767 px): usado para virar blocos em drop down. */
+export const useCelular = (consulta = '(max-width: 767px)') => {
+  const [sim, setSim] = useState(() => typeof window !== 'undefined' && window.matchMedia(consulta).matches);
+  useEffect(() => {
+    const m = window.matchMedia(consulta);
+    const f = () => setSim(m.matches);
+    f();
+    m.addEventListener('change', f);
+    return () => m.removeEventListener('change', f);
+  }, [consulta]);
+  return sim;
+};
+
 /** Fica true quando o elemento chega perto da tela (para buscar a foto automática só do que aparece). */
 const useVisivel = (ref: React.RefObject<HTMLElement | null>) => {
   const [visivel, setVisivel] = useState(false);

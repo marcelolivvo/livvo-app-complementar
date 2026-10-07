@@ -1330,3 +1330,92 @@
 .lv-app :is(.font-mono, .lv-hist-close, .lv-hist-readout, .lv-hist-stamp, .lv-hist-rank) {
   font-family: 'Barlow', 'Plus Jakarta Sans', sans-serif;
 }
+
+/* Faixa de baixo da página do show (revisão 6): Setlist · Foi com alguém? · Mais shows do artista · Mais shows nesta casa */
+.lv-faixa-show { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: 32px; }
+@media (min-width: 768px) { .lv-faixa-show { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .lv-faixa-show { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 767px) {
+  .lv-faixa-show { margin-top: 28px; border-top: 1px dashed var(--lv-line); }
+  .lv-faixa-row .lv-row-title { font-size: 14.5px; }
+}
+
+/* Concert Buddies (revisão 6): "N shows juntos" clicável, janela de shows juntos e caixas da Minha História */
+.lv-juntos {
+  display: inline;
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--lv-cyan);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.lv-juntos:hover { color: #fff; }
+.lv-app button.lv-tag { cursor: pointer; }
+.lv-app button.lv-tag:hover { filter: brightness(1.2); }
+.lv-aviso-nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px dashed var(--lv-nota);
+  border-radius: 6px;
+  background: rgba(255, 214, 10, 0.06);
+  color: var(--lv-cream);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.lv-aviso-nota svg { color: var(--lv-nota); margin-top: 1px; }
+.lv-buddies-caixas {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+@media (max-width: 767px) {
+  .lv-buddies-caixas {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 132px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
+  }
+  .lv-buddy-caixa { scroll-snap-align: start; }
+}
+.lv-buddy-caixa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 10px 14px;
+  border: 1px solid var(--lv-line-2);
+  border-radius: 8px;
+  background: var(--lv-paper);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.lv-buddy-caixa:hover { border-color: var(--lv-cyan); background: rgba(79, 220, 222, 0.05); }
+.lv-buddy-nome { font-size: 13.5px; font-weight: 800; color: var(--lv-cream); line-height: 1.25; word-break: keep-all; hyphens: none; }
+.lv-buddy-n { font-size: 12px; font-weight: 600; color: var(--lv-muted); }
+.lv-buddy-n b { font-family: 'RAYDIS', 'Alfa Slab One', sans-serif; font-weight: 700; color: var(--lv-cyan); font-size: 15px; margin-right: 2px; }
+/* Números do passaporte clicáveis (revisão 6) */
+.lv-app .lv-num-link {
+  display: inline-block;
+  font-size: inherit;
+  color: inherit;
+  line-height: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 6px;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+.lv-app .lv-num-link:hover,
+.lv-app .lv-num-link:focus-visible { color: var(--lv-cyan); text-decoration-color: var(--lv-cyan); outline: none; }
+/* Gráfico de destino no Meu histórico */
+.lv-app .lv-hist-block.lv-hist-alvo { outline: 2px solid var(--lv-cyan); outline-offset: 8px; border-radius: 4px; transition: outline-color 1.2s ease; }

@@ -127,25 +127,49 @@ export const textoFaltam = (pass: Passaporte) =>
     <>Você chegou ao nível mais alto: {pass.faixa}</>
   );
 
-export const CamposPassaporte: React.FC<{ pass: Passaporte }> = ({ pass }) => (
-  <dl className="lv-fields lv-fields--passaporte">
-    <div>
-      <dt>Shows</dt>
-      <dd className="lv-num">{pass.shows}</dd>
-      <span>{pass.primeiroShow ? `desde ${new Date(pass.primeiroShow.ts).getFullYear()}` : ' '}</span>
-    </div>
-    <div>
-      <dt>Artistas</dt>
-      <dd className="lv-num">{pass.artistas}</dd>
-      <span title={pass.artistaMaisVisto?.nome}>{pass.artistaMaisVisto ? `mais visto: ${pass.artistaMaisVisto.nome}` : ' '}</span>
-    </div>
-    <div>
-      <dt>Cidades</dt>
-      <dd className="lv-num">{pass.cidades}</dd>
-      <span>{pass.estados === 1 ? 'em 1 estado' : `em ${pass.estados} estados`}</span>
-    </div>
-  </dl>
-);
+export type AlvoPassaporte = 'carteira' | 'artistas' | 'cidades';
+
+/**
+ * Campos do passaporte. Os números levam aos detalhes (revisão 6): Shows → Carteira de ingressos;
+ * Artistas e Cidades → gráficos do Meu histórico. Sem `ir`, os números são links para a Minha História.
+ */
+export const CamposPassaporte: React.FC<{ pass: Passaporte; ir?: (alvo: AlvoPassaporte) => void }> = ({ pass, ir }) => {
+  const Numero: React.FC<{ alvo: AlvoPassaporte; valor: number; rotulo: string }> = ({ alvo, valor, rotulo }) =>
+    ir ? (
+      <button type="button" className="lv-num lv-num-link" onClick={() => ir(alvo)} aria-label={rotulo}>
+        {valor}
+      </button>
+    ) : (
+      <Link to={`/minha-historia?ver=${alvo}`} className="lv-num lv-num-link" aria-label={rotulo}>
+        {valor}
+      </Link>
+    );
+  return (
+    <dl className="lv-fields lv-fields--passaporte">
+      <div>
+        <dt>Shows</dt>
+        <dd>
+          <Numero alvo="carteira" valor={pass.shows} rotulo={`${pass.shows} shows: ver a Carteira de ingressos`} />
+        </dd>
+        <span>{pass.primeiroShow ? `desde ${new Date(pass.primeiroShow.ts).getFullYear()}` : ' '}</span>
+      </div>
+      <div>
+        <dt>Artistas</dt>
+        <dd>
+          <Numero alvo="artistas" valor={pass.artistas} rotulo={`${pass.artistas} artistas: ver no Meu histórico`} />
+        </dd>
+        <span title={pass.artistaMaisVisto?.nome}>{pass.artistaMaisVisto ? `mais visto: ${pass.artistaMaisVisto.nome}` : ' '}</span>
+      </div>
+      <div>
+        <dt>Cidades</dt>
+        <dd>
+          <Numero alvo="cidades" valor={pass.cidades} rotulo={`${pass.cidades} cidades: ver no Meu histórico`} />
+        </dd>
+        <span>{pass.estados === 1 ? 'em 1 estado' : `em ${pass.estados} estados`}</span>
+      </div>
+    </dl>
+  );
+};
 
 export const ProgressoFaixa: React.FC<{ pass: Passaporte }> = ({ pass }) => (
   <div className="max-w-[620px]">

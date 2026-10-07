@@ -7,7 +7,7 @@ import { dataCurta, plural } from '../format';
 import { Link, setQuery, useRoute } from '../router';
 import { calcularPassaporte } from '../stats';
 import { livvo, useLivvo, type QuemPodeMarcar } from '../store';
-import { ListaBuddies } from '../ConcertBuddies';
+import { BotaoJuntos, ListaBuddies } from '../ConcertBuddies';
 import { Avatar, Bilhete, Discos, Grupo, Linha, Stub, TagExemplo, avisar } from '../ui';
 
 /**
@@ -222,6 +222,10 @@ export const Comunidade: React.FC = () => {
                 const p = pessoaPorUsuario(c.de);
                 if (!show) return null;
                 const jaFui = Boolean(lv.memoriaDoShow(show.id));
+                // Shows em comum com quem convidou (revisão 6): juntos (Concert Buddies) + mesmos shows registrados
+                const juntosCom = buddies.find((b) => b.pessoa.usuario === c.de)?.shows || [];
+                const comunsCom = emComum.find((x) => x.pessoa.usuario === c.de)?.shows || [];
+                const comuns = [...new Map([...juntosCom, ...comunsCom].map((sh) => [sh.id, sh])).values()];
                 return (
                   <div key={c.id} className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
                     <Avatar nome={p.nome} tamanho={40} />
@@ -235,6 +239,13 @@ export const Comunidade: React.FC = () => {
                       <p className="lv-meta">
                         {show.casa} · {show.cidade} · {dataCurta(show.ts)}
                         {jaFui ? ' · já está na sua história' : ''}
+                      </p>
+                      <p className="mt-1.5">
+                        {comuns.length > 0 ? (
+                          <BotaoJuntos modo="comum" buddy={{ pessoa: p, shows: comuns, exemplo: Boolean(c.exemplo) }} className="lv-tag lv-tag--teal !cursor-pointer" />
+                        ) : (
+                          <span className="lv-tag lv-tag--next">Primeiro show juntos</span>
+                        )}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
