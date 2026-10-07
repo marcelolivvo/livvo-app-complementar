@@ -6,7 +6,7 @@ import { dataCartao, dataCurta, dataLonga, dataParaTs, diasAte, hojeTs, nota, qu
 import { Link } from '../router';
 import { calcularPassaporte, type Passaporte } from '../stats';
 import { livvo, useLivvo, type Livvo } from '../store';
-import { Avatar, Bilhete, CaixaData, CardShow, Discos, Grupo, IngressoContorno, Linha, Picotes, Poster, Stub, TagExemplo, avisar } from '../ui';
+import { Avatar, Bilhete, CaixaData, CardShow, Discos, FotoArtista, Grupo, IngressoContorno, Linha, Picotes, Poster, Stub, TagExemplo, avisar } from '../ui';
 
 /* Cartão de momento: um só pedido por vez ---------------------------------------------
  * Prioridade (plano de fusão, 6.4): amanhã tem show → como foi? → neste dia → faltam poucos dias
@@ -270,6 +270,19 @@ const Missoes: React.FC<{ pass: Passaporte; lv: Livvo }> = ({ pass, lv }) => {
 
 /* Agenda --------------------------------------------------------------------------------- */
 
+/** Data ao lado da foto (revisão 7): dia em RAYDIS e mês, seguidos da casa e da cidade. */
+const DataLinha: React.FC<{ ts: number; resto: string }> = ({ ts, resto }) => {
+  const d = dataCartao(ts);
+  return (
+    <>
+      <span className="lv-data-linha">
+        <b>{d.dia}</b> {d.mes} {d.ano}
+      </span>
+      <span className="block">{resto}</span>
+    </>
+  );
+};
+
 const Agenda: React.FC<{ cat: Catalogo; lv: Livvo }> = ({ cat, lv }) => {
   const itens = Object.entries(lv.interesses)
     .map(([id, tipo]) => ({ show: cat.porId.get(id), tipo }))
@@ -283,9 +296,10 @@ const Agenda: React.FC<{ cat: Catalogo; lv: Livvo }> = ({ cat, lv }) => {
         <Linha
           key={show.id}
           to={`/show/${show.id}`}
-          inicio={<CaixaData ts={show.ts} />}
+          foto
+          inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
           titulo={show.artista}
-          sub={`${show.casa} · ${show.cidade}`}
+          sub={<DataLinha ts={show.ts} resto={`${show.casa} · ${show.cidade}`} />}
           nota={quando(show.ts)}
           fim={<span className="lv-tag lv-tag--cyan">{tipo === 'tenho_ingresso' ? 'Tenho ingresso' : 'Quero ir'}</span>}
         />
@@ -407,9 +421,10 @@ export const Inicio: React.FC = () => {
               <Linha
                 key={show.id}
                 to={`/show/${show.id}`}
-                inicio={<CaixaData ts={show.ts} />}
+                foto
+                inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
                 titulo={show.artista}
-                sub={`${show.casa} · ${show.cidade}`}
+                sub={<DataLinha ts={show.ts} resto={`${show.casa} · ${show.cidade}`} />}
                 nota={`Você viu ${vezes === 1 ? '1 vez' : `${vezes} vezes`}`}
               />
             ))}
@@ -423,8 +438,8 @@ export const Inicio: React.FC = () => {
               <Linha
                 key={`${pessoa.usuario}-${show.id}`}
                 to={`/show/${show.id}`}
-                avatar
-                inicio={<Avatar nome={pessoa.nome} tamanho={38} />}
+                foto
+                inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
                 titulo={
                   <>
                     {pessoa.nome} <span className="font-semibold text-[#B3AE9F]">registrou</span> {show.artista}

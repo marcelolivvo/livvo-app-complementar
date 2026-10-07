@@ -1,10 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Search, X } from 'lucide-react';
-import { buscarArtistas, ehFuturo, useCatalogo, type Artista } from '../data/catalog';
+import { ArrowLeft, ArrowRight, Check, Search, Star, X } from 'lucide-react';
+import { buscarArtistas, ehFuturo, useCatalogo, type Artista, type Show } from '../data/catalog';
 import { dataCartao, plural } from '../format';
-import { Link, setQuery, useRoute } from '../router';
-import { livvo, useLivvo } from '../store';
-import { Avatar, Bilhete, CaixaData, CarimboFui, Grupo, Linha, TagProxima, avisar } from '../ui';
+import { Link, navigate, setQuery, useRoute } from '../router';
+import { livvo, useLivvo, type Memoria } from '../store';
+import { Modal } from '../AtualizarFoto';
+import { BotaoCompartilhar } from '../Compartilhar';
+import { BotaoFavoritar } from '../Favoritos';
+import { Bilhete, CaixaData, CarimboFui, FotoArtista, Grupo, Linha, Poster, TagProxima, avisar } from '../ui';
 
 /**
  * Registrar (versão da parte 1): artista → data → Eu fui, em 3 toques.
@@ -12,8 +15,59 @@ import { Avatar, Bilhete, CaixaData, CarimboFui, Grupo, Linha, TagProxima, avisa
  * e o formulário "Meu show não está aqui".
  */
 
-/** Sem foto de artista até haver imagens licenciadas: iniciais no lugar. */
-const FotoArtista: React.FC<{ a: Artista; tamanho?: number }> = ({ a, tamanho = 44 }) => <Avatar nome={a.nome} tamanho={tamanho} />;
+/**
+ * Janela depois do "Eu fui" (revisão 7): o pôster padrão do show (sem carimbo) e o convite para compartilhar.
+ * Dar a nota leva à página do show; "Continuar registrando" fecha e volta à lista de datas.
+ */
+const JanelaEuFui: React.FC<{ show: Show; memoria: Memoria; usuario: string; fechar: () => void }> = ({ show, memoria, usuario, fechar }) => {
+  const d = dataCartao(show.ts);
+  return (
+    <Modal rotulo={`Você foi: ${show.artista}`} fechar={fechar}>
+      <Bilhete
+        esquerda={
+          <>
+            Livvo · <b>Eu fui</b>
+          </>
+        }
+        direita={
+          <button type="button" className="lv-iconbtn !w-8 !h-8 -my-2 -mr-2" aria-label="Fechar" onClick={fechar}>
+            <X className="w-4 h-4" />
+          </button>
+        }
+      >
+        <div className="lv-pad grid gap-6 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:items-center">
+          <div className="w-full max-w-[260px] mx-auto">
+            <Poster show={show} usuario={usuario} />
+          </div>
+          <div className="min-w-0">
+            <CarimboFui animar texto="Guardado" />
+            <h2 className="lv-display text-[26px] leading-tight mt-3">{show.artista}</h2>
+            <p className="lv-meta mt-1">
+              {show.casa} · {show.cidade} · {d.dia} {d.mes.toLowerCase()} {d.ano}
+            </p>
+            <p className="lv-sub mt-4">Seu pôster está pronto. Compartilhe nos Stories, no Feed ou com quem estava lá.</p>
+            <div className="mt-5 grid gap-2.5 max-w-[320px]">
+              <BotaoCompartilhar show={show} memoria={memoria} usuario={usuario} botao />
+              <button
+                type="button"
+                className="lv-btn lv-btn--stub lv-btn--cream w-full whitespace-nowrap"
+                onClick={() => {
+                  fechar();
+                  navigate(`/show/${show.id}?avaliar=show`);
+                }}
+              >
+                <Star className="w-4 h-4 shrink-0" strokeWidth={2.2} /> <span>Dar nota agora</span>
+              </button>
+              <button type="button" className="lv-link justify-center mt-1" onClick={fechar}>
+                Continuar registrando
+              </button>
+            </div>
+          </div>
+        </div>
+      </Bilhete>
+    </Modal>
+  );
+};
 
 const LinhaArtista: React.FC<{ a: Artista; vezes?: number }> = ({ a, vezes }) => {
   const passados = a.shows.filter((s) => !ehFuturo(s)).length;
@@ -21,7 +75,8 @@ const LinhaArtista: React.FC<{ a: Artista; vezes?: number }> = ({ a, vezes }) =>
     <Linha
       avatar
       onClick={() => setQuery({ artista: a.id })}
-      inicio={<FotoArtista a={a} tamanho={40} />}
+      foto
+      inicio={<FotoArtista nome={a.nome} artistaId={a.id} />}
       titulo={a.nome}
       sub={`${plural(passados, 'show no catálogo', 'shows no catálogo')}${vezes ? ` · você foi a ${vezes}` : ''}`}
       fim={<ArrowRight className="w-4 h-4 lv-show-go" />}
@@ -35,6 +90,7 @@ export const Registrar: React.FC = () => {
   const lv = useLivvo();
   const [termo, setTermo] = useState(query.get('q') || '');
   const [recentes, setRecentes] = useState<string[]>([]);
+  const [janela, setJanela] = useState<{ show: Show; memoria: Memoria } | null>(null);
   const artistaId = query.get('artista');
   const artista = artistaId ? catalogo?.artistas.get(artistaId) : undefined;
 
@@ -71,14 +127,15 @@ export const Registrar: React.FC = () => {
         <Bilhete esquerda={tira()} direita="Passo 2 de 2">
           <div className="lv-pad">
             <div className="flex items-center gap-4">
-              <FotoArtista a={artista} tamanho={60} />
-              <div className="min-w-0">
+              <FotoArtista nome={artista.nome} artistaId={artista.id} />
+              <div className="min-w-0 flex-1">
                 <div className="lv-kicker lv-kicker--cyan">Qual destes você viveu?</div>
                 <h1 className="lv-h1 mt-1 !text-[clamp(26px,5.6vw,38px)]">{artista.nome}</h1>
                 <p className="lv-meta mt-1">
                   {plural(passados.length, 'show no catálogo', 'shows no catálogo')}
                   {fuiAqui ? ` · você foi a ${fuiAqui}` : ''}
                 </p>
+                <BotaoFavoritar artistaId={artista.id} nome={artista.nome} className="mt-2" />
               </div>
             </div>
 
@@ -106,9 +163,10 @@ export const Registrar: React.FC = () => {
                         type="button"
                         className="lv-btn lv-btn--cyan !py-2.5 !px-4"
                         onClick={() => {
-                          if (livvo.registrar(s.id)) {
+                          const m = livvo.registrar(s.id);
+                          if (m) {
                             setRecentes((r) => [...r, s.id]);
-                            avisar('Show guardado na sua história');
+                            setJanela({ show: s, memoria: m });
                           }
                         }}
                       >
@@ -120,6 +178,7 @@ export const Registrar: React.FC = () => {
               );
             })}
             {recentes.length > 0 && <p className="lv-meta mt-3">Toque no carimbo para dar a nota do show e da organização.</p>}
+            {janela && <JanelaEuFui show={janela.show} memoria={janela.memoria} usuario={lv.perfil.usuario} fechar={() => setJanela(null)} />}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <p className="lv-sub flex-1 min-w-[220px]">Não achou a data? Você vai poder pedir a inclusão com data, casa e cidade.</p>
               <TagProxima parte={2} />

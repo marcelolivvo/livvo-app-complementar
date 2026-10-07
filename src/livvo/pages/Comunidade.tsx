@@ -7,8 +7,8 @@ import { dataCurta, plural } from '../format';
 import { Link, setQuery, useRoute } from '../router';
 import { calcularPassaporte } from '../stats';
 import { livvo, useLivvo, type QuemPodeMarcar } from '../store';
-import { BotaoJuntos, ListaBuddies } from '../ConcertBuddies';
-import { Avatar, Bilhete, Discos, Grupo, Linha, Stub, TagExemplo, avisar } from '../ui';
+import { BotaoJuntos, CaixasBuddies } from '../ConcertBuddies';
+import { Bilhete, CaixaFoto, Discos, FotoArtista, FotoPessoa, Grupo, Linha, Stub, TagExemplo, avisar } from '../ui';
 
 /**
  * Comunidade (adiantada da parte 4 em 07/10/2026): Seguindo, Concert Buddies, Convites "Fomos juntos",
@@ -133,7 +133,8 @@ export const Comunidade: React.FC = () => {
         </div>
       </Bilhete>
 
-      <div className="max-w-[880px]">
+      {/* Seguindo e Convites em lista; Concert Buddies, Shows em comum e Pessoas em caixas na largura da página (revisão 7) */}
+      <div className={aba === 'seguindo' || aba === 'convites' ? 'max-w-[880px]' : ''}>
         {aba === 'seguindo' &&
           (!lv.exemplos ? (
             <Vazio titulo="Ainda não há atividade." texto="Quando as pessoas que você segue registrarem shows, eles aparecem aqui.">
@@ -154,8 +155,8 @@ export const Comunidade: React.FC = () => {
                 <Linha
                   key={`${pessoa.usuario}-${show.id}`}
                   to={`/show/${show.id}`}
-                  avatar
-                  inicio={<Avatar nome={pessoa.nome} tamanho={38} />}
+                  foto
+                  inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
                   titulo={
                     <>
                       {pessoa.nome} <span className="font-semibold text-[#B3AE9F]">registrou</span> {show.artista}
@@ -171,19 +172,18 @@ export const Comunidade: React.FC = () => {
         {aba === 'buddies' && (
           <section>
             <Grupo titulo="Mais shows juntos" extra={lv.exemplos && buddies.some((b) => b.exemplo) ? <TagExemplo /> : undefined} />
-            <ListaBuddies
-              buddies={buddies}
-              vazio={
-                <Vazio
-                  titulo="Nenhum Concert Buddy ainda."
-                  texto="Na página de um show que você foi, use “Foi com alguém?” para marcar o @ de quem estava com você."
-                >
-                  <Link to="/minha-historia" className="lv-link">
-                    Escolher um show da sua história <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </Vazio>
-              }
-            />
+            {buddies.length ? (
+              <CaixasBuddies buddies={buddies} limite={0} quebra />
+            ) : (
+              <Vazio
+                titulo="Nenhum Concert Buddy ainda."
+                texto="Na página de um show que você foi, use “Foi com alguém?” para marcar o @ de quem estava com você."
+              >
+                <Link to="/minha-historia" className="lv-link">
+                  Escolher um show da sua história <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Vazio>
+            )}
           </section>
         )}
 
@@ -227,8 +227,8 @@ export const Comunidade: React.FC = () => {
                 const comunsCom = emComum.find((x) => x.pessoa.usuario === c.de)?.shows || [];
                 const comuns = [...new Map([...juntosCom, ...comunsCom].map((sh) => [sh.id, sh])).values()];
                 return (
-                  <div key={c.id} className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
-                    <Avatar nome={p.nome} tamanho={40} />
+                  <div key={c.id} className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3 sm:gap-4">
+                    <FotoArtista nome={show.artista} artistaId={show.artistaId} />
                     <div className="min-w-0 flex-1">
                       <p className="text-[14px] leading-snug">
                         <b>{p.nome}</b> marcou você em{' '}
@@ -278,8 +278,8 @@ export const Comunidade: React.FC = () => {
                     <Linha
                       key={c.id}
                       to={`/show/${show.id}`}
-                      avatar
-                      inicio={<Avatar nome={p.nome} tamanho={34} />}
+                      foto
+                      inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
                       titulo={`${show.artista} · com ${p.nome}`}
                       sub={`${show.casa} · ${dataCurta(show.ts)}`}
                       fim={<span className={`lv-tag ${c.status === 'aceito' ? 'lv-tag--teal' : 'lv-tag--next'}`}>{c.status === 'aceito' ? 'Aceito' : 'Recusado'}</span>}
@@ -300,17 +300,13 @@ export const Comunidade: React.FC = () => {
           ) : (
             <section>
               <Grupo titulo="Foram aos mesmos shows que você" extra={<TagExemplo />} />
-              {emComum.slice(0, 20).map(({ pessoa, shows }) => (
-                <Linha
-                  key={pessoa.usuario}
-                  avatar
-                  inicio={<Avatar nome={pessoa.nome} tamanho={38} />}
-                  titulo={pessoa.nome}
-                  sub={`@${pessoa.usuario} · ${pessoa.cidade} · ${shows.slice(0, 2).map((s) => s.artista).join(', ')}`}
-                  nota={plural(shows.length, 'show em comum', 'shows em comum')}
-                  fim={<BotaoSeguir usuario={pessoa.usuario} />}
-                />
-              ))}
+              <CaixasBuddies
+                buddies={emComum.slice(0, 20).map((x) => ({ ...x, exemplo: true }))}
+                limite={0}
+                quebra
+                modo="comum"
+                extra={(b) => <BotaoSeguir usuario={b.pessoa.usuario} />}
+              />
             </section>
           ))}
 
@@ -320,16 +316,17 @@ export const Comunidade: React.FC = () => {
           ) : (
             <section>
               <Grupo titulo="Pessoas para seguir" extra={<TagExemplo />} />
-              {PESSOAS_EXEMPLO.map((p) => (
-                <Linha
-                  key={p.usuario}
-                  avatar
-                  inicio={<Avatar nome={p.nome} tamanho={38} />}
-                  titulo={p.nome}
-                  sub={`@${p.usuario} · ${p.cidade}`}
-                  fim={<BotaoSeguir usuario={p.usuario} />}
-                />
-              ))}
+              <div className="lv-buddies-caixas lv-buddies-caixas--quebra">
+                {PESSOAS_EXEMPLO.map((p) => (
+                  <CaixaFoto
+                    key={p.usuario}
+                    foto={<FotoPessoa nome={p.nome} tamanho="caixa" />}
+                    titulo={p.nome}
+                    linha={`@${p.usuario} · ${p.cidade}`}
+                    extra={<BotaoSeguir usuario={p.usuario} />}
+                  />
+                ))}
+              </div>
             </section>
           ))}
       </div>

@@ -7,7 +7,8 @@ import { buddiesExemplo, pessoaAceitaMarcacao, pessoaPorUsuario, type Buddy } fr
 import { dataCartao, nota as fmtNota, normalizar } from './format';
 import { Link, navigate } from './router';
 import { livvo, personalizacaoDe, useLivvo, type Marcacao, type Memoria } from './store';
-import { Avatar, Bilhete, Discos, IngressoContorno, Linha, Poster, TagExemplo, avisar } from './ui';
+import { Avatar, Bilhete, CaixaFoto, Discos, FotoPessoa, IngressoContorno, Linha, Poster, TagExemplo, avisar, fotoDoUsuario } from './ui';
+import { BotaoCompartilharJuntos } from './Compartilhar';
 
 /**
  * Concert Buddies (decisões de 07/10/2026): no "Foi com alguém?" a pessoa marca o @ de quem foi com ela.
@@ -211,15 +212,28 @@ export const JanelaShowsJuntos: React.FC<{ buddy: Buddy; fechar: () => void; mod
         }
       >
         <div className="lv-pad">
-          <div className="flex items-center gap-3">
-            <Avatar nome={buddy.pessoa.nome} tamanho={46} />
-            <div className="min-w-0 flex-1">
-              <h2 className="lv-display text-[24px] leading-tight">Você e {buddy.pessoa.nome.split(' ')[0]}</h2>
-              <p className="lv-meta">
-                @{buddy.pessoa.usuario} · {modo === 'comum' ? pluralComum(shows.length) : plural(shows.length)}
-              </p>
+          {/* As duas fotos lado a lado e o Compartilhar (revisão 7) */}
+          <div className="flex flex-wrap items-center gap-4 sm:gap-5">
+            <div className="lv-dupla" aria-hidden="true">
+              <FotoPessoa nome={lv.perfil.nome} eu />
+              <FotoPessoa nome={buddy.pessoa.nome} />
             </div>
-            {buddy.exemplo && <TagExemplo />}
+            <div className="min-w-0 flex-1 basis-[200px]">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="lv-display text-[24px] leading-tight">Você e {buddy.pessoa.nome.split(' ')[0]}</h2>
+                {buddy.exemplo && <TagExemplo />}
+              </div>
+              <p className="lv-meta">
+                @{lv.perfil.usuario} e @{buddy.pessoa.usuario} · {modo === 'comum' ? pluralComum(shows.length) : plural(shows.length)}
+              </p>
+              <BotaoCompartilharJuntos
+                className="mt-3"
+                voce={{ nome: lv.perfil.nome, usuario: lv.perfil.usuario, foto: fotoDoUsuario() }}
+                outra={{ nome: buddy.pessoa.nome, usuario: buddy.pessoa.usuario }}
+                shows={shows}
+                modo={modo}
+              />
+            </div>
           </div>
 
           {faltam > 0 ? (
@@ -353,29 +367,40 @@ export const ListaBuddies: React.FC<{ buddies: Buddy[]; limite?: number; vazio?:
   );
 };
 
-/** Concert Buddies em caixas lado a lado (Minha História): foto, nome e shows juntos; os 5 com mais shows. */
-export const CaixasBuddies: React.FC<{ buddies: Buddy[]; limite?: number }> = ({ buddies, limite = 5 }) => {
+/**
+ * Concert Buddies em caixas (Minha História: os 5 com mais shows; Comunidade: todos, quebrando a linha):
+ * foto padrão 4:5, nome e shows juntos. Cada caixa abre a janela com os ingressos de vocês.
+ */
+export const CaixasBuddies: React.FC<{ buddies: Buddy[]; limite?: number; quebra?: boolean; modo?: 'juntos' | 'comum'; extra?: (b: Buddy) => React.ReactNode }> = ({
+  buddies,
+  limite = 5,
+  quebra,
+  modo = 'juntos',
+  extra,
+}) => {
   const [aberto, setAberto] = useState<Buddy | null>(null);
+  const lista = limite ? buddies.slice(0, limite) : buddies;
   return (
     <>
-      <div className="lv-buddies-caixas">
-        {buddies.slice(0, limite).map((b) => (
-          <button
+      <div className={`lv-buddies-caixas ${quebra ? 'lv-buddies-caixas--quebra' : ''}`}>
+        {lista.map((b) => (
+          <CaixaFoto
             key={b.pessoa.usuario}
-            type="button"
-            className="lv-buddy-caixa"
+            foto={<FotoPessoa nome={b.pessoa.nome} tamanho="caixa" />}
+            titulo={b.pessoa.nome}
+            linha={
+              <>
+                <b>{b.shows.length}</b>{' '}
+                {modo === 'comum' ? (b.shows.length === 1 ? 'show em comum' : 'shows em comum') : b.shows.length === 1 ? 'show junto' : 'shows juntos'}
+              </>
+            }
             onClick={() => setAberto(b)}
-            aria-label={`${b.pessoa.nome}: ${plural(b.shows.length)}. Ver os ingressos`}
-          >
-            <Avatar nome={b.pessoa.nome} tamanho={56} />
-            <span className="lv-buddy-nome">{b.pessoa.nome}</span>
-            <span className="lv-buddy-n">
-              <b>{b.shows.length}</b> {b.shows.length === 1 ? 'show junto' : 'shows juntos'}
-            </span>
-          </button>
+            extra={extra?.(b)}
+            rotulo={`${b.pessoa.nome}: ${modo === 'comum' ? pluralComum(b.shows.length) : plural(b.shows.length)}. Ver os ingressos`}
+          />
         ))}
       </div>
-      {aberto && <JanelaShowsJuntos buddy={aberto} fechar={() => setAberto(null)} />}
+      {aberto && <JanelaShowsJuntos buddy={aberto} modo={modo} fechar={() => setAberto(null)} />}
     </>
   );
 };

@@ -396,6 +396,117 @@ export const Avatar: React.FC<{ nome: string; tamanho?: number; className?: stri
   </span>
 );
 
+/* Foto padrão 4:5 (revisão 7, 07/10/2026) --------------------------------------------
+ * A foto do canhoto dos ingressos, sem textos: recorte 4:5, duotone suave com retícula (foto automática ou
+ * salva do artista) ou a retícula gerada pela paleta do artista quando não há foto. Pessoas sem foto ganham
+ * a mesma retícula com as iniciais; a sua usa a foto da Credencial. Tamanho do canhoto da Carteira no celular
+ * (72 × 90 px) e 96 × 120 px a partir de 640 px; `tamanho` muda isso.
+ */
+const CHAVE_FOTO_USUARIO = 'livvo_user_photo_v1';
+export const fotoDoUsuario = (): string | null => {
+  try {
+    return localStorage.getItem(CHAVE_FOTO_USUARIO);
+  } catch {
+    return null;
+  }
+};
+
+const Reticula: React.FC<{ semente: string; iniciais?: string }> = ({ semente, iniciais: ini }) => {
+  const p = paletaDoArtista(semente);
+  const h = hash(semente);
+  return (
+    <span
+      className="lv-foto-gerada"
+      style={{ '--p-bg': p.bg, '--p-acc': p.acc, '--p-fg': p.fg, '--p-x': `${30 + (h % 50)}%`, '--p-y': `${10 + ((h >>> 5) % 40)}%` } as React.CSSProperties}
+    >
+      {ini && <b>{ini}</b>}
+    </span>
+  );
+};
+
+export const FotoArtista: React.FC<{ nome: string; artistaId?: string; tamanho?: 'lista' | 'caixa' | number; className?: string }> = ({
+  nome,
+  artistaId,
+  tamanho = 'lista',
+  className = '',
+}) => {
+  const ref = useRef<HTMLSpanElement>(null);
+  const visivel = useVisivel(ref);
+  const img = useImagemDoPoster({ id: `artista-${artistaId || nome}`, artista: nome, artistaId: artistaId || '' }, { automatica: visivel });
+  const [falhou, setFalhou] = useState<string | null>(null);
+  const url = img?.url && img.url !== falhou ? img.url : undefined;
+  const estilo = typeof tamanho === 'number' ? ({ '--foto-w': `${tamanho}px` } as React.CSSProperties) : undefined;
+  return (
+    <span ref={ref} className={`lv-foto ${typeof tamanho === 'string' ? `lv-foto--${tamanho}` : ''} ${className}`} style={estilo} aria-hidden="true">
+      {url ? (
+        <>
+          <img src={url} alt="" loading="lazy" referrerPolicy="no-referrer" className={img?.tratada ? '' : 'lv-poster-photo--duo'} onError={() => setFalhou(url)} />
+          <span className="lv-foto-ret" />
+        </>
+      ) : (
+        <Reticula semente={artistaId || nome} />
+      )}
+    </span>
+  );
+};
+
+export const FotoPessoa: React.FC<{ nome: string; eu?: boolean; tamanho?: 'lista' | 'caixa' | number; className?: string }> = ({
+  nome,
+  eu,
+  tamanho = 'lista',
+  className = '',
+}) => {
+  const foto = eu ? fotoDoUsuario() : null;
+  const estilo = typeof tamanho === 'number' ? ({ '--foto-w': `${tamanho}px` } as React.CSSProperties) : undefined;
+  return (
+    <span className={`lv-foto lv-foto--pessoa ${typeof tamanho === 'string' ? `lv-foto--${tamanho}` : ''} ${className}`} style={estilo} aria-hidden="true">
+      {foto ? (
+        <>
+          <img src={foto} alt="" className="lv-poster-photo--duo" />
+          <span className="lv-foto-ret" />
+        </>
+      ) : (
+        <Reticula semente={nome} iniciais={iniciais(nome)} />
+      )}
+    </span>
+  );
+};
+
+/** Caixa com a foto padrão em cima, nome e um número (Concert Buddies, Artistas favoritos, Shows em comum, Pessoas). */
+export const CaixaFoto: React.FC<{
+  foto: React.ReactNode;
+  titulo: React.ReactNode;
+  linha?: React.ReactNode;
+  extra?: React.ReactNode;
+  onClick?: () => void;
+  to?: string;
+  rotulo?: string;
+}> = ({ foto, titulo, linha, extra, onClick, to, rotulo }) => {
+  const dentro = (
+    <>
+      <span className="lv-caixa-foto">{foto}</span>
+      <span className="lv-buddy-nome">{titulo}</span>
+      {linha && <span className="lv-buddy-n">{linha}</span>}
+    </>
+  );
+  return (
+    <div className="lv-buddy-caixa-wrap">
+      {to ? (
+        <Link to={to} className="lv-buddy-caixa" aria-label={rotulo}>
+          {dentro}
+        </Link>
+      ) : onClick ? (
+        <button type="button" className="lv-buddy-caixa" onClick={onClick} aria-label={rotulo}>
+          {dentro}
+        </button>
+      ) : (
+        <div className="lv-buddy-caixa lv-buddy-caixa--fixa">{dentro}</div>
+      )}
+      {extra && <div className="lv-caixa-extra">{extra}</div>}
+    </div>
+  );
+};
+
 /* Etiquetas ------------------------------------------------------------------------ */
 
 export const TagExemplo: React.FC<{ texto?: string; title?: string }> = ({ texto = 'Exemplo', title }) => (
@@ -512,9 +623,11 @@ export const Linha: React.FC<{
   nota?: React.ReactNode;
   fim?: React.ReactNode;
   avatar?: boolean;
+  /** Coluna inicial com a foto padrão 4:5 (revisão 7). */
+  foto?: boolean;
   rotulo?: string;
-}> = ({ to, onClick, inicio, titulo, sub, nota, fim, avatar, rotulo }) => {
-  const cls = `lv-show ${avatar ? 'lv-show--av' : ''} ${to || onClick ? '' : 'lv-show--fixa'}`;
+}> = ({ to, onClick, inicio, titulo, sub, nota, fim, avatar, foto, rotulo }) => {
+  const cls = `lv-show ${foto ? 'lv-show--foto' : avatar ? 'lv-show--av' : ''} ${to || onClick ? '' : 'lv-show--fixa'}`;
   const dentro = (
     <>
       <span className="flex items-center">{inicio}</span>

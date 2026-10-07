@@ -1419,3 +1419,111 @@
 .lv-app .lv-num-link:focus-visible { color: var(--lv-cyan); text-decoration-color: var(--lv-cyan); outline: none; }
 /* Gráfico de destino no Meu histórico */
 .lv-app .lv-hist-block.lv-hist-alvo { outline: 2px solid var(--lv-cyan); outline-offset: 8px; border-radius: 4px; transition: outline-color 1.2s ease; }
+
+/* Foto padrão 4:5 (revisão 7): a foto do canhoto dos ingressos, sem textos ---------- */
+.lv-foto {
+  --foto-w: 72px;
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  width: var(--foto-w);
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border-radius: 10px 5px 5px 10px;
+  background: #171226;
+  isolation: isolate;
+  box-shadow: 0 0 0 1px rgba(79, 220, 222, 0.18);
+}
+@media (min-width: 640px) {
+  .lv-foto--lista { --foto-w: 96px; }
+}
+.lv-foto--caixa { --foto-w: 100%; border-radius: 10px; }
+.lv-foto > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 28%;
+}
+.lv-foto-ret {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(rgba(16, 12, 31, 0.24) 0.7px, transparent 1.1px) 0 0 / 4px 4px;
+}
+.lv-foto-gerada {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  background:
+    radial-gradient(circle at var(--p-x) var(--p-y), transparent 0, transparent 1px),
+    var(--p-bg);
+  container-type: inline-size;
+}
+.lv-foto-gerada::before {
+  content: '';
+  position: absolute;
+  inset: -10%;
+  background-image: radial-gradient(circle, var(--p-acc) 0 34%, transparent 37%);
+  background-size: 7cqw 7cqw;
+  -webkit-mask-image: radial-gradient(circle at var(--p-x) var(--p-y), #000 0 22%, rgba(0, 0, 0, 0.5) 42%, transparent 70%);
+  mask-image: radial-gradient(circle at var(--p-x) var(--p-y), #000 0 22%, rgba(0, 0, 0, 0.5) 42%, transparent 70%);
+}
+.lv-foto-gerada b {
+  position: relative;
+  margin: 0 0 8cqw 9cqw;
+  font-family: 'Alfa Slab One', Georgia, serif;
+  font-weight: 400;
+  font-size: 30cqw;
+  line-height: 1;
+  color: var(--p-fg);
+  text-shadow: 0 0 2cqw var(--p-bg), 0 0 5cqw var(--p-bg);
+}
+.lv-app .lv-show--foto { grid-template-columns: 72px minmax(0, 1fr) auto; align-items: center; }
+@media (min-width: 640px) {
+  .lv-app .lv-show--foto { grid-template-columns: 96px minmax(0, 1fr) auto; }
+}
+/* Caixas com a foto padrão (revisão 7) */
+.lv-buddy-caixa-wrap { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.lv-buddy-caixa-wrap > .lv-buddy-caixa { flex: 1; color: inherit; text-decoration: none; }
+.lv-buddy-caixa--fixa { cursor: default; }
+.lv-buddy-caixa--fixa:hover { border-color: var(--lv-line-2); background: var(--lv-paper); }
+.lv-caixa-foto { display: block; width: min(100%, 120px); margin-bottom: 2px; }
+.lv-caixa-extra { position: absolute; left: 0; right: 0; bottom: 12px; display: flex; justify-content: center; }
+.lv-buddy-caixa-wrap:has(.lv-caixa-extra) > .lv-buddy-caixa { padding-bottom: 54px; }
+/* Em linhas que quebram (Comunidade): lado a lado até a borda da página, depois a linha de baixo */
+.lv-buddies-caixas--quebra { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+@media (max-width: 767px) {
+  .lv-buddies-caixas--quebra {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    overflow: visible;
+  }
+}
+/* Favoritar artista (discreto) */
+.lv-fav {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px solid var(--lv-line-2);
+  border-radius: 999px;
+  background: rgba(16, 12, 31, 0.6);
+  color: var(--lv-dim);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.lv-fav:hover { color: var(--lv-cream); border-color: var(--lv-cyan); }
+.lv-fav[aria-pressed='true'] { color: var(--lv-cyan); border-color: rgba(79, 220, 222, 0.5); }
+.lv-fav--compacto { padding: 6px; }
+.lv-data-linha { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--lv-cyan); margin: 2px 0 1px; }
+.lv-data-linha b { font-family: 'RAYDIS', 'Alfa Slab One', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0; margin-right: 2px; }
+.lv-dupla { display: flex; gap: 10px; flex-shrink: 0; }
+/* Com a foto padrão a linha é alta: título e apoio quebram (palavra inteira) em vez de cortar */
+.lv-app .lv-show--foto .lv-show-t,
+.lv-app .lv-show--foto .lv-show-s { white-space: normal; overflow: visible; text-overflow: clip; }

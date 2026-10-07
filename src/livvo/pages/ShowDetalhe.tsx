@@ -7,6 +7,7 @@ import { Link, navigate, useRoute } from '../router';
 import { livvo, nivelVerificacao, personalizacaoDe, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
 import { BotaoAtualizarFoto } from '../AtualizarFoto';
 import { BotaoCompartilhar } from '../Compartilhar';
+import { BotaoFavoritar } from '../Favoritos';
 import { MarcarBuddies } from '../ConcertBuddies';
 import { IngressoMemoria } from '../Ingresso';
 import { PainelPersonalizar, type RascunhoPersonalizacao } from '../Personalizar';
@@ -333,7 +334,10 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         <span className="lv-kicker lv-kicker--cyan">{show.turne || (futuro ? 'Show que vem aí' : 'Show ao vivo')}</span>
         {show.exemplo && <TagExemplo texto="Show de exemplo" title="O catálogo real ainda não tem shows futuros. Este show e a data são fictícios." />}
       </div>
-      <h1 className="lv-h1 mt-2">{show.artista}</h1>
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="lv-h1">{show.artista}</h1>
+        <BotaoFavoritar artistaId={show.artistaId} nome={show.artista} />
+      </div>
       <div className="mt-3 space-y-1 text-[14px] sm:text-[14.5px] text-[#B3AE9F]">
         <p>
           <Link to={`/explorar?casa=${encodeURIComponent(show.casa)}&cidade=${encodeURIComponent(show.cidade)}`} className="text-[#ECE5D1] font-bold hover:underline">

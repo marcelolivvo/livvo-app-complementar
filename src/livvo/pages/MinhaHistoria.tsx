@@ -8,6 +8,7 @@ import { livvo, personalizacaoDe, useLivvo } from '../store';
 import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagExemplo, TagProxima, avisar } from '../ui';
 import { concertBuddies } from '../data/social';
 import { CaixasBuddies } from '../ConcertBuddies';
+import { ArtistasFavoritos } from '../Favoritos';
 import { CamposPassaporte, ProgressoFaixa, type AlvoPassaporte } from './Inicio';
 import { LivvoCredencialCard, exportarCredencialPNG } from '../../components/LivvoCredencialCard';
 import { PassportIcon } from '../../components/PassportIcon';
@@ -314,6 +315,8 @@ export const MinhaHistoria: React.FC = () => {
           <MeuWrapped pass={pass} usuario={lv.perfil.usuario} fechar={() => setWrapped(false)} />
         </Suspense>
       )}
+
+      {catalogo && <ArtistasFavoritos pass={pass} catalogo={catalogo} />}
 
       {buddies.length > 0 && (
         <section aria-label="Concert Buddies">

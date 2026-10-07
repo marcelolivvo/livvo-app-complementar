@@ -109,6 +109,8 @@ interface Estado {
   notasOrgNoMes: { mes: string; ids: string[] };
   /** Pessoas seguidas (@usuario). */
   seguindo?: string[];
+  /** Artistas favoritos (ids do catálogo), na ordem em que foram favoritados (revisão 7). */
+  favoritos?: string[];
   /** Convites "Fomos juntos" recebidos. */
   convites?: Convite[];
   quemPodeMarcar?: QuemPodeMarcar;
@@ -225,6 +227,7 @@ export interface Livvo {
   exemplos: boolean;
   notasOrgNoMes: string[];
   seguindo: string[];
+  favoritos: string[];
   convites: Convite[];
   quemPodeMarcar: QuemPodeMarcar;
   memoriaDoShow: (showId: string) => Memoria | undefined;
@@ -240,6 +243,7 @@ export const useLivvo = (): Livvo => {
     exemplos: e.exemplos,
     notasOrgNoMes: e.notasOrgNoMes.mes === mesAtual() ? e.notasOrgNoMes.ids : [],
     seguindo: logado ? e.seguindo || [] : [],
+    favoritos: logado ? e.favoritos || [] : [],
     // convites de exemplo só aparecem com a comunidade de exemplo ligada
     convites: logado ? (e.convites || []).filter((c) => e.exemplos || !c.exemplo) : [],
     quemPodeMarcar: e.quemPodeMarcar || 'seguindo',
@@ -321,6 +325,15 @@ export const livvo = {
     const atual = estado.seguindo || [];
     const seguindo = atual.includes(usuario) ? atual.filter((u) => u !== usuario) : [...atual, usuario];
     salvar({ ...estado, seguindo });
+  },
+
+  /** Favorita ou desfavorita um artista (Artistas favoritos da Minha História). */
+  alternarFavorito(artistaId: string) {
+    if (!this.exigirLogin()) return false;
+    const atual = estado.favoritos || [];
+    const agora = !atual.includes(artistaId);
+    salvar({ ...estado, favoritos: agora ? [...atual, artistaId] : atual.filter((a) => a !== artistaId) });
+    return agora;
   },
 
   /** Marca um Concert Buddy na memória (convite pendente até a pessoa aceitar). */

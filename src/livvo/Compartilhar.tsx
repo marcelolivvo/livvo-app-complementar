@@ -765,3 +765,249 @@ export const BotaoCompartilhar: React.FC<{
     </div>
   );
 };
+
+/* Compartilhar "Você e {pessoa}" (revisão 7) ------------------------------------------------
+ * Imagem com as duas fotos (a sua da Credencial ou a retícula com iniciais), "N shows juntos" (ou em comum)
+ * e os ingressos dos shows mais recentes de vocês, com o endereço do site.
+ */
+const desenharFotoPessoa = async (c: CanvasRenderingContext2D, nome: string, foto: string | null, x: number, y: number, w: number, h: number) => {
+  c.save();
+  retArredondado(c, x, y, w, h, 18);
+  c.clip();
+  let ok = false;
+  if (foto) {
+    try {
+      const img = await carregar(foto);
+      const { sx, sy, sw, sh } = recorte45(img.naturalWidth, img.naturalHeight);
+      c.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+      aplicarDuotone(c, x, y, w, h);
+      ok = true;
+    } catch {
+      ok = false;
+    }
+  }
+  if (!ok) {
+    const p = paletaDoArtista(nome);
+    c.fillStyle = p.bg;
+    c.fillRect(x, y, w, h);
+    const hs = hash(nome);
+    const cx = x + w * ((30 + (hs % 50)) / 100);
+    const cy = y + h * ((10 + ((hs >>> 5) % 40)) / 100);
+    const passo = w * 0.07;
+    c.fillStyle = p.acc;
+    for (let py = y; py < y + h; py += passo)
+      for (let px = x; px < x + w; px += passo) {
+        const dist = Math.hypot(px - cx, py - cy) / (w * 0.9);
+        const k = dist < 0.25 ? 1 : dist < 0.75 ? 1 - (dist - 0.25) / 0.5 : 0;
+        if (k <= 0.03) continue;
+        c.beginPath();
+        c.arc(px + passo / 2, py + passo / 2, passo * 0.36 * Math.sqrt(k), 0, Math.PI * 2);
+        c.fill();
+      }
+    c.fillStyle = p.fg;
+    c.font = `400 ${Math.round(w * 0.3)}px "Alfa Slab One", Georgia, serif`;
+    c.textAlign = 'left';
+    c.textBaseline = 'alphabetic';
+    const ini = nome
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((p2) => p2[0]!.toUpperCase())
+      .join('');
+    c.fillText(ini, x + w * 0.09, y + h - w * 0.09);
+  }
+  c.restore();
+  c.strokeStyle = 'rgba(79,220,222,0.5)';
+  c.lineWidth = 3;
+  retArredondado(c, x, y, w, h, 18);
+  c.stroke();
+};
+
+export const gerarImagemJuntos = async (opcoes: {
+  voce: { nome: string; usuario: string; foto: string | null };
+  outra: { nome: string; usuario: string };
+  shows: Array<Pick<Show, 'artista' | 'casa' | 'cidade' | 'ts'>>;
+  modo: 'juntos' | 'comum';
+  formato: Formato;
+}): Promise<Blob> => {
+  const { voce, outra, shows, modo, formato } = opcoes;
+  await garantirFontes();
+  const W = 1080;
+  const H = formato === 'stories' ? 1920 : 1350;
+  const stories = formato === 'stories';
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const c = canvas.getContext('2d', { willReadFrequently: true });
+  if (!c) throw new Error('canvas');
+  c.fillStyle = INK;
+  c.fillRect(0, 0, W, H);
+  c.fillStyle = 'rgba(79,220,222,0.07)';
+  for (let y = 0; y < H; y += 18) for (let x = 0; x < W; x += 18) c.fillRect(x, y, 2, 2);
+  try {
+    const logo = await carregar('/livvo/livvo-icon-256.png');
+    c.drawImage(logo, 80, stories ? 110 : 60, 110, 110);
+  } catch {
+    /* segue sem logo */
+  }
+  // as duas fotos
+  const fw = stories ? 300 : 230;
+  const fh = fw * 1.25;
+  const fy = stories ? 300 : 210;
+  const gap = 40;
+  const fx = (W - (2 * fw + gap)) / 2;
+  await desenharFotoPessoa(c, voce.nome, voce.foto, fx, fy, fw, fh);
+  await desenharFotoPessoa(c, outra.nome, null, fx + fw + gap, fy, fw, fh);
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  c.fillStyle = CIANO;
+  c.font = '700 30px Barlow, sans-serif';
+  c.fillText(`@${voce.usuario}`, fx + fw / 2, fy + fh + 18);
+  c.fillText(`@${outra.usuario}`, fx + fw + gap + fw / 2, fy + fh + 18);
+  // título e número
+  let y = fy + fh + (stories ? 110 : 80);
+  c.fillStyle = OFF;
+  c.font = `400 ${stories ? 84 : 68}px "Alfa Slab One", Georgia, serif`;
+  c.fillText(`Você e ${outra.nome.split(' ')[0]}`, W / 2, y);
+  y += stories ? 112 : 88;
+  c.fillStyle = AMARELO;
+  c.font = `700 ${stories ? 96 : 76}px RAYDIS, "Alfa Slab One", sans-serif`;
+  const n = String(shows.length);
+  c.font = `700 ${stories ? 96 : 76}px RAYDIS, "Alfa Slab One", sans-serif`;
+  const wn = c.measureText(n).width;
+  c.font = `700 ${stories ? 44 : 36}px Barlow, sans-serif`;
+  const rot = modo === 'comum' ? (shows.length === 1 ? 'SHOW EM COMUM' : 'SHOWS EM COMUM') : shows.length === 1 ? 'SHOW JUNTOS' : 'SHOWS JUNTOS';
+  const wr = c.measureText(rot).width;
+  const x0 = (W - (wn + 22 + wr)) / 2;
+  c.textAlign = 'left';
+  c.fillStyle = AMARELO;
+  c.font = `700 ${stories ? 96 : 76}px RAYDIS, "Alfa Slab One", sans-serif`;
+  c.fillText(n, x0, y);
+  c.fillStyle = OFF;
+  c.font = `700 ${stories ? 44 : 36}px Barlow, sans-serif`;
+  c.fillText(rot, x0 + wn + 22, y + (stories ? 34 : 26));
+  // ingressos dos shows mais recentes
+  y += stories ? 150 : 110;
+  const lista = shows.slice().sort((a, b) => b.ts - a.ts).slice(0, stories ? 5 : 3);
+  const lx = 110;
+  const lw = W - 220;
+  const lh = stories ? 104 : 92;
+  for (const s of lista) {
+    c.strokeStyle = TEAL;
+    c.lineWidth = 3;
+    retArredondado(c, lx, y, lw, lh, 18);
+    c.stroke();
+    c.setLineDash([6, 7]);
+    c.beginPath();
+    c.moveTo(lx + 190, y + 12);
+    c.lineTo(lx + 190, y + lh - 12);
+    c.stroke();
+    c.setLineDash([]);
+    const d = dataCartao(s.ts);
+    c.textAlign = 'center';
+    c.fillStyle = OFF;
+    c.font = '700 44px RAYDIS, "Alfa Slab One", sans-serif';
+    c.fillText(d.dia, lx + 95, y + 12);
+    c.font = '700 22px Barlow, sans-serif';
+    c.fillText(`${d.mes} ${d.ano}`.toUpperCase(), lx + 95, y + 60);
+    c.textAlign = 'left';
+    c.font = '400 36px "Alfa Slab One", Georgia, serif';
+    let nome = s.artista;
+    while (c.measureText(nome).width > lw - 240 && nome.length > 4) nome = nome.slice(0, -2);
+    if (nome !== s.artista) nome = `${nome.trimEnd()}…`;
+    c.fillText(nome, lx + 220, y + 14);
+    c.fillStyle = '#B3AE9F';
+    c.font = '600 24px Barlow, sans-serif';
+    c.fillText(`${s.casa} · ${s.cidade}`.slice(0, 48), lx + 220, y + 58);
+    y += lh + 18;
+  }
+  if (shows.length > lista.length) {
+    c.textAlign = 'center';
+    c.fillStyle = '#8A8577';
+    c.font = '600 28px Barlow, sans-serif';
+    c.fillText(`e mais ${shows.length - lista.length} no Livvo`, W / 2, y + 4);
+  }
+  c.textAlign = 'center';
+  c.textBaseline = 'top';
+  c.fillStyle = CIANO;
+  c.font = '700 36px Barlow, sans-serif';
+  c.fillText(SITE, W / 2, H - (stories ? 150 : 70));
+  if (stories) {
+    c.fillStyle = '#8A8577';
+    c.font = '500 30px Barlow, sans-serif';
+    c.fillText('Sua história através dos seus shows', W / 2, H - 100);
+  }
+  return new Promise((ok, erro) => canvas.toBlob((b) => (b ? ok(b) : erro(new Error('png'))), 'image/png'));
+};
+
+/** Botão "Compartilhar" da janela de shows juntos / em comum. */
+export const BotaoCompartilharJuntos: React.FC<{
+  voce: { nome: string; usuario: string; foto: string | null };
+  outra: { nome: string; usuario: string };
+  shows: Array<Pick<Show, 'artista' | 'casa' | 'cidade' | 'ts'>>;
+  modo: 'juntos' | 'comum';
+  className?: string;
+}> = ({ voce, outra, shows, modo, className = '' }) => {
+  const [aberto, setAberto] = useState(false);
+  const [gerando, setGerando] = useState<Formato | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const url = `${window.location.origin}/`;
+  const texto = `Eu e @${outra.usuario}: ${shows.length} ${modo === 'comum' ? (shows.length === 1 ? 'show em comum' : 'shows em comum') : shows.length === 1 ? 'show juntos' : 'shows juntos'} no Livvo.`;
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setAberto(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && (e.stopPropagation(), setAberto(false));
+    document.addEventListener('mousedown', fora);
+    document.addEventListener('keydown', esc, true);
+    return () => {
+      document.removeEventListener('mousedown', fora);
+      document.removeEventListener('keydown', esc, true);
+    };
+  }, [aberto]);
+  const instagram = async (formato: Formato) => {
+    if (gerando) return;
+    setGerando(formato);
+    try {
+      const blob = await gerarImagemJuntos({ voce, outra, shows, modo, formato });
+      await baixarOuCompartilhar(blob, `Livvo_${voce.usuario}_e_${outra.usuario}_${formato === 'stories' ? 'Stories' : 'Feed'}.png`, formato === 'stories' ? 'Stories' : 'Feed');
+      setAberto(false);
+    } catch {
+      avisar('Não deu para gerar a imagem agora.');
+    } finally {
+      setGerando(null);
+    }
+  };
+  return (
+    <div className={`relative ${className}`} ref={ref}>
+      <button type="button" className="lv-btn lv-btn--stub lv-btn--teal whitespace-nowrap" aria-haspopup="menu" aria-expanded={aberto} onClick={() => setAberto((v) => !v)}>
+        <Share2 className="w-4 h-4 shrink-0" strokeWidth={2.2} /> <span>Compartilhar</span>
+      </button>
+      {aberto && (
+        <div className="lv-menu lv-menu--baixo" role="menu" aria-label="Compartilhar">
+          <div className="lv-kicker px-2.5 pt-1 pb-1">Instagram</div>
+          <button type="button" className="lv-menu-item" role="menuitem" onClick={() => instagram('stories')} disabled={Boolean(gerando)}>
+            <Instagram /> {gerando === 'stories' ? 'Gerando imagem…' : 'Stories (imagem 9:16)'}
+          </button>
+          <button type="button" className="lv-menu-item" role="menuitem" onClick={() => instagram('feed')} disabled={Boolean(gerando)}>
+            <Instagram /> {gerando === 'feed' ? 'Gerando imagem…' : 'Feed (imagem 4:5)'}
+          </button>
+          <div className="lv-menu-sep" />
+          <a
+            className="lv-menu-item"
+            role="menuitem"
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setAberto(false)}
+          >
+            <Facebook /> Facebook
+          </a>
+          <a className="lv-menu-item" role="menuitem" href={`https://wa.me/?text=${encodeURIComponent(`${texto} ${url}`)}`} target="_blank" rel="noopener noreferrer" onClick={() => setAberto(false)}>
+            <MessageCircle /> WhatsApp
+          </a>
+          <p className="lv-meta px-2.5 pt-2 pb-1 leading-snug">No celular, a imagem abre no menu do aparelho para você escolher o Instagram. No computador, ela é baixada.</p>
+        </div>
+      )}
+    </div>
+  );
+};
