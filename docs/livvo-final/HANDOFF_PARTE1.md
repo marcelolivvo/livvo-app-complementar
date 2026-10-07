@@ -1,6 +1,6 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 6: Pôster | Ingresso acima do pôster, sem carimbo padrão, faixa de blocos, shows juntos e Minha História) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 7: foto padrão 4:5, janela do Eu fui, caixas na Comunidade, Compartilhar shows juntos e Artistas favoritos) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
@@ -14,6 +14,8 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 > **Revisão 5 (07/10/2026, pedido às 16h04 e respostas às 16h11):** nota com o **ingresso inclinado com estrela** (Teal no traço, transparente no fundo), em teste no lugar do ingresso vertical; mais espaço entre Artistas e Cidades no "Seu passaporte"; **nome nunca partido no meio da palavra**; legenda só "Foto automática"; sob o pôster, **Atualizar foto** (Off-white), **Compartilhar** (Teal) e **Personalizar**, que abre as opções na coluna da direita em linhas que abrem e fecham, como no Livvo Virtual Poster; formato **Pôster ou Ingresso** só com carimbos de presença (mantido "Show da minha vida"); **Meu histórico** e **Gerar meu Wrapped** do Livvo Virtual Poster na Minha História. Seções 5, 5.2, 5.5, 5.6, 6.3, 6.5, 7 e decisões 30 a 39.
 
 > **Revisão 6 (07/10/2026, pedido às 17h05 e respostas às 17h09):** chave **Pôster | Ingresso** acima do pôster (grava na hora) e fora do Personalizar; **sem carimbo por padrão**; na página do show, "Como foi" na largura toda, Resenhas e Quem foi lado a lado e a **faixa Setlist · Foi com alguém? · Mais shows do artista · Mais shows nesta casa** lado a lado (drop down no celular); **"N shows juntos" abre a janela** com os ingressos de vocês e convida a avaliar; **convites mostram os shows em comum**; Minha História sem "Compartilhar credencial", Concert Buddies em **caixas** (5 com mais shows) e **números do passaporte clicáveis**. Seções 5.3, 5.5, 6.3, 6.5 e decisões 40 a 49.
+
+> **Revisão 7 (07/10/2026, pedido às 19h23 e respostas às 19h28):** **foto padrão 4:5** (a foto do canhoto dos ingressos, sem textos) no Registrar, no Início (Sua agenda, Vem aí, Quem você segue) e em toda a Comunidade; **janela depois do "Eu fui"** com o pôster padrão e o convite a compartilhar; **Concert Buddies, Shows em comum e Pessoas em caixas** lado a lado que quebram a linha; **janela de shows juntos com as duas fotos e Compartilhar**; **Artistas favoritos** (Favoritar discreto e seção na Minha História antes de Concert Buddies). Seções 5.7, 5.8, 6.1, 6.4, 6.5, 6.6, 7 e decisões 50 a 58.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -203,6 +205,25 @@ Abas em texto: **Seguindo** (o que quem você segue registrou, com notas), **Con
 
 Na Minha História, abaixo de "Registrar show" e "Compartilhar credencial": **Meu histórico** (botão-canhoto Teal, ícone de gráfico) abre, dentro do Passaporte, a seção do Estúdio com a tira "Livvo · Meu histórico" e Fechar e os mesmos gráficos do `MyHistory` do A (shows por ano, por mês em cada ano, linha do tempo acumulada com as faixas, artistas, cidades e casas mais vistos, dias da semana, distância entre shows e marcos). **Gerar meu Wrapped** (botão-canhoto Off-white, ícone de brilho) abre o `TourWrappedModal` do A (Baixar e Compartilhar o PNG). Os dois componentes do A são usados sem mudança; a ponte converte cada memória no `CollectedTicket` do A (data `dd/mm/aaaa`, carimbo e faixa da personalização) e monta o `FanStats` a partir do Passaporte (nível = faixa do Passaporte; artista mais visto com a mesma foto dos pôsteres, passando por `/api/foto` para o PNG). Os rótulos em DM Mono desses componentes aparecem em Barlow dentro do Livvo final. Carregados só quando a pessoa abre.
 
+### 5.7 Foto padrão 4:5 e caixas (`src/livvo/ui.tsx`: `FotoArtista`, `FotoPessoa`, `CaixaFoto`)
+
+| Peça | Como funciona |
+| --- | --- |
+| **Foto padrão** | A foto do canhoto dos ingressos, **sem textos**: recorte 4:5, duotone suave com retícula leve, cantos 10/5 px (como o canhoto) e contorno Ciano a 18%. Tamanho do canhoto da Carteira: **72 × 90 px no celular** e **96 × 120 px a partir de 640 px** nas listas (`Linha` com `foto`). Nas caixas, até 120 px de largura |
+| **Artista** (`FotoArtista`) | Mesma ordem de imagem do pôster: foto salva pelo admin → foto automática (buscada só quando a foto chega perto da tela) → retícula gerada pela paleta do artista |
+| **Pessoa** (`FotoPessoa`) | A sua usa a foto da Credencial (`livvo_user_photo_v1`) com o mesmo tratamento. Quem não tem foto (todas as pessoas de exemplo) ganha a retícula da paleta com as **iniciais** em Alfa Slab One |
+| **Onde aparece** | Registrar (cabeçalho do artista e linhas de artistas); Início (Sua agenda, Vem aí, Quem você segue); Comunidade inteira. Em linhas sobre um show (atividade de quem você segue, convites, respondidos) a foto é **do artista**; em pessoas (caixas), a foto é da pessoa. Com a foto, o título da linha quebra por palavra em vez de cortar |
+| **Caixas** (`CaixaFoto`) | Foto em cima, nome, número (RAYDIS Ciano) e uma ação opcional embaixo (Seguir, coração). Na Minha História: até 5 numa fileira (rolagem lateral no celular). Na Comunidade (Concert Buddies, Shows em comum, Pessoas): **lado a lado até a borda da página e depois a linha de baixo** (colunas de no mínimo 150 px; 2 por linha no celular) |
+
+### 5.8 Janela do Eu fui, Compartilhar shows juntos e Artistas favoritos
+
+| Peça | Como funciona |
+| --- | --- |
+| **Janela do Eu fui** (Registrar) | Ao tocar em "Eu fui" na lista de datas do artista: a data vira carimbo "Você foi" e abre a janela "Livvo · Eu fui" com o **pôster padrão** do show (com a personalização da memória, sem carimbo por padrão), "Seu pôster está pronto. Compartilhe nos Stories, no Feed ou com quem estava lá.", o **Compartilhar** (Teal; Instagram Stories e Feed, Facebook, WhatsApp e link), **Dar nota agora** (Off-white; leva à página do show com foco na Nota do Show) e **Continuar registrando**. Só no Registrar: a página do show já mostra o pôster |
+| **Janela de shows juntos / em comum** | No alto, **as duas fotos lado a lado** (a sua e a da outra pessoa), "Você e {nome}", os dois @ e o número; botão **Compartilhar** (Teal). A imagem gerada (Stories 1080 × 1920 ou Feed 1080 × 1350) traz o logo, as duas fotos com os @, "Você e {nome}", o número em RAYDIS amarelo com "SHOWS JUNTOS" (ou "EM COMUM"), os ingressos dos 5 (Stories) ou 3 (Feed) shows mais recentes, "e mais N no Livvo" e livvomusic.com.br. Também Facebook e WhatsApp |
+| **Favoritar** (`src/livvo/Favoritos.tsx`) | Botão discreto em pílula com coração ("Favoritar" / "Favorito", Ciano quando ativo) ao lado do nome do artista na página do show e no cabeçalho do artista em Registrar. Grava na hora |
+| **Artistas favoritos** (Minha História) | Antes de Concert Buddies, em caixas como as de Concert Buddies: foto do artista, nome e "N shows" (os seus). Mostra os favoritos, **até 5, os com mais shows seus**. **Sem nenhum favorito**, mostra os seus 5 artistas mais vistos com o título "Artistas favoritos · seus mais vistos" e o convite "Toque no coração para escolher os seus favoritos". Cada caixa leva aos shows do artista no Explorar e tem o coração para favoritar ou tirar |
+
 ---
 
 ## 6. Telas
@@ -284,6 +305,7 @@ Nesta prévia tudo fica no navegador (`localStorage`, chave `livvo_final_v1`), c
 | --- | --- | --- |
 | **Memória** | `id`, `showId`, `criadaEm`, `atualizadaEm`, `notaShow` (0,5–5), `notaOrganizacao` (0,5–5), `dimensoes` (mapa id → nota), `setor`, `comQuem` (@), `fotoUrl`, `ingressoAnexado`, `presencaConfirmadaPor`, `relato`, `personalizacao`, `visibilidade` (`privado` / `seguidores` / `publico`) | Uma memória por pessoa e show. O nível da escada de verificação é calculado, não gravado |
 | **Personalização da memória** | `personalizacao`: `formato` (`poster` / `ingresso`), `carimbo` (`nenhum` / `eu_fui` / `show_da_minha_vida`), `cor` (`ciano` / `teal` / `offwhite`), `fonte` (`alfa` / `barlow` / `raydis`), `tamanho` (`p` / `m` / `g`), `posicao` (`cima` / `meio` / `baixo`), `frase`, `faixa`, `mostrarSetor`, `mostrarComQuem`, `mostrarCasa`, `mostrarUsuario` | Guardada como objeto parcial; o que falta usa o padrão (`PERSONALIZACAO_PADRAO`). O setor escolhido no painel grava no campo `setor` da memória |
+| **Artistas favoritos** | `favoritos`: lista de ids de artista do catálogo, na ordem em que foram favoritados | Por pessoa. A seção da Minha História ordena por número de shows da pessoa |
 | **Interesse** | `showId` → `quero_ir` ou `tenho_ingresso` | Some quando a pessoa registra o show (vira memória) |
 | **Seguindo** | lista de @ | Base da Comunidade |
 | **Concert Buddy (marcação)** | na memória: `buddies` = lista de `{ usuario, status (pendente / aceita / recusada), em }` | A marcação gera um convite para a outra pessoa. `comQuem` fica para compatibilidade com B |
@@ -377,6 +399,18 @@ Decisões do Edmir em 07/10/2026, 17h05 e 17h09 (revisão 6):
 48. **Concert Buddies da Minha História em caixas lado a lado** (foto, nome e shows juntos), só os 5 com mais shows.
 49. **Números do passaporte clicáveis**: Shows → Carteira de ingressos; Artistas e Cidades → gráficos do Meu histórico.
 
+Decisões do Edmir em 07/10/2026, 19h23 e 19h28 (revisão 7):
+
+50. **Foto do artista no Registrar**: o círculo com a inicial vira a foto tratada no tamanho das fotos dos ingressos.
+51. **Depois do "Eu fui" no Registrar**, abre uma janela com o pôster padrão do show e o convite a compartilhar (só no Registrar).
+52. **A mesma foto em Sua agenda e Vem aí** no Início.
+53. **A mesma foto em toda a Comunidade**: linhas sobre show com a foto do artista; pessoas sem foto com a retícula e as iniciais.
+54. **Concert Buddies, Shows em comum e Pessoas em caixas** lado a lado até a borda da página, quebrando para a linha de baixo.
+55. **Janela de shows em comum / juntos com a foto das duas pessoas e um botão Compartilhar.**
+56. **Artistas favoritos**: a pessoa escolhe os favoritos (botão discreto de favoritar); seção na Minha História antes de Concert Buddies, no formato de caixas, com quantos shows foi de cada artista, só 5 por enquanto.
+57. **Sem favoritos escolhidos**, a seção mostra os 5 artistas mais vistos.
+58. **Com mais de 5 favoritos**, aparecem os 5 com mais shows da pessoa.
+
 Escolhas de execução da revisão 5 (DRAFT, para o Edmir confirmar): "Show da minha vida" em amarelo das notas e "Eu fui" em Ciano (o vermelho do Estúdio não é da paleta);  RAYDIS só para nomes sem acento; "Meu histórico" e "Gerar meu Wrapped" dentro do Passaporte, abaixo dos dois botões que já existiam.
 
 Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
@@ -408,6 +442,7 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/livvo/Compartilhar.tsx`, `src/livvo/ConcertBuddies.tsx`, `src/livvo/pages/Comunidade.tsx` | Compartilhar e imagens (5.2), Concert Buddies (5.3), Comunidade (5.4) |
 | `src/livvo/Personalizar.tsx`, `src/livvo/Ingresso.tsx` | Painel Personalizar e formato Ingresso (5.5) |
 | `src/livvo/HistoricoWrapped.tsx` | Ponte para o `MyHistory` e o `TourWrappedModal` do A (5.6) |
+| `src/livvo/Favoritos.tsx` | Favoritar e Artistas favoritos (5.8) |
 | `src/components/RetroTicket.tsx`, `src/components/MyHistory.tsx`, `src/components/TourWrappedModal.tsx` | Componentes do Estúdio reaproveitados sem alteração (escala do ingresso, gráficos e Wrapped) |
 | `src/livvo/fotos.ts`, `src/livvo/AtualizarFoto.tsx` | Padrão de foto, armazenamento, fontes, janela Atualizar foto e janela de admin (seção 5.1) |
 | `server.ts` | Rota `/api/foto` (seção 5.1); `/api/artist-search` do Estúdio reaproveitada |
@@ -422,6 +457,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 7 (07/10/2026, commit `c6d6859`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página: Registrar com a foto do artista, Eu fui abrindo a janela do pôster, Favoritar, Início com as fotos, as 5 abas da Comunidade (caixas quebrando a linha), janela de shows juntos com as duas fotos e a imagem de Stories gerada, Artistas favoritos na Minha História e o coração na página do show. No ambiente de teste a internet é bloqueada, então as fotos aparecem como retícula; a foto automática foi conferida na prévia publicada.
 
 Verificação da revisão 6 (07/10/2026, commit `368bcad`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página: chave Pôster | Ingresso, faixa lado a lado e em drop down, marcar um Concert Buddy até o aceite e abrir a janela pelo "N shows juntos", Avaliar pela janela (foco na Nota do Show), convites com shows em comum, caixas de Concert Buddies e janela, números do passaporte levando à Carteira e aos gráficos de Artistas e Cidades, inclusive a partir do Início.
 
