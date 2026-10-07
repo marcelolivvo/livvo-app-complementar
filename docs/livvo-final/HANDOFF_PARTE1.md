@@ -1,9 +1,11 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 2: visual no padrão do Estúdio) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
+
+> **Revisão 2 (07/10/2026, à tarde):** o visual foi refeito nos parâmetros do Estúdio (app A), que valem para tudo. O plano de fusão vale para estrutura e fluxos. Em conflito, vale o documento da identidade oficial. Detalhes na seção 4 e nas decisões 9 a 13 da seção 9.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -72,16 +74,41 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e o amarelo
 
 | Fonte | Uso |
 | --- | --- |
-| Alfa Slab One | Títulos de página e seção, nome do artista no pôster |
-| RAYDIS 700 | Números grandes (Passaporte, contagem regressiva, notas, dia no pôster). Nunca em texto com acento |
-| Barlow 500/600/700 | Rótulos em caixa alta (`.lv-kicker`), etiquetas, barra inferior, textos do pôster |
-| Plus Jakarta Sans | Corpo do texto, **provisório até a decisão #22** (fonte do corpo) |
+| Alfa Slab One | Títulos de página e seção, nome do artista no pôster e nos ingressos. Título do Passaporte em **Teal** (como "Passaporte Oficial de Shows" do Estúdio) |
+| RAYDIS 700 | Números grandes (campos do Passaporte, contagem regressiva, notas, dia no pôster e nas listas). Nunca em texto com acento |
+| Barlow 600/700 | Todos os rótulos em caixa alta: tira do ingresso, rótulos de campo, cabeçalhos de grupo, etiquetas, barra inferior, textos do pôster. **Substitui o DM Mono do Estúdio** (a identidade oficial manda Barlow) |
+| Plus Jakarta Sans | Corpo do texto, **provisório até a decisão #22** (a identidade oficial indica fonte do sistema; o Estúdio usa Plus Jakarta) |
+
+**Gramática "Bilheteria" do Estúdio (vale para todas as telas).** As classes vêm de `src/index.css` (as mesmas do Estúdio e da Wallet) e funcionam dentro de `.lv-app`; `src/livvo/livvo.css` só troca DM Mono por Barlow e acrescenta o que faltava.
+
+| Elemento | Classe | Onde aparece |
+| --- | --- | --- |
+| Página-ingresso: papel `#171226`, cantos 10 px | `.lv-ticket` | Topo de Explorar, Registrar, Detalhe do show, Passaporte, Minha História, páginas de espera, entrada do visitante |
+| Tira superior: "LIVVO · SEÇÃO" à esquerda, dado à direita (titular, data, passo, total) | `.lv-strip` | Em toda página-ingresso |
+| Palco com retícula halftone | `.lv-stage` | Pôster no Detalhe do show, entrada do visitante, páginas de espera |
+| Picote com meias-luas: horizontal no celular, vertical a partir de 1024 px | `.lv-perf` | Entre o palco (pôster) e o canhoto (ações) no Detalhe do show |
+| Campos de identificação: rótulo + número RAYDIS + nota em Ciano, separados por picote vertical | `.lv-fields` | Passaporte (Shows · Artistas · Cidades com "desde 1998", "mais visto: …", "em 3 estados"), contagem regressiva, médias da comunidade (número em amarelo) |
+| Marcas de picote como progresso (24 marcas) + percentual | `.lv-ticks` | Faixa do Passaporte, missões (versão fina) |
+| Botão-ingresso com canhoto (furos em cima e embaixo, ícone no canhoto, picote tracejado) | `.lv-btn--stub` (+ `--cyan`, `--cream`, `--teal`) | Ações principais: Eu fui, Quero ir/Tenho ingresso marcado, Minha História, Registrar, Compartilhar credencial |
+| Botão com recortes laterais | `.lv-btn` | Eu fui nas linhas do Registrar, Registrar show no topo |
+| Botão de contorno / link | `.lv-ghost`, `.lv-link` | Ações secundárias |
+| Campo sublinhado com rótulo em caixa alta (sem caixa) | `.lv-input` + `.lv-label` | Busca e filtros CIDADE · ANO · CASA do Explorar, busca de artista do Registrar |
+| Abas em texto com sublinhado Ciano e contagem | `.lv-tabs` | Passados 6.592 · Próximos 12 |
+| Cabeçalho de grupo: rótulo Ciano em caixa alta + linha | `.lv-group` | Todas as seções de lista (Sua agenda, Vem aí, Resenhas, Quem foi, Mais shows…) |
+| Linha com picote (data · texto · fim) | `.lv-show` | Agenda, Vem aí, Quem você segue, Registrar, Quem foi, Mais shows do artista e da casa |
+| Desafio com caixa de marcar | `.lv-challenge` + `.lv-box` | Missões do mês |
+| Canhoto com borda Ciano e furos laterais | `.lv-passport` | "Sua memória" no Detalhe do show |
+| Ingresso em contorno Ciano com brilho (recortes em cima e embaixo a 28% da largura, raio 16, cantos 24, picote tracejado) | `IngressoContorno` (desenho do `TransparentTicketItem` da Wallet) | Cartão de momento do Início e a Carteira de ingressos de Minha História |
+| Credencial Backstage | `LivvoCredencialCard` (`src/components`) | Passaporte em Minha História |
+| Estado vazio tracejado | `.lv-empty` | Vazios e erros |
 
 Regras visuais aplicadas:
-- **"Bilheteria contida":** formato de ingresso (picote, meias-luas, carimbo) só no que é da pessoa (sua memória, cartão de momento, Passaporte). Busca, filtros e listas usam superfície lisa.
-- **Um botão Ciano por tela.** Quando a pessoa já marcou Quero ir ou Tenho ingresso, o escolhido fica em Creme com ✓ e o outro vira contorno.
+- **Nada de cards dentro de cards.** Listas são linhas com picote sob um cabeçalho de grupo; o papel do ingresso fica para a página e para o que é da pessoa.
+- **Uma ação principal por estado (#9).** Quando a pessoa já marcou Quero ir ou Tenho ingresso, o escolhido vira botão-canhoto Creme com ✓ e o outro vira contorno.
 - **Amarelo só nas notas.** Destaques e progresso usam Ciano.
-- Ícones Lucide (decisão anterior do Edmir), em Teal ou Ciano.
+- **Etiquetas retas** (raio 3 px), nunca pílulas. Etiqueta "Exemplo" tracejada.
+- **Ícones Lucide** (padrão do Estúdio, decisão de 07/10/2026), só em botões e links. **Sem ícones de data, local e casa nos cards e linhas (#15):** a informação vai em texto.
+- **Sem a linha estilo passaporte (MRZ)** (decisão de 07/10/2026).
 - Nada de contador zerado: "0 registraram" nunca aparece; vira convite ("Seja a primeira pessoa") ou some.
 
 ---
@@ -94,12 +121,16 @@ Regras visuais aplicadas:
 | **Card de show** (`CardShow`) | Pôster + artista + casa · cidade + data + linha social | Linha social: avatares + "N registraram" (passado) ou "N querem ir" (futuro) ou a etiqueta Quero ir / Tenho ingresso. Carimbo "Você foi" ou etiqueta "Exemplo" no canto do pôster |
 | **Carimbo "Você foi"** (`CarimboFui`) | Marca de presença | Borda Ciano, inclinado −6°, animação de carimbo de 0,42 s ao registrar (desligada com "reduzir movimento") |
 | **Discos de nota** (`Discos`) | Nota de meio a cinco, em discos de vinil amarelos | Interativo: metade esquerda do disco = meio ponto. Acessível como `role="slider"` (setas mudam 0,5). Sem nota: contorno amarelo fraco no interativo, cinza no só-leitura |
-| **Ingresso** (`.lv-tix`) | Bloco "ingresso" com corpo e canhoto separados por picote | No celular o canhoto fica embaixo; a partir de 720 px fica à direita (236 px) |
+| **Página-ingresso** (`Bilhete`) | `.lv-ticket` + `.lv-strip` com texto à esquerda e à direita | Envolve o topo de cada tela |
+| **Grupo** (`Grupo`) | `.lv-group` com ação à direita (ex.: "Ver todos", etiqueta Exemplo) | Cabeçalho de toda lista |
+| **Linha** (`Linha`) | `.lv-show`: coluna inicial (data em RAYDIS ou avatar), título, linha de apoio, nota em Ciano e fim (etiqueta, carimbo, botão ou seta) | Coluna inicial de 58 px no celular e 72 px a partir de 640 px |
+| **Botão-canhoto** (`Stub`) | `.lv-btn--stub` com ícone Lucide no canhoto | Vira `<a>` quando recebe `to` |
+| **Ingresso em contorno** (`IngressoContorno`) | SVG medido com `ResizeObserver`; canhoto com o pôster à esquerda | Altura mínima garante o pôster 4:5 inteiro no canhoto |
 | **Etiquetas** | `Exemplo` (tracejada), `Parte N` (o que entra nas próximas partes), Ciano, Teal, Creme | Toda informação fictícia leva "Exemplo" |
 | **Avatar** | Iniciais em círculo (Ciano, Teal, Creme ou Muted por hash do nome) | Usado nas pessoas de exemplo e na conta |
-| **Picotes** (`Picotes`) | Barra de progresso em marcas de picote | Faixa do Passaporte (24 marcas) e missões (3) |
-| **Caixa de data** (`CaixaData`) | Dia em RAYDIS + mês (e ano curto) | Agenda, Registrar, Minha História |
-| **Aviso rápido** (`avisar`) | Confirmação curta em Creme, acima da barra inferior | "Show guardado na sua história", "Link copiado", notas dadas |
+| **Picotes** (`Picotes`) | `.lv-ticks`: barra de progresso em marcas de picote | Faixa do Passaporte (24 marcas) e missões (3, versão fina) |
+| **Data** (`CaixaData`) | Dia em RAYDIS + mês (e ano) em Barlow, sem caixa | Coluna inicial das linhas |
+| **Aviso rápido** (`avisar`) | Confirmação curta em Creme (raio 4 px, como o do Estúdio), acima da barra inferior | "Show guardado na sua história", "Link copiado", notas dadas |
 | **Silhuetas** (`.lv-skel`) | Carregamento sem "Carregando…" | Grade, detalhe do show, cartão de momento |
 | **Compartilhar** (`compartilharLink`) | Menu nativo do celular; no computador copia o link | Página do show é pública, então o link funciona para quem não tem conta |
 
@@ -112,61 +143,67 @@ Regras visuais aplicadas:
 **Logado**, no computador em duas colunas (principal + lateral de 360 px a partir de 1100 px); no celular em uma coluna, nesta ordem:
 
 1. Data em rótulo e "Oi, Marcelo." (Alfa Slab One).
-2. **Cartão de momento**, um só pedido por vez, em formato de ingresso. Prioridade:
+2. **Cartão de momento**, um só pedido por vez, no **ingresso em contorno Ciano** (pôster no canhoto). Prioridade:
    1. amanhã tem show (Quero ir ou Tenho ingresso para amanhã);
    2. como foi? (show com interesse entre hoje e 3 dias atrás, ainda sem memória) → botão Eu fui;
    3. neste dia (aniversário de um show da história) → Ver memória;
    4. faltam até 3 dias para um show com interesse → Ver show;
-   5. complete essa história: **dar a Nota da Organização ali mesmo**, nos discos do canhoto; ao tocar, salva e passa para a próxima memória sem nota.
-3. **Resumo do Passaporte:** avatar, nome, @, "No Livvo desde ago 2026", faixa (Pista Premium), 3 números grandes (Shows, Artistas, Cidades), picotes até a próxima faixa com "Mais 1 show na sua história e você chega ao Camarote. Shows antigos contam.", rodapé com o artista mais visto e link Minha História.
-4. **Missões do mês** (completar o vivido, nunca "vá a mais shows"): "Avalie a organização de 3 shows" (0/3, conta as notas de organização dadas no mês) e "Resgate um show antigo".
-5. Lateral: **Sua agenda** (Quero ir e Tenho ingresso, com contagem), **Vem aí** (shows futuros de artistas que a pessoa já viu: "Você viu 1 vez"), **Quem você segue** (atividade de exemplo; sem exemplos, convite para seguir quem foi aos seus shows).
+   5. complete essa história: **dar a Nota da Organização ali mesmo**, nos discos; ao tocar, salva e passa para a próxima memória sem nota.
+3. **Seu Passaporte** (página-ingresso, tira "Livvo · Passaporte de fã / Titular @toboi"): título "Seu Passaporte" em Alfa Teal, nome e "no Livvo desde ago 2026", faixa (Pista Premium), campos Shows · Artistas · Cidades com notas "desde 1998", "mais visto: Dave Matthews Band", "em 3 estados" (decisão #3), 24 marcas de picote com "Faltam 1 show para o nível Camarote" e 94%, botão-canhoto Teal "Minha História".
+4. **Missões do mês** (completar o vivido, nunca "vá a mais shows"), como os desafios da Wallet: caixa de marcar, título, apoio, picote fino 0/3 e link. "Avalie a organização de 3 shows" (conta as notas de organização dadas no mês) e "Resgate um show antigo".
+5. Lateral (linhas com picote sob cabeçalho de grupo): **Sua agenda** (Quero ir e Tenho ingresso, com "em 10 dias"), **Vem aí** (shows futuros de artistas que a pessoa já viu: "Você viu 1 vez"), **Quem você segue** (atividade de exemplo; sem exemplos, convite para seguir quem foi aos seus shows).
 
-**Visitante:** bloco de entrada com "Registre · Avalie · Colecione", "Sua história através dos seus shows.", subtítulo do plano, botões "Comece pela sua história" (abre entrar) e "Explorar shows", e uma faixa de shows recentes. A landing completa é a parte 4.
+**Visitante:** página-ingresso com palco halftone, "Registre · Avalie · Colecione", "Sua história através dos seus shows.", subtítulo do plano, botões "Comece pela sua história" (abre entrar) e "Explorar shows", e uma faixa de shows recentes. A landing completa é a parte 4.
 
 **Conta zerada:** o cartão de momento vira "Qual foi o último show que você viu?" com "Registrar meu primeiro show".
 
 ### 6.2 Explorar (`src/livvo/pages/Explorar.tsx`)
 
-1. Rótulo "Explorar", título "Shows", subtítulo "Encontre um show que você viveu para guardar na sua história, ou um que vem aí."
-2. Busca grande: "Artista, casa de show ou cidade" (sem acento e sem caixa; espera 220 ms entre teclas).
-3. Abas **Passados | Próximos**. Em Próximos aparece a etiqueta "Datas de exemplo".
-4. Chips de filtro (por baixo, `<select>` nativo): Cidade, Ano (só Passados), Casa (até 80, filtradas pela cidade), "Shows que eu fui" (logado), "Limpar".
+1. Página-ingresso como o topo do Estúdio: tira "Livvo · Shows / 114,8 mil no catálogo", título "Encontre o seu show", subtítulo "Um show que você viveu, para guardar na sua história, ou um que vem aí."
+2. Linha de campos sublinhados: **ARTISTA, CASA OU CIDADE** (busca sem acento e sem caixa; espera 220 ms entre teclas) · **CIDADE** · **ANO** (só Passados) · **CASA** (até 80, filtradas pela cidade), `<select>` nativo. No celular a busca ocupa a linha e os três filtros dividem a de baixo.
+3. Abas em texto **Passados 6.592 | Próximos 12**. Em Próximos aparece a etiqueta "Datas de exemplo".
+4. "Só shows que eu fui" (caixa de marcar, logado) e "Limpar filtros".
 5. Contagem: "6.592 shows · prévia com um recorte de 6,6 mil dos 114,8 mil shows do catálogo".
-6. Grade por mês ("Agosto de 2026"): 2 colunas no celular, 3 a partir de 640 px, 4 a partir de 1024 px e 5 a partir de 1180 px. Próximos em ordem do mais perto para o mais longe.
+6. Grade por mês, com cabeçalho de grupo ("AGOSTO DE 2026"): 2 colunas no celular, 3 a partir de 640 px, 4 a partir de 1024 px e 5 a partir de 1180 px. Próximos em ordem do mais perto para o mais longe.
 7. "Mostrar mais shows" de 40 em 40; no fim, "Não achou o seu show? Peça a inclusão".
 8. Estados: carregando (silhuetas), erro ("Não conseguimos carregar os shows agora." + Tentar de novo), vazio ("Nenhum show encontrado para …" + "Meu show não está aqui").
 
 ### 6.3 Detalhe do show (`src/livvo/pages/ShowDetalhe.tsx`)
 
-Celular: pôster menor (38% da largura) ao lado do título, para o **Eu fui aparecer sem rolar**. Computador: pôster fixo à esquerda (380 px) e conteúdo à direita.
+Página-ingresso com tira "Livvo · Shows / 23 nov 2025". Computador: **palco** halftone com o pôster (380 px) · **picote vertical** · **canhoto** com título, dados e ação. Celular: pôster menor (38% da largura) ao lado do título no palco, picote horizontal e a ação logo abaixo, para o **Eu fui aparecer sem rolar**. Abaixo do ingresso, duas colunas no computador: comunidade (médias, resenhas, quem foi) à esquerda; setlist, "Foi com alguém?" e mais shows à direita.
 
 1. Voltar · Compartilhar.
-2. Turnê (ou "Show ao vivo" / "Show que vem aí"), etiqueta "Show de exemplo" quando for o caso, artista, casa (link para Explorar filtrado pela casa) · cidade, UF, data por extenso · "há 10 meses" / "em 10 dias".
+2. Turnê (ou "Show ao vivo" / "Show que vem aí"), etiqueta "Show de exemplo" quando for o caso, artista, casa (link para Explorar filtrado pela casa) · cidade, UF, data por extenso · "há 10 meses" / "em 10 dias". Sem ícones de local e data (#15).
 3. **Ação principal:**
-   - Passado, sem memória: botão **Eu fui** (Ciano, largura total no celular) + "Guarde este show na sua história. Leva um toque; as notas você dá logo depois."
-   - Passado, com memória: **Sua memória** em formato de ingresso: data do registro e visibilidade, carimbo "Você foi" (animado ao registrar), **Nota do Show** e **Nota da Organização** em discos (salvam no toque), frase "Duas notas para o artista não pagar pela fila do bar."; canhoto com **Verificação** (selo da escada: Registrado → Com foto → Com ingresso → Presença confirmada), "Ingresso de Memória · Parte 2" e "Desfazer registro" (pede um segundo toque).
-   - Futuro: **Quero ir** e **Tenho ingresso** (um ou outro, tocar de novo desmarca), contagem regressiva em RAYDIS, explicação do lembrete e "O link da ticketeira aparece aqui quando o show vem de uma fonte oficial."
+   - Passado, sem memória: botão-canhoto **Eu fui** (Ciano, largura total no celular) + "Guarde este show na sua história. Leva um toque; as notas você dá logo depois."
+   - Passado, com memória: **Sua memória** no canhoto de borda Ciano (`.lv-passport`): data do registro e visibilidade, carimbo "Você foi" (animado ao registrar), **Nota do Show** e **Nota da Organização** em discos (salvam no toque), frase "Duas notas para o artista não pagar pela fila do bar."; canhoto com **Verificação** (selo da escada: Registrado → Com foto → Com ingresso → Presença confirmada), "Ingresso de Memória · Parte 2" e "Desfazer registro" (pede um segundo toque).
+   - Futuro: **Quero ir** e **Tenho ingresso** (um ou outro, tocar de novo desmarca), contagem regressiva no campo "DIAS PARA O SHOW", explicação do lembrete e "O link da ticketeira aparece aqui quando o show vem de uma fonte oficial."
    - O link `?avaliar=org` rola até a Nota da Organização e coloca o foco nela (usado pela missão).
 4. Prova social: avatares + "133 pessoas registraram este show, com você" (ou "querem ir"), etiqueta Exemplo. Sem ninguém: "Ninguém registrou este show ainda. Seja a primeira pessoa."
-5. **Como foi, para quem estava lá** (só passado e só com amostra mínima): médias de Show e Organização em RAYDIS amarelo + discos, até 3 dimensões mais citadas (+ ou −), "Média de N avaliações. As médias só aparecem a partir de 3." Abaixo da amostra, o bloco some (nunca "Sem avaliações" em destaque).
+5. **Como foi, para quem estava lá** (só passado e só com amostra mínima): médias de Show e Organização nos campos `.lv-fields` em RAYDIS amarelo + discos, até 3 dimensões mais citadas (+ ou −), "Média de N avaliações. As médias só aparecem a partir de 3." Abaixo da amostra, o bloco some (nunca "Sem avaliações" em destaque).
 6. **Setlist:** link real para o setlist.fm do show (base do catálogo).
 7. **Resenhas de quem foi:** avatar, nome, @, setor, notas de Show e Organização, texto de até 3 linhas, dimensões.
 8. **Quem foi / Quem vai:** pessoas com Seguir/Seguindo e "Só aparece quem deixou a memória pública."
 9. **Foi com alguém? / Vai com alguém?:** "Chamar no WhatsApp" abre o WhatsApp com texto pronto e o link do show (nada é enviado sozinho).
-10. **Mais shows de {artista}** e **Mais shows nesta casa** (faixas roláveis, com "Ver todos").
+10. **Mais shows de {artista}** e **Mais shows nesta casa** (até 6 linhas com data, casa ou artista e carimbo "Você foi" quando for o caso, com "Ver todos").
 
 ### 6.4 Registrar, versão da parte 1 (`src/livvo/pages/Registrar.tsx`)
 
-"Qual show você viveu?" → busca de artista (com "N shows no catálogo · você foi a N") → lista de datas com casa, cidade e dia da semana, cada uma com **Eu fui** (vira carimbo na hora). Sem busca, mostra "Artistas da sua história". Três toques até guardar. A parte 2 acrescenta a tela de sucesso com o Ingresso de Memória, o Avaliar em camadas e o "Meu show não está aqui".
+Página-ingresso com tira "Livvo · Registrar show / Passo 1 de 2" (e "Passo 2 de 2"). "Qual show você viveu?" → campo sublinhado ARTISTA (com "N shows no catálogo · você foi a N") → lista de datas com casa, cidade e dia da semana, cada uma com **Eu fui** (vira carimbo na hora). Sem busca, mostra "Artistas da sua história". Três toques até guardar. A parte 2 acrescenta a tela de sucesso com o Ingresso de Memória, o Avaliar em camadas e o "Meu show não está aqui".
 
-### 6.5 Minha História, provisória (`src/livvo/pages/MinhaHistoria.tsx`)
+### 6.5 Minha História (`src/livvo/pages/MinhaHistoria.tsx`)
 
-Resumo do Passaporte e a lista de memórias por ano (nota do show em discos, "Falta a organização" quando não tem). Vira o Passaporte completo na parte 3.
+Mesma página de identificação da Wallet do Estúdio, sem a linha MRZ:
+1. Tira "Livvo · Passaporte de fã / Titular @toboi"; ícone de passaporte e **"Passaporte Oficial de Shows"** em Alfa Teal; "Cada show que você registra vira um carimbo aqui. Os antigos contam também."
+2. TITULAR · NOME (Alfa) e @ em Ciano; campos Shows · Artistas · Cidades; 24 marcas com "Faltam N shows para o nível X" e percentual.
+3. Botões-canhoto "Registrar show" (Ciano) e "Compartilhar credencial" (Creme).
+4. À direita (abaixo no celular): **Credencial Backstage** com os dados da conta (nome, @, shows, desde, nível e acesso calculados pelos shows, Nº de cadastro de teste 16), "Adicionar foto" / "Trocar foto" (mesmo tratamento e mesma chave `livvo_user_photo_v1` do Estúdio: até 1024 px, mantém transparência, tenta 640 px sem espaço, aviso para HEIC) e "Compartilhar" (PNG em resolução cheia pelo menu do celular ou download).
+5. **Carteira de ingressos 25**: memórias por ano em ingressos de contorno Ciano (duas colunas a partir de 1024 px): pôster no canhoto, artista em Alfa, data, casa · cidade, nota do show em discos ou "Sem nota", e "Falta a organização" (leva direto à nota).
+As abas Números, Coleção (medalhas, desafios, stickers), Agenda e Listas entram na parte 3.
 
 ### 6.6 Comunidade e Alertas
 
-Páginas de espera com o que entra na parte 4 e um caminho útil (Explorar, Próximos).
+Páginas de espera em página-ingresso com palco, lista "O que entra aqui" em linhas com picote e um caminho útil (Explorar, Próximos).
 
 ---
 
@@ -208,6 +245,14 @@ Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem:
 7. **Nome da área de shows na navegação: "Shows"** (como em B); o título da página é "Shows" com o rótulo "Explorar".
 8. **Registrar já funciona** em versão simples nesta parte, para o botão central não levar a uma página vazia.
 
+Decisões do Edmir em 07/10/2026 (revisão 2):
+
+9. **Os parâmetros visuais do Estúdio (A) valem para tudo**; o plano de fusão vale para estrutura, fluxos e conteúdo.
+10. **Em conflito entre o Estúdio e a identidade oficial, vale a identidade oficial** (por isso Barlow nos rótulos, no lugar do DM Mono).
+11. **Sem a linha estilo passaporte (MRZ).**
+12. **Ícones: padrão do Estúdio (Lucide)**, no lugar dos Material Symbols citados na identidade oficial.
+13. **Todo documento que existir só no Claude ganha cópia em Markdown na pasta Livvo**, para o ChatGPT e o Codex lerem.
+
 Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
 
 ---
@@ -234,7 +279,9 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/livvo/stats.ts` | Passaporte: números, faixa, progresso, pendências |
 | `src/livvo/format.ts` | Datas, notas, plural e hash em pt-BR |
 | `src/livvo/ui.tsx` | Componentes da seção 5 |
-| `src/livvo/livvo.css` | Tokens e estilos `.lv-app` |
+| `src/livvo/livvo.css` | Tokens `.lv-app`, troca de DM Mono por Barlow nas classes do Estúdio e os estilos que faltavam (linhas, data, contorno, busca sublinhada) |
+| `src/index.css` | Classes "Bilheteria" do Estúdio, usadas sem alteração |
+| `src/components/LivvoCredencialCard.tsx`, `src/components/PassportIcon.tsx`, `public/credencial/` | Credencial Backstage e ícone de passaporte do Estúdio, reaproveitados no Passaporte |
 | `src/livvo/data/catalog.ts` | Leitura do catálogo e busca |
 | `src/livvo/data/demo.ts` | Perfil, memórias, futuros, pessoas e textos de exemplo |
 | `src/livvo/data/social.ts` | Comunidade de exemplo |
@@ -244,4 +291,6 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
 
-Verificação feita em 07/10/2026: `tsc -b` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 em todas as telas; fluxos testados: Registrar (artista → data → Eu fui → carimbo), notas no detalhe e no cartão de momento (missão passou para 2/3), Quero ir / Tenho ingresso, visitante → Eu fui abre entrar, comunidade de exemplo desligada (estados vazios), filtros e "Shows que eu fui", laboratório em `/estudio`. Nenhum erro de página. Fotos externas não carregam no ambiente de teste (rede bloqueada); não afeta esta parte, que não usa fotos.
+Verificação da revisão 2 (07/10/2026, commit `2f3e3f8`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 em todas as telas e nos 6 fluxos, sem erro de página e sem rolagem lateral em 390 px em nenhuma rota.
+
+Verificação da primeira versão (07/10/2026): `tsc -b` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 em todas as telas; fluxos testados: Registrar (artista → data → Eu fui → carimbo), notas no detalhe e no cartão de momento (missão passou para 2/3), Quero ir / Tenho ingresso, visitante → Eu fui abre entrar, comunidade de exemplo desligada (estados vazios), filtros e "Shows que eu fui", laboratório em `/estudio`. Nenhum erro de página. Fotos externas não carregam no ambiente de teste (rede bloqueada); não afeta esta parte, que não usa fotos.
