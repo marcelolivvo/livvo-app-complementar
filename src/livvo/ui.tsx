@@ -3,6 +3,7 @@ import { Check, type LucideIcon } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { Link } from './router';
 import { dataCartao, hash, iniciais, nota as fmtNota } from './format';
+import { useFoto } from './fotos';
 
 /* Pôster Halftone gerado pelos dados do show -------------------------------------
  * Prioridade de imagem (plano de fusão): foto do usuário → foto licenciada do artista em
@@ -33,14 +34,22 @@ export const Poster: React.FC<{
   show: Pick<Show, 'id' | 'artista' | 'casa' | 'cidade' | 'uf' | 'ts' | 'artistaId'>;
   fotoUsuario?: string;
   fotoLicenciada?: string;
+  /** false: ignora as fotos salvas (usado na prévia do "Atualizar foto") */
+  fotosSalvas?: boolean;
   className?: string;
   children?: React.ReactNode;
-}> = ({ show, fotoUsuario, fotoLicenciada, className = '', children }) => {
+}> = ({ show, fotoUsuario, fotoLicenciada, fotosSalvas = true, className = '', children }) => {
   const h = hash(show.artistaId || show.artista);
   const p = PALETAS[h % PALETAS.length]!;
   const [falhou, setFalhou] = useState(false);
   useEffect(() => setFalhou(false), [show.id]);
-  const foto = !falhou ? fotoUsuario || fotoLicenciada : undefined;
+  // Prioridade (plano de fusão): foto da pessoa → foto do artista → pôster gerado pelos dados.
+  // As fotos salvas já vêm padronizadas (halftone 4:5, ver fotos.ts).
+  const daMemoria = useFoto(fotosSalvas ? `show:${show.id}` : undefined);
+  const doArtista = useFoto(fotosSalvas && show.artistaId ? `artista:${show.artistaId}` : undefined);
+  const pronta = fotoUsuario || daMemoria?.url || doArtista?.url;
+  const foto = !falhou ? pronta || fotoLicenciada : undefined;
+  const tratada = Boolean(pronta && foto === pronta);
   const d = dataCartao(show.ts);
   const style = {
     '--p-bg': foto ? '#100C1F' : p.bg,
@@ -54,7 +63,7 @@ export const Poster: React.FC<{
     <div className={`lv-poster ${className}`} style={style} aria-hidden="true">
       {foto ? (
         <>
-          <img className="lv-poster-photo" src={foto} alt="" loading="lazy" onError={() => setFalhou(true)} />
+          <img className={`lv-poster-photo ${tratada ? 'lv-poster-photo--pronta' : ''}`} src={foto} alt="" loading="lazy" onError={() => setFalhou(true)} />
           <div className="lv-poster-shade" />
         </>
       ) : (
@@ -79,22 +88,54 @@ export const Poster: React.FC<{
   );
 };
 
-/* Notas em discos: meio a cinco, amarelo #FFD60A ---------------------------------- */
+/* Notas em ingressos (decisão de 07/10/2026): meio a cinco ------------------------------
+ * Desenho do ícone enviado pelo Edmir: ingresso vertical com recortes laterais, código de barras,
+ * picote e palheta com nota musical. Off-white onde o ícone é branco, Teal onde é preto.
+ * Meio ponto = metade esquerda preenchida (como nos discos).
+ */
 
-const Disco: React.FC<{ fill: 0 | 0.5 | 1; id: string }> = ({ fill, id }) => (
-  <svg viewBox="0 0 24 24" width="100%" height="100%" aria-hidden="true">
-    <defs>
-      <clipPath id={id}>
-        <rect x="0" y="0" width="12" height="24" />
-      </clipPath>
-    </defs>
-    <circle cx="12" cy="12" r="10.6" fill="none" stroke={fill ? 'currentColor' : '#3A3159'} strokeWidth="1.6" />
-    {fill === 1 && <circle cx="12" cy="12" r="10.6" fill="currentColor" />}
-    {fill === 0.5 && <circle cx="12" cy="12" r="10.6" fill="currentColor" clipPath={`url(#${id})`} />}
-    <circle cx="12" cy="12" r="6.4" fill="none" stroke={fill ? 'rgba(16,12,31,0.35)' : '#3A3159'} strokeWidth="0.9" />
-    <circle cx="12" cy="12" r="2.2" fill={fill ? '#100C1F' : '#3A3159'} />
-  </svg>
-);
+const TEAL = '#2FB8BA';
+const OFFWHITE = '#ECE5D1';
+const APAGADO = '#3A3159';
+const CONTORNO_INGRESSO =
+  'M4,1 H16 A3,3 0 0 1 19,4 V13 A2,2 0 0 0 19,17 V26 A3,3 0 0 1 16,29 H4 A3,3 0 0 1 1,26 V17 A2,2 0 0 0 1,13 V4 A3,3 0 0 1 4,1 Z';
+const BARRAS: Array<[number, number]> = [
+  [4.4, 1.1],
+  [6.2, 1.6],
+  [8.5, 0.7],
+  [9.9, 0.7],
+  [11.3, 1.6],
+  [13.6, 0.7],
+  [15, 0.7],
+];
+const PALHETA = 'M10,26.4 C7.7,24.5 5.7,21.9 6,19.9 C6.2,18.6 7.9,18.1 10,18.1 C12.1,18.1 13.8,18.6 14,19.9 C14.3,21.9 12.3,24.5 10,26.4 Z';
+
+const Disco: React.FC<{ fill: 0 | 0.5 | 1; id: string; interativo?: boolean }> = ({ fill, id, interativo }) => {
+  const traco = fill ? TEAL : interativo ? 'rgba(47,184,186,0.55)' : APAGADO;
+  const detalhe = fill ? TEAL : APAGADO;
+  return (
+    <svg viewBox="0 0 20 30" width="100%" height="100%" aria-hidden="true">
+      <defs>
+        <clipPath id={id}>
+          <rect x="0" y="0" width="10" height="30" />
+        </clipPath>
+      </defs>
+      {fill === 1 && <path d={CONTORNO_INGRESSO} fill={OFFWHITE} />}
+      {fill === 0.5 && <path d={CONTORNO_INGRESSO} fill={OFFWHITE} clipPath={`url(#${id})`} />}
+      <path d={CONTORNO_INGRESSO} fill="none" stroke={traco} strokeWidth="1.7" strokeLinejoin="round" />
+      {BARRAS.map(([x, w]) => (
+        <rect key={x} x={x} y="4.4" width={w} height="6.6" rx="0.25" fill={detalhe} />
+      ))}
+      <line x1="4.6" y1="15" x2="15.6" y2="15" stroke={detalhe} strokeWidth="1.1" strokeLinecap="round" strokeDasharray="1.2 1.3" />
+      <path d={PALHETA} fill={detalhe} />
+      <g fill={fill ? OFFWHITE : '#100C1F'} stroke={fill ? OFFWHITE : '#100C1F'}>
+        <path d="M9.3,22.7 V20.3 L11.9,19.8 V22.2" fill="none" strokeWidth="0.6" strokeLinejoin="round" />
+        <circle cx="8.75" cy="22.75" r="0.75" stroke="none" />
+        <circle cx="11.35" cy="22.25" r="0.75" stroke="none" />
+      </g>
+    </svg>
+  );
+};
 
 let discosSeq = 0;
 
@@ -107,12 +148,17 @@ export const Discos: React.FC<{
 }> = ({ valor = 0, onChange, tamanho = 22, rotulo, className = '' }) => {
   const [uid] = useState(() => `lvd${++discosSeq}`);
   const interativo = Boolean(onChange);
-  const style = { '--d-size': `${tamanho}px`, '--d-gap': `${Math.round(tamanho / 5)}px` } as React.CSSProperties;
+  // tamanho = altura de referência; o ingresso é vertical (20 × 30)
+  const style = {
+    '--d-w': `${Math.round(tamanho * 0.8)}px`,
+    '--d-h': `${Math.round(tamanho * 1.2)}px`,
+    '--d-gap': `${Math.max(2, Math.round(tamanho / 5))}px`,
+  } as React.CSSProperties;
   const discos = [1, 2, 3, 4, 5].map((i) => {
     const fill: 0 | 0.5 | 1 = valor >= i ? 1 : valor >= i - 0.5 ? 0.5 : 0;
     return (
       <span className="lv-disc" key={i}>
-        <Disco fill={fill} id={`${uid}-${i}`} />
+        <Disco fill={fill} id={`${uid}-${i}`} interativo={interativo} />
         {interativo && (
           <>
             <button type="button" tabIndex={-1} aria-label={`${fmtNota(i - 0.5)}`} onClick={() => onChange!(i - 0.5)} />

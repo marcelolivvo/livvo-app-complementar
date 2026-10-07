@@ -15,6 +15,7 @@ import {
   Eye,
   EyeOff,
   Ticket,
+  Images,
 } from 'lucide-react';
 import { Link, useRoute } from './router';
 import { livvo, useLivvo } from './store';
@@ -22,6 +23,8 @@ import { Avatar, Avisos, avisar } from './ui';
 import { guestService } from '../services/guestService';
 import { adminCatalog } from '../services/adminCatalogService';
 import { LoginModal } from '../components/LoginModal';
+import { AdminFotos } from './AtualizarFoto';
+import { useCatalogo } from './data/catalog';
 
 /** Modo admin da prévia: ?admin=1 liga, ?admin=0 desliga (igual ao Estúdio). No site final, vem do login. */
 export const useAdmin = (): boolean => {
@@ -45,7 +48,7 @@ const ABAS = [
   { to: '/minha-historia', rotulo: 'Minha História', icone: BookOpen, ativo: (p: string) => p.startsWith('/minha-historia') },
 ];
 
-const MenuConta: React.FC<{ fechar: () => void; admin: boolean }> = ({ fechar, admin }) => {
+const MenuConta: React.FC<{ fechar: () => void; admin: boolean; abrirFotos: () => void }> = ({ fechar, admin, abrirFotos }) => {
   const { logado, perfil, exemplos } = useLivvo();
   const acao = (fn: () => void, aviso?: string) => () => {
     fn();
@@ -82,6 +85,20 @@ const MenuConta: React.FC<{ fechar: () => void; admin: boolean }> = ({ fechar, a
         <Link to="/admin" className="lv-menu-item" role="menuitem" onClick={fechar}>
           <Shield /> Área interna
         </Link>
+      )}
+      {admin && (
+        <button
+          type="button"
+          className="lv-menu-item"
+          role="menuitem"
+          onClick={() => {
+            fechar();
+            abrirFotos();
+          }}
+        >
+          <Images /> Atualizar todas as fotos
+          <span className="lv-tag lv-tag--next ml-auto">Admin</span>
+        </button>
       )}
       <div className="lv-menu-sep" />
       <div className="lv-kicker px-2.5 pt-1 pb-1">Prévia</div>
@@ -133,6 +150,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { logado, perfil } = useLivvo();
   const admin = useAdmin();
   const [menu, setMenu] = useState(false);
+  const [fotosAdmin, setFotosAdmin] = useState(false);
+  const { catalogo } = useCatalogo();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMenu(false), [path]);
@@ -193,7 +212,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             >
               {logado ? <Avatar nome={perfil.nome} tamanho={32} /> : <LogIn className="w-5 h-5" />}
             </button>
-            {menu && <MenuConta fechar={() => setMenu(false)} admin={admin} />}
+            {menu && <MenuConta fechar={() => setMenu(false)} admin={admin} abrirFotos={() => setFotosAdmin(true)} />}
           </div>
         </div>
       </header>
@@ -225,6 +244,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
       <Avisos />
       <LoginModal />
+      {admin && fotosAdmin && <AdminFotos catalogo={catalogo} fechar={() => setFotosAdmin(false)} />}
     </div>
   );
 };

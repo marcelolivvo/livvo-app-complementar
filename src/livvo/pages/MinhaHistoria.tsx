@@ -9,6 +9,7 @@ import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagProxima, avi
 import { CamposPassaporte, ProgressoFaixa } from './Inicio';
 import { LivvoCredencialCard, exportarCredencialPNG } from '../../components/LivvoCredencialCard';
 import { PassportIcon } from '../../components/PassportIcon';
+import { BotaoAtualizarFoto } from '../AtualizarFoto';
 
 /**
  * Minha História — o Passaporte com a mesma cara da Wallet do Estúdio:
@@ -300,7 +301,7 @@ export const MinhaHistoria: React.FC = () => {
                     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       {memoria.notaShow !== undefined ? (
                         <>
-                          <Discos valor={memoria.notaShow} tamanho={14} rotulo="Nota do show" />
+                          <Discos valor={memoria.notaShow} tamanho={15} rotulo="Nota do show" />
                           <span className="lv-nota-num text-[15px]">{nota(memoria.notaShow)}</span>
                         </>
                       ) : (
@@ -312,6 +313,7 @@ export const MinhaHistoria: React.FC = () => {
                         </Link>
                       )}
                     </div>
+                    <BotaoAtualizarFoto show={show} memoria={memoria} fotoCatalogo={show.foto} compacto className="mt-2.5" />
                   </IngressoContorno>
                 );
               })}

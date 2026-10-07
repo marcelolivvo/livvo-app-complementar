@@ -38,7 +38,7 @@
   --lv-cream: #ece5d1;
   --lv-muted: #b3ae9f;
   --lv-dim: #8a8577;
-  --lv-nota: #ffd60a; /* amarelo só para notas */
+  --lv-nota: #ece5d1; /* notas em Off-white com ingressos Teal (07/10/2026); o amarelo #FFD60A saiu das notas */
   --lv-tabbar-h: 64px;
   min-height: 100vh;
   background: var(--lv-ink);
@@ -677,6 +677,14 @@
   opacity: 0.85;
   z-index: 0;
 }
+.lv-poster-photo--pronta {
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+.lv-poster-photo--pronta + .lv-poster-shade {
+  background: linear-gradient(180deg, rgba(16, 12, 31, 0.55) 0%, rgba(16, 12, 31, 0) 24%, rgba(16, 12, 31, 0) 52%, rgba(16, 12, 31, 0.92) 92%) !important;
+}
 .lv-poster-photo + .lv-poster-shade {
   position: absolute;
   inset: 0;
@@ -906,7 +914,7 @@
   color: var(--lv-teal);
 }
 
-/* Notas em discos (amarelo só aqui) ------------------------------------------ */
+/* Notas em ingressos (componente Discos, nome mantido por compatibilidade) ------- */
 .lv-discs {
   display: inline-flex;
   align-items: center;
@@ -920,8 +928,8 @@
 }
 .lv-disc {
   position: relative;
-  width: var(--d-size, 22px);
-  height: var(--d-size, 22px);
+  width: var(--d-w, 18px);
+  height: var(--d-h, 26px);
   flex-shrink: 0;
 }
 .lv-disc button {
@@ -1031,6 +1039,78 @@
     margin-top: 0;
   }
 }
-.lv-discs[role='slider'] .lv-disc svg circle:first-of-type {
-  stroke: rgba(255, 214, 10, 0.55);
+
+/* Janela sobre a página (Atualizar foto, Atualizar todas as fotos) ---------------- */
+.lv-modal-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow-y: auto;
+  padding: 24px 12px calc(24px + env(safe-area-inset-bottom));
+  background: rgba(16, 12, 31, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.lv-modal {
+  width: min(900px, 100%);
+  margin: auto 0;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  border-radius: 10px;
+}
+.lv-modal .lv-ticket {
+  border: 1px solid var(--lv-line);
+}
+.lv-fotos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(86px, 1fr));
+  gap: 10px;
+}
+.lv-foto-opcao {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.lv-foto-opcao img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 6px;
+  background: var(--lv-line);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color 0.15s ease;
+}
+.lv-foto-opcao:hover img {
+  outline-color: var(--lv-line-2);
+}
+.lv-foto-opcao[data-on='true'] img {
+  outline-color: var(--lv-cyan);
+}
+.lv-foto-opcao span {
+  font-family: 'Barlow', sans-serif;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lv-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lv-foto-opcao:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+.lv-app .lv-opt:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

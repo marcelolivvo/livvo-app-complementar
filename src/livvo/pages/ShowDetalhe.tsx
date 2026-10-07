@@ -5,6 +5,8 @@ import { MIN_AMOSTRA_NOTAS, socialDoShow, type ResenhaExemplo } from '../data/so
 import { dataCartao, dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
 import { Link, navigate, useRoute } from '../router';
 import { livvo, nivelVerificacao, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
+import { BotaoAtualizarFoto } from '../AtualizarFoto';
+import { useFoto } from '../fotos';
 import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
 
 const ROTULO_VISIBILIDADE = { privado: 'Só você vê', seguidores: 'Visível para quem te segue', publico: 'Visível para todos' };
@@ -65,15 +67,16 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
           </div>
         </div>
       </div>
-      <p className="lv-meta mt-4">Duas notas para o artista não pagar pela fila do bar. Toque no disco: metade esquerda vale meio ponto.</p>
+      <p className="lv-meta mt-4">Duas notas para o artista não pagar pela fila do bar. Toque no ingresso: a metade esquerda vale meio ponto.</p>
 
       <div className="mt-4 pt-4 border-t border-dashed border-[#3A3159]">
         <div className="flex flex-wrap items-center gap-2">
           <span className="lv-label">Verificação</span>
           <span className="lv-tag lv-tag--teal">{ROTULO_VERIFICACAO[nivel]}</span>
         </div>
-        <p className="lv-meta mt-2 leading-snug">Suba o selo com foto, ingresso ou um amigo que confirme que você estava lá.</p>
+        <p className="lv-meta mt-2 leading-snug">Suba o selo com uma foto sua do show, o ingresso ou um amigo que confirme que você estava lá.</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <BotaoAtualizarFoto show={show} memoria={memoria} fotoCatalogo={show.foto} />
           <span className="inline-flex items-center gap-2 text-[13px] font-bold text-[#B3AE9F]">
             <Ticket className="w-4 h-4 text-[#2FB8BA]" /> Ingresso de Memória <TagProxima parte={2} />
           </span>
@@ -91,6 +94,18 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
         </div>
       </div>
     </div>
+  );
+};
+
+/** Legenda do pôster: de onde vem a imagem. */
+const LegendaPoster: React.FC<{ showId: string; artistaId?: string }> = ({ showId, artistaId }) => {
+  const daMemoria = useFoto(`show:${showId}`);
+  const doArtista = useFoto(artistaId ? `artista:${artistaId}` : undefined);
+  const foto = daMemoria || doArtista;
+  return (
+    <p className="lv-eyebrow mt-3 text-center hidden lg:block">
+      {foto ? `Foto no padrão Livvo · ${foto.origem === 'upload' ? 'sua foto' : foto.fonte || 'fonte do artista'}` : 'Pôster gerado pelos dados do show'}
+    </p>
   );
 };
 
@@ -302,7 +317,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
             <div className="grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block">
               <div>
                 <Poster show={show} />
-                <p className="lv-eyebrow mt-3 text-center hidden lg:block">Pôster gerado pelos dados do show</p>
+                <LegendaPoster showId={show.id} artistaId={show.artistaId} />
               </div>
               <div className="min-w-0 lg:hidden">{cabecalho}</div>
             </div>

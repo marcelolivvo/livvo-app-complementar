@@ -293,6 +293,35 @@ app.get('/api/catalog/search', (req, res) => {
     }
   });
 
+  // API Route: devolve uma foto de artista das mesmas fontes do /api/artist-search (Deezer, Wikimedia/Wikipedia,
+  // iTunes) pelo próprio domínio, para o navegador poder aplicar o tratamento halftone padrão do Livvo no <canvas>.
+  // Só aceita esses domínios (nada de endereço arbitrário) e só imagens de até 6 MB.
+  const HOSTS_FOTO = [/(^|\.)dzcdn\.net$/i, /(^|\.)deezer\.com$/i, /^upload\.wikimedia\.org$/i, /(^|\.)mzstatic\.com$/i];
+  app.get('/api/foto', async (req, res) => {
+    let alvo: URL;
+    try {
+      alvo = new URL(String(req.query.url || ''));
+    } catch {
+      return res.status(400).json({ error: 'Endereço inválido' });
+    }
+    if (alvo.protocol !== 'https:' || !HOSTS_FOTO.some((h) => h.test(alvo.hostname))) {
+      return res.status(403).json({ error: 'Fonte não permitida' });
+    }
+    try {
+      const r = await fetch(alvo.toString(), { headers: { 'User-Agent': 'LivvoApp/1.0 (https://livvomusic.com.br)' }, redirect: 'follow' });
+      const tipo = r.headers.get('content-type') || '';
+      if (!r.ok || !tipo.startsWith('image/')) return res.status(502).json({ error: 'A fonte não devolveu uma imagem' });
+      const corpo = Buffer.from(await r.arrayBuffer());
+      if (corpo.length > 6 * 1024 * 1024) return res.status(413).json({ error: 'Imagem grande demais' });
+      res.setHeader('Content-Type', tipo);
+      res.setHeader('Cache-Control', 'public, max-age=604800');
+      return res.send(corpo);
+    } catch (err) {
+      console.error('Erro na rota /api/foto:', err);
+      return res.status(502).json({ error: 'Falha ao buscar a foto' });
+    }
+  });
+
   // API Routes: Setlist.fm & Bandsintown (chaves somente no servidor)
   registerIntegrationRoutes(app);
 
