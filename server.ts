@@ -235,6 +235,7 @@ app.get('/api/catalog/search', (req, res) => {
             thumbnailUrl: page.thumbnail.source,
             source: 'wikimedia',
             isExactMatch,
+            musical,
           };
 
           if (isExactMatch) {
@@ -283,9 +284,20 @@ app.get('/api/catalog/search', (req, res) => {
       }
 
       // Vários artistas com o mesmo nome no Deezer (ex.: "Oasis"): o de mais fãs vem primeiro
-      const exatosDeezer = artists.filter((a) => a.isExactMatch && a.source === 'deezer').sort((x, y) => (y.fans || 0) - (x.fans || 0));
+      // Homônimo com menos de 1.000 fãs sai quando há fonte melhor (ex.: "Biquini" com 34 fãs, sendo a banda a da Wikipédia)
+      const FAS_MINIMO = 1000;
+      let exatosDeezer = artists.filter((a) => a.isExactMatch && a.source === 'deezer').sort((x, y) => (y.fans || 0) - (x.fans || 0));
       const demais = artists.filter((a) => !(a.isExactMatch && a.source === 'deezer'));
-      artists.splice(0, artists.length, ...exatosDeezer.slice(0, 1), ...demais.filter((a) => a.isExactMatch), ...exatosDeezer.slice(1), ...demais.filter((a) => !a.isExactMatch));
+      const exatosWiki = demais.filter((a) => a.isExactMatch);
+      const temMelhor = (exatosDeezer[0]?.fans || 0) >= FAS_MINIMO || exatosWiki.some((a) => a.musical);
+      if (temMelhor) exatosDeezer = exatosDeezer.filter((a) => (a.fans || 0) >= FAS_MINIMO).slice(0, 1);
+      const deezerConfiavel = (exatosDeezer[0]?.fans || 0) >= FAS_MINIMO;
+      artists.splice(
+        0,
+        artists.length,
+        ...(deezerConfiavel ? [...exatosDeezer, ...exatosWiki] : [...exatosWiki, ...exatosDeezer]),
+        ...demais.filter((a) => !a.isExactMatch),
+      );
 
       // Best photo calculation: ONLY accept verified exact matches
       const exactArtist = artists.find((a) => a.isExactMatch);
