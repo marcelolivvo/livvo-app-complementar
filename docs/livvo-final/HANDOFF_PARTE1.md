@@ -72,7 +72,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e a cor dos
 | `--lv-teal` | `#2FB8BA` | Ícones de apoio, selo de verificação |
 | `--lv-cream` | `#ECE5D1` | Texto principal, botão selecionado |
 | `--lv-muted` / `--lv-dim` | `#B3AE9F` / `#8A8577` | Texto secundário e rótulos |
-| `--lv-nota` | `#ECE5D1` | Números de nota. Os ingressos de nota usam Off-white `#ECE5D1` (preenchimento) e Teal `#2FB8BA` (contorno e detalhes). **O amarelo `#FFD60A` saiu das notas** (decisão de 07/10/2026; a identidade oficial ainda o reserva para notas e precisa ser atualizada pelo Edmir) |
+| `--lv-nota` | `#FFD60A` | Números de nota em RAYDIS (amarelo, decisão de 07/10/2026 à tarde). Os ingressos de nota usam Off-white `#ECE5D1` (preenchimento) e Teal `#2FB8BA` (contorno e detalhes) |
 
 | Fonte | Uso |
 | --- | --- |
@@ -89,7 +89,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e a cor dos
 | Tira superior: "LIVVO · SEÇÃO" à esquerda, dado à direita (titular, data, passo, total) | `.lv-strip` | Em toda página-ingresso |
 | Palco com retícula halftone | `.lv-stage` | Pôster no Detalhe do show, entrada do visitante, páginas de espera |
 | Picote com meias-luas: horizontal no celular, vertical a partir de 1024 px | `.lv-perf` | Entre o palco (pôster) e o canhoto (ações) no Detalhe do show |
-| Campos de identificação: rótulo + número RAYDIS + nota em Ciano, separados por picote vertical | `.lv-fields` | Passaporte (Shows · Artistas · Cidades com "desde 1998", "mais visto: …", "em 3 estados"), contagem regressiva, médias da comunidade (número em Off-white + ingressos) |
+| Campos de identificação: rótulo + número RAYDIS + nota em Ciano, separados por picote vertical | `.lv-fields` | Passaporte (Shows · Artistas · Cidades com "desde 1998", "mais visto: …", "em 3 estados"), contagem regressiva, médias da comunidade (número em RAYDIS amarelo + ingressos) |
 | Marcas de picote como progresso (24 marcas) + percentual | `.lv-ticks` | Faixa do Passaporte, missões (versão fina) |
 | Botão-ingresso com canhoto (furos em cima e embaixo, ícone no canhoto, picote tracejado) | `.lv-btn--stub` (+ `--cyan`, `--cream`, `--teal`) | Ações principais: Eu fui, Quero ir/Tenho ingresso marcado, Minha História, Registrar, Compartilhar credencial |
 | Botão com recortes laterais | `.lv-btn` | Eu fui nas linhas do Registrar, Registrar show no topo |
@@ -141,10 +141,12 @@ Regras visuais aplicadas:
 | Peça | Como funciona |
 | --- | --- |
 | **Padrão Livvo** (`padronizar`) | Toda foto, de qualquer fonte, vira um JPEG 640 × 800 (4:5): recorte centralizado e puxado para cima (rostos), contraste automático (percentis 3 e 97) e retícula halftone com células de 7 px sobre Preto Profundo, pontos em Ciano que clareiam para Off-white nas luzes. Feito no `<canvas>` do navegador |
-| **Atualizar foto** (memória) | Link em "Sua memória" (detalhe do show) e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar ao pôster gerado" (ou à foto do artista). Só a foto enviada pela pessoa sobe a memória para "Com foto" na escada de verificação |
+| **Atualizar foto** (memória) | Botão logo abaixo do pôster na página do show, link em "Sua memória" e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar ao pôster gerado" (ou à foto do artista). Só a foto enviada pela pessoa sobe a memória para "Com foto" na escada de verificação |
 | **Atualizar todas as fotos** (admin) | Menu da conta, só com `?admin=1`. Escopo: artistas da conta e da agenda (rápido) ou todo o catálogo da prévia (653 artistas). Para cada artista: foto do catálogo (Deezer) ou a melhor foto do `/api/artist-search` (só nome exato), padronizada e salva para todos os pôsteres e ingressos do artista. 3 em paralelo, progresso em picotes com %, Parar, opção de refazer quem já tem foto, lista de quem ficou sem foto nas fontes e "Voltar todos aos pôsteres gerados" (pede segundo toque) |
-| **`GET /api/foto?url=`** | Busca a imagem pelo próprio domínio para o canvas poder tratá-la. Só HTTPS e só os domínios das fontes (`*.dzcdn.net`, `*.deezer.com`, `upload.wikimedia.org`, `*.mzstatic.com`), só `image/*`, até 6 MB, cache de 7 dias. Qualquer outro endereço responde 403 |
+| **`GET /api/foto?url=`** | Busca a imagem pelo próprio domínio para o canvas poder tratá-la. Só HTTPS e só os domínios das fontes (`*.dzcdn.net`, `*.deezer.com`, `upload.wikimedia.org`, `thumb.wikimedia.org`, `*.mzstatic.com`), só `image/*`, até 6 MB, cache de 7 dias. Qualquer outro endereço responde 403 |
 | **Armazenamento na prévia** | IndexedDB do navegador (`livvo_final_fotos`), chaves `show:<id>` e `artista:<id>`, com origem e fonte. No site final: armazenamento de arquivos de B, com a foto do artista compartilhada por todos e a da memória só da pessoa |
+
+**Foto certa do artista** (`/api/artist-search` e `buscarFotosDoArtista`): só entram nomes iguais ao do catálogo; homônimos do Deezer são ordenados por fãs e fica só o principal (ex.: há vários "Oasis"); homônimo com menos de 1.000 fãs sai quando há fonte melhor (ex.: "Biquini" com 34 fãs, enquanto a banda está na Wikipédia como "Biquini (banda)"); a silhueta vazia do Deezer sai; páginas da Wikipédia cuja descrição não é de música saem (ex.: "Oasis", o oásis do deserto). Conferido na prévia publicada com Oasis, Keane, Biquini, Vanguart, Dave Matthews Band e Nenhum de Nós.
 
 Bancos de imagem genéricos (Unsplash, usados como reserva no Estúdio) ficam fora: não são fotos do artista. Antes de produção, o Greg deve conferir os termos de uso das fontes (API do Deezer, licenças por arquivo do Wikimedia) e guardar a fonte de cada foto.
 
@@ -194,7 +196,7 @@ Página-ingresso com tira "Livvo · Shows / 23 nov 2025". Computador: **palco** 
    - Futuro: **Quero ir** e **Tenho ingresso** (um ou outro, tocar de novo desmarca), contagem regressiva no campo "DIAS PARA O SHOW", explicação do lembrete e "O link da ticketeira aparece aqui quando o show vem de uma fonte oficial."
    - O link `?avaliar=org` rola até a Nota da Organização e coloca o foco nela (usado pela missão).
 4. Prova social: avatares + "133 pessoas registraram este show, com você" (ou "querem ir"), etiqueta Exemplo. Sem ninguém: "Ninguém registrou este show ainda. Seja a primeira pessoa."
-5. **Como foi, para quem estava lá** (só passado e só com amostra mínima): médias de Show e Organização nos campos `.lv-fields` em RAYDIS Off-white + ingressos, até 3 dimensões mais citadas (+ ou −), "Média de N avaliações. As médias só aparecem a partir de 3." Abaixo da amostra, o bloco some (nunca "Sem avaliações" em destaque).
+5. **Como foi, para quem estava lá** (só passado e só com amostra mínima): médias de Show e Organização nos campos `.lv-fields` em RAYDIS amarelo + ingressos, até 3 dimensões mais citadas (+ ou −), "Média de N avaliações. As médias só aparecem a partir de 3." Abaixo da amostra, o bloco some (nunca "Sem avaliações" em destaque).
 6. **Setlist:** link real para o setlist.fm do show (base do catálogo).
 7. **Resenhas de quem foi:** avatar, nome, @, setor, notas de Show e Organização, texto de até 3 linhas, dimensões.
 8. **Quem foi / Quem vai:** pessoas com Seguir/Seguindo e "Só aparece quem deixou a memória pública."
@@ -273,7 +275,9 @@ Decisões do Edmir em 07/10/2026, 13h11 e 13h32 (revisão 3):
 15. **Padrão de foto: halftone** nas cores da marca, para pôsteres e ingressos.
 16. **Fontes de foto: o mesmo método do Estúdio** (Deezer e as demais fontes de uso permitido: Wikimedia Commons e Wikipédia).
 17. **Botão "Atualizar foto"** na memória e **botão de admin para atualizar todas as fotos de uma vez**.
-18. Consequência: o amarelo `#FFD60A` deixa de ser a cor das notas. Atualizar o documento da identidade oficial depende do Edmir.
+18. ~~O amarelo `#FFD60A` deixa de ser a cor das notas~~ (substituída pela 19).
+19. **Números de nota em RAYDIS amarelo `#FFD60A`** (07/10, 13h41); os ingressos de nota seguem Off-white e Teal. Fica dentro da regra da identidade oficial (amarelo só para notas).
+20. **Botão "Atualizar foto" visível logo abaixo do pôster** na página do show (07/10, 13h41).
 
 Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
 
@@ -314,6 +318,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Ajustes de 07/10 à tarde (commits `46522c8` e `020fb4e`), conferidos na prévia publicada da Vercel pelo navegador do app: botão sob o pôster, números em amarelo, escolha e tratamento de foto do Deezer e do Wikimedia (as do Wikimedia vinham de `thumb.wikimedia.org` e não eram tratadas antes da correção), salvar e "Voltar ao pôster gerado".
 
 Verificação da revisão 3 (07/10/2026, commit `d7a24f8`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900: notas em ingressos em todas as telas, Atualizar foto com foto enviada (prévia, salvar, pôster e ingresso da Carteira atualizados, verificação "Com foto"), janela de admin com o escopo da conta (16 artistas) do começo ao fim, `/api/foto` recusando domínio fora da lista e HTTP. Neste ambiente de teste a rede externa é bloqueada, então as fotos do Deezer, Wikimedia e Wikipédia só podem ser conferidas na prévia publicada.
 
