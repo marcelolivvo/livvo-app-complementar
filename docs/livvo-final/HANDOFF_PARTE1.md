@@ -1,6 +1,6 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 4: logo e foto automática nos pôsteres, Compartilhar, Concert Buddies e Comunidade) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 5: nota no ingresso com estrela, Personalizar, pôster ou ingresso, Meu histórico e Wrapped) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
@@ -10,6 +10,8 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 > **Revisão 3 (07/10/2026, pedido às 13h11 e respostas às 13h32):** as notas passam a usar o **ingresso** (ícone enviado pelo Edmir) no lugar dos discos; botão **Atualizar foto** na memória, com toda foto no padrão Livvo (corte 4:5 + halftone da marca); botão de admin **Atualizar todas as fotos**, com as fontes que o Estúdio já usava (Deezer, Wikimedia Commons, Wikipédia). Decisões 14 a 18 da seção 9 e seção 5.1.
 
 > **Revisão 4 (07/10/2026, pedido às 14h58 e respostas às 15h09):** todo pôster e ingresso com o logo Livvo (padrão do Estúdio); foto automática de cada artista em todo card, pôster e ingresso; tratamento de foto trocado por um duotone suave que mostra os detalhes; Compartilhar dentro da "Sua memória" com Instagram (Stories e Feed), Facebook, WhatsApp e link; Concert Buddies com marcação de @ e aceite; Comunidade funcionando. Seções 5.1 a 5.4, 6.3, 6.5, 6.6, 7 e decisões 21 a 29.
+
+> **Revisão 5 (07/10/2026, pedido às 16h04 e respostas às 16h11):** nota com o **ingresso inclinado com estrela** (Teal no traço, transparente no fundo), em teste no lugar do ingresso vertical; mais espaço entre Artistas e Cidades no "Seu passaporte"; **nome nunca partido no meio da palavra**; legenda só "Foto automática"; sob o pôster, **Atualizar foto** (Off-white), **Compartilhar** (Teal) e **Personalizar**, que abre as opções na coluna da direita em linhas que abrem e fecham, como no Livvo Virtual Poster; formato **Pôster ou Ingresso** só com carimbos de presença (mantido "Show da minha vida"); **Meu histórico** e **Gerar meu Wrapped** do Livvo Virtual Poster na Minha História. Seções 5, 5.2, 5.5, 5.6, 6.3, 6.5, 7 e decisões 30 a 39.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -124,8 +126,10 @@ Regras visuais aplicadas:
 | --- | --- | --- |
 | **Pôster** (`Poster`) | Capa de cada show: **logo Livvo** no canto superior esquerdo (ícone oficial, como no Estúdio), o **@ da pessoa** embaixo do logo só nas memórias e no que é compartilhado, data (dia em RAYDIS, mês e ano) e UF à direita, nome do artista em Alfa Slab One e casa de show embaixo | Imagem, nesta ordem: foto da memória da pessoa (`show:<id>`) → foto definida pelo admin (`artista:<id>`) → **foto automática do artista** (seção 5.1) → pôster halftone gerado pelos dados (5 paletas por hash do artista, "sol" de retícula). A foto automática só é buscada quando o card chega perto da tela. Toda foto aparece com o duotone suave e uma retícula leve por cima, com escurecido em cima e embaixo para o texto |
 | **Card de show** (`CardShow`) | Pôster + artista + casa · cidade + data + linha social | Linha social: avatares + "N registraram" (passado) ou "N querem ir" (futuro) ou a etiqueta Quero ir / Tenho ingresso. Carimbo "Você foi" ou etiqueta "Exemplo" no canto do pôster |
-| **Carimbo "Você foi"** (`CarimboFui`) | Marca de presença | Borda Ciano, inclinado −6°, animação de carimbo de 0,42 s ao registrar (desligada com "reduzir movimento") |
-| **Notas em ingressos** (`Discos`, nome mantido por compatibilidade) | Nota de meio a cinco em 5 ingressos verticais (desenho do ícone enviado pelo Edmir: recortes laterais, código de barras, picote, palheta com nota musical), em SVG 20 × 30 | Preenchido: Off-white com contorno e detalhes Teal. Meio ponto: metade esquerda preenchida (toque na metade esquerda vale meio ponto, como nos discos). Sem nota: contorno apagado (`#3A3159`), ou Teal a 55% quando dá para tocar. Acessível como `role="slider"` (setas mudam 0,5). `tamanho` = referência; o ingresso mede 0,8 × 1,2 desse valor |
+| **Carimbo "Você foi"** (`CarimboFui`) | Marca de presença na "Sua memória" e nos cards | Borda Ciano, inclinado −6°, animação de carimbo de 0,42 s ao registrar (desligada com "reduzir movimento") |
+| **Carimbo de presença** (`Carimbo`) | Carimbo do pôster e do ingresso escolhido no Personalizar: **Eu fui!** (Ciano, "Presença registrada") ou **Show da minha vida** (amarelo das notas `#FFD60A`, "Memória inesquecível") | Borda tracejada de 2 px, inclinado −12° no pôster e −8° no ingresso, Barlow 800. O vermelho que o Estúdio usava no "Show da vida" saiu: não é da paleta oficial |
+| **Nome do artista** (pôster, ingresso, cards e imagens) | **Nunca partido no meio da palavra** (revisão 5): se o nome não cabe numa linha, a palavra seguinte vai inteira para a linha de baixo | `word-break: keep-all`, `hyphens: none`; a fonte diminui até a palavra mais longa caber (`tamanhoNome`: ~0,72 em por letra na Alfa, 0,56 na Barlow, 0,8 na RAYDIS, largura útil de 85% do pôster). Nas imagens geradas, a quebra é feita palavra por palavra no `<canvas>` |
+| **Notas em ingressos** (`Discos`, nome mantido por compatibilidade) | Nota de meio a cinco em 5 ícones. **Modelo em teste desde a revisão 5:** ingresso inclinado a −45° com recorte lateral, picote e estrela (ícone enviado pelo Edmir às 16h04), em SVG 24 × 24 só com traço. O modelo anterior (ingresso vertical com código de barras e palheta) fica no código como `IngressoVerticalAnterior` | Preenchido: traço Teal `#2FB8BA`, fundo transparente (onde o ícone é branco). Meio ponto: metade esquerda em Teal (toque na metade esquerda vale meio ponto). Sem nota: traço apagado (`#3A3159`), ou Teal a 38% quando dá para tocar. Acessível como `role="slider"` (setas mudam 0,5). O ícone mede 1,1 × o `tamanho`. O mesmo desenho vai para as imagens de compartilhar |
 | **Página-ingresso** (`Bilhete`) | `.lv-ticket` + `.lv-strip` com texto à esquerda e à direita | Envolve o topo de cada tela |
 | **Grupo** (`Grupo`) | `.lv-group` com ação à direita (ex.: "Ver todos", etiqueta Exemplo) | Cabeçalho de toda lista |
 | **Linha** (`Linha`) | `.lv-show`: coluna inicial (data em RAYDIS ou avatar), título, linha de apoio, nota em Ciano e fim (etiqueta, carimbo, botão ou seta) | Coluna inicial de 58 px no celular e 72 px a partir de 640 px |
@@ -158,8 +162,8 @@ Bancos de imagem genéricos (Unsplash, usados como reserva no Estúdio) ficam fo
 
 | Peça | Como funciona |
 | --- | --- |
-| **Onde fica** | Botão "Compartilhar" no canto inferior direito da "Sua memória", abaixo do "Atualizar foto". O "Compartilhar" do topo da página do show só aparece quando a pessoa não foi ao show (não há memória). No celular, as opções abrem numa folha presa embaixo da tela |
-| **Instagram Stories e Feed** | O site não consegue postar direto no Instagram. O Livvo gera a imagem pronta no `<canvas>`: 1080 × 1920 (Stories) ou 1080 × 1350 (Feed), com o pôster (mesma imagem e tratamento da tela, logo, @ da pessoa), carimbo "Eu fui", Nota do Show e da Organização em ingressos com o número em RAYDIS amarelo, data por extenso e o endereço livvomusic.com.br (#12). No celular abre o menu do aparelho (Web Share com arquivo) e a pessoa escolhe o Instagram; no computador a imagem é baixada com o aviso "Abra o Instagram e publique" |
+| **Onde fica** | Desde a revisão 5, **logo abaixo do "Atualizar foto", sob o pôster**: botão Teal com texto preto (saiu da "Sua memória"). O menu abre para baixo. O "Compartilhar" do topo da página do show só aparece quando a pessoa não foi ao show (não há memória). No celular, as opções abrem numa folha presa embaixo da tela |
+| **Instagram Stories e Feed** | O site não consegue postar direto no Instagram. O Livvo gera a imagem pronta no `<canvas>`: 1080 × 1920 (Stories) ou 1080 × 1350 (Feed), com o pôster (mesma imagem e tratamento da tela, logo, @ da pessoa), com a personalização da memória (formato pôster ou ingresso, carimbo de presença, fonte, tamanho, posição, cor, frase, faixa, setor, com quem, casa e @; seção 5.5), Nota do Show e da Organização em ingressos com o número em RAYDIS amarelo, data por extenso e o endereço livvomusic.com.br (#12). No celular abre o menu do aparelho (Web Share com arquivo) e a pessoa escolhe o Instagram; no computador a imagem é baixada com o aviso "Abra o Instagram e publique" |
 | **Facebook** | Abre a janela de compartilhar do Facebook com o link do show |
 | **WhatsApp e link** | WhatsApp com texto pronto e link; "Copiar link" |
 
@@ -178,6 +182,21 @@ Bancos de imagem genéricos (Unsplash, usados como reserva no Estúdio) ficam fo
 ### 5.4 Comunidade (`src/livvo/pages/Comunidade.tsx`)
 
 Abas em texto: **Seguindo** (o que quem você segue registrou, com notas), **Concert Buddies** (mais shows juntos), **Convites** (quem pode marcar você + convites "Fomos juntos" para aceitar ou recusar, e os respondidos), **Shows em comum** (pessoas que foram aos mesmos shows, com Seguir) e **Pessoas** (para seguir). Com a "Comunidade de exemplo" desligada no menu, cada aba mostra o estado vazio real. Visitante vê o convite para entrar.
+
+### 5.5 Personalizar e formato Ingresso (`src/livvo/Personalizar.tsx`, `src/livvo/Ingresso.tsx`)
+
+| Peça | Como funciona |
+| --- | --- |
+| **Botões sob o pôster** (só com memória) | Em pilha, na largura do pôster (no celular, na largura da tela, abaixo do pôster): **Atualizar foto** (botão-canhoto Off-white, texto preto), **Compartilhar** (botão-canhoto Teal, texto preto) e **Personalizar** (contorno Ciano; aberto, fica preenchido em Ciano). Embaixo, a legenda do tipo de foto: só "Foto automática", "Foto do artista", "Sua foto no padrão Livvo" ou "Pôster gerado pelos dados do show" (sem a fonte, revisão 5) |
+| **Painel Personalizar** | Ocupa a coluna da direita do ingresso da página (no lugar do título, da "Sua memória" e da prova social); no celular aparece abaixo dos botões, e o pôster cresce (até 340 px) para a prévia ficar legível. Linhas que abrem e fecham, uma por vez (`.lv-row` do Estúdio), agrupadas como no Livvo Virtual Poster: **Formato** (Pôster ou ingresso; Carimbo de presença), **Memória do show** (Faixa, setor e com quem), **Texto e tipografia** (Fonte do nome, Tamanho do nome, Posição do nome, Frase no alto), **Cor e identificação** (Cor de destaque, Seu @ no card, Casa de show). Cada linha mostra o valor atual à direita |
+| **Prévia e salvar** | Toda mudança aparece na hora no pôster ou no ingresso da esquerda. Nada é gravado até **Salvar** (fica apagado sem mudanças). **Descartar e fechar** e **Voltar ao padrão**. Fechar o painel sem salvar volta ao que estava salvo |
+| **Opções** | Formato: Pôster (4:5) ou Ingresso (horizontal). Carimbo: Sem carimbo, Eu fui (padrão), Show da minha vida. Fonte: Alfa Slab One (padrão), Barlow (caixa alta) ou RAYDIS (desligada quando o nome tem acento). Tamanho: Pequeno 80%, Médio 90%, Grande 100% (padrão), sempre limitado para a palavra mais longa caber. Posição: Em cima (abaixo do logo), No meio, Embaixo (padrão). Frase no alto: até 28 caracteres, sob o logo e o @. Cor de destaque: Ciano (padrão), Teal ou Off-white, usada na casa, na frase, na faixa e no traço sob o nome. Faixa marcante (até 40 caracteres), setor (Pista, Pista premium, Cadeira, Arquibancada, Camarote, Backstage; grava no campo `setor` da memória), mostrar setor e mostrar com quem fui (Concert Buddies que aceitaram + `comQuem`), mostrar @ e mostrar casa |
+| **Onde vale** | Pôster da página do show, pôster do canhoto na Carteira da Minha História e as imagens de Stories e Feed. Na Carteira, o canhoto continua sendo o pôster (a Carteira já é um ingresso) |
+| **Formato Ingresso** (`IngressoMemoria`) | O Ingresso Retrô do Livvo Virtual Poster (A) com o mesmo contorno (960 × 352, furos em cima e embaixo, picote e canhoto), escalado pelo `RetroTicketStage` do A. Ajustado à identidade: rótulos em Barlow (sem DM Mono), logo Livvo e @ no canhoto, data em RAYDIS, foto com o duotone suave (ou retícula Teal sem foto), frase no alto, nome em até duas linhas sem partir palavra, traço na cor de destaque, faixa/setor/com quem, Local e Cidade, nota em ingressos e livvomusic.com.br. Do Estúdio ficaram de fora o selo de colecionador, VIP, contagem regressiva, "Show histórico", filtros e temas: só os carimbos de presença. No computador, a coluna do palco passa de 380 para 540 px quando o formato é Ingresso |
+
+### 5.6 Meu histórico e Wrapped (`src/livvo/HistoricoWrapped.tsx`)
+
+Na Minha História, abaixo de "Registrar show" e "Compartilhar credencial": **Meu histórico** (botão-canhoto Teal, ícone de gráfico) abre, dentro do Passaporte, a seção do Estúdio com a tira "Livvo · Meu histórico" e Fechar e os mesmos gráficos do `MyHistory` do A (shows por ano, por mês em cada ano, linha do tempo acumulada com as faixas, artistas, cidades e casas mais vistos, dias da semana, distância entre shows e marcos). **Gerar meu Wrapped** (botão-canhoto Off-white, ícone de brilho) abre o `TourWrappedModal` do A (Baixar e Compartilhar o PNG). Os dois componentes do A são usados sem mudança; a ponte converte cada memória no `CollectedTicket` do A (data `dd/mm/aaaa`, carimbo e faixa da personalização) e monta o `FanStats` a partir do Passaporte (nível = faixa do Passaporte; artista mais visto com a mesma foto dos pôsteres, passando por `/api/foto` para o PNG). Os rótulos em DM Mono desses componentes aparecem em Barlow dentro do Livvo final. Carregados só quando a pessoa abre.
 
 ---
 
@@ -217,11 +236,11 @@ Abas em texto: **Seguindo** (o que quem você segue registrou, com notas), **Con
 
 Página-ingresso com tira "Livvo · Shows / 23 nov 2025". Computador: **palco** halftone com o pôster (380 px) · **picote vertical** · **canhoto** com título, dados e ação. Celular: pôster menor (38% da largura) ao lado do título no palco, picote horizontal e a ação logo abaixo, para o **Eu fui aparecer sem rolar**. Abaixo do ingresso, duas colunas no computador: comunidade (médias, resenhas, quem foi) à esquerda; setlist, "Foi com alguém?" e mais shows à direita.
 
-1. Voltar · Compartilhar.
+1. Voltar · Compartilhar (só sem memória). Com memória, sob o pôster: Atualizar foto, Compartilhar e Personalizar (seção 5.5).
 2. Turnê (ou "Show ao vivo" / "Show que vem aí"), etiqueta "Show de exemplo" quando for o caso, artista, casa (link para Explorar filtrado pela casa) · cidade, UF, data por extenso · "há 10 meses" / "em 10 dias". Sem ícones de local e data (#15).
 3. **Ação principal:**
    - Passado, sem memória: botão-canhoto **Eu fui** (Ciano, largura total no celular) + "Guarde este show na sua história. Leva um toque; as notas você dá logo depois."
-   - Passado, com memória: **Sua memória** no canhoto de borda Ciano (`.lv-passport`): data do registro e visibilidade, carimbo "Você foi" (animado ao registrar), **Nota do Show** e **Nota da Organização** em discos (salvam no toque), frase "Duas notas para o artista não pagar pela fila do bar."; canhoto com **Verificação** (selo da escada: Registrado → Com foto → Com ingresso → Presença confirmada), "Ingresso de Memória · Parte 2" e "Desfazer registro" (pede um segundo toque).
+   - Passado, com memória: **Sua memória** no canhoto de borda Ciano (`.lv-passport`): data do registro e visibilidade, carimbo "Você foi" (animado ao registrar), **Nota do Show** e **Nota da Organização** em ingressos (salvam no toque), frase "Duas notas para o artista não pagar pela fila do bar."; canhoto com **Verificação** (selo da escada: Registrado → Com foto → Com ingresso → Presença confirmada), "Ingresso de Memória · Parte 2" e "Desfazer registro" (pede um segundo toque).
    - Futuro: **Quero ir** e **Tenho ingresso** (um ou outro, tocar de novo desmarca), contagem regressiva no campo "DIAS PARA O SHOW", explicação do lembrete e "O link da ticketeira aparece aqui quando o show vem de uma fonte oficial."
    - O link `?avaliar=org` rola até a Nota da Organização e coloca o foco nela (usado pela missão).
 4. Prova social: avatares + "133 pessoas registraram este show, com você" (ou "querem ir"), etiqueta Exemplo. Sem ninguém: "Ninguém registrou este show ainda. Seja a primeira pessoa."
@@ -241,9 +260,9 @@ Página-ingresso com tira "Livvo · Registrar show / Passo 1 de 2" (e "Passo 2 d
 Mesma página de identificação da Wallet do Estúdio, sem a linha MRZ:
 1. Tira "Livvo · Passaporte de fã / Titular @toboi"; ícone de passaporte e **"Passaporte Oficial de Shows"** em Alfa Teal; "Cada show que você registra vira um carimbo aqui. Os antigos contam também."
 2. TITULAR · NOME (Alfa) e @ em Ciano; campos Shows · Artistas · Cidades; 24 marcas com "Faltam N shows para o nível X" e percentual.
-3. Botões-canhoto "Registrar show" (Ciano) e "Compartilhar credencial" (Creme).
+3. Botões-canhoto "Registrar show" (Ciano) e "Compartilhar credencial" (Creme); abaixo, **"Meu histórico"** (Teal) e **"Gerar meu Wrapped"** (Creme), seção 5.6. Os campos Shows · Artistas · Cidades ganharam mais espaço entre si (revisão 5).
 4. À direita (abaixo no celular): **Credencial Backstage** com os dados da conta (nome, @, shows, desde, nível e acesso calculados pelos shows, Nº de cadastro de teste 16), "Adicionar foto" / "Trocar foto" (mesmo tratamento e mesma chave `livvo_user_photo_v1` do Estúdio: até 1024 px, mantém transparência, tenta 640 px sem espaço, aviso para HEIC) e "Compartilhar" (PNG em resolução cheia pelo menu do celular ou download).
-5. **Carteira de ingressos 25**: memórias por ano em ingressos de contorno Ciano (duas colunas a partir de 1024 px): pôster no canhoto, artista em Alfa, data, casa · cidade, nota do show em discos ou "Sem nota", e "Falta a organização" (leva direto à nota).
+5. **Carteira de ingressos 25**: memórias por ano em ingressos de contorno Ciano (duas colunas a partir de 1024 px): pôster no canhoto, artista em Alfa, data, casa · cidade, nota do show em ingressos ou "Sem nota", e "Falta a organização" (leva direto à nota). O canhoto mostra a personalização da memória e o nome do artista quebra em até duas linhas, sem cortar palavra.
 As abas Números, Coleção (medalhas, desafios, stickers), Agenda e Listas entram na parte 3.
 
 ### 6.6 Comunidade e Alertas
@@ -258,7 +277,8 @@ Nesta prévia tudo fica no navegador (`localStorage`, chave `livvo_final_v1`), c
 
 | Entidade | Campos | Observações |
 | --- | --- | --- |
-| **Memória** | `id`, `showId`, `criadaEm`, `atualizadaEm`, `notaShow` (0,5–5), `notaOrganizacao` (0,5–5), `dimensoes` (mapa id → nota), `setor`, `comQuem` (@), `fotoUrl`, `ingressoAnexado`, `presencaConfirmadaPor`, `relato`, `visibilidade` (`privado` / `seguidores` / `publico`) | Uma memória por pessoa e show. O nível da escada de verificação é calculado, não gravado |
+| **Memória** | `id`, `showId`, `criadaEm`, `atualizadaEm`, `notaShow` (0,5–5), `notaOrganizacao` (0,5–5), `dimensoes` (mapa id → nota), `setor`, `comQuem` (@), `fotoUrl`, `ingressoAnexado`, `presencaConfirmadaPor`, `relato`, `personalizacao`, `visibilidade` (`privado` / `seguidores` / `publico`) | Uma memória por pessoa e show. O nível da escada de verificação é calculado, não gravado |
+| **Personalização da memória** | `personalizacao`: `formato` (`poster` / `ingresso`), `carimbo` (`nenhum` / `eu_fui` / `show_da_minha_vida`), `cor` (`ciano` / `teal` / `offwhite`), `fonte` (`alfa` / `barlow` / `raydis`), `tamanho` (`p` / `m` / `g`), `posicao` (`cima` / `meio` / `baixo`), `frase`, `faixa`, `mostrarSetor`, `mostrarComQuem`, `mostrarCasa`, `mostrarUsuario` | Guardada como objeto parcial; o que falta usa o padrão (`PERSONALIZACAO_PADRAO`). O setor escolhido no painel grava no campo `setor` da memória |
 | **Interesse** | `showId` → `quero_ir` ou `tenho_ingresso` | Some quando a pessoa registra o show (vira memória) |
 | **Seguindo** | lista de @ | Base da Comunidade |
 | **Concert Buddy (marcação)** | na memória: `buddies` = lista de `{ usuario, status (pendente / aceita / recusada), em }` | A marcação gera um convite para a outra pessoa. `comQuem` fica para compatibilidade com B |
@@ -267,7 +287,7 @@ Nesta prévia tudo fica no navegador (`localStorage`, chave `livvo_final_v1`), c
 | **Foto** | por memória (`show:<id>`) e por artista (`artista:<id>`, admin): imagem tratada, `origem`, `fonte`, versão do tratamento | No site final, armazenamento de arquivos de B; a foto automática é só uma referência (endereço e fonte), não uma cópia |
 | **Dimensões (IDs fixos)** | `entrada_saida`, `seguranca`, `som`, `visao_palco`, `clima_publico`, `bares_banheiros` | Fixar os IDs agora evita quebrar séries históricas (decisão irreversível nº 2). As três últimas são propostas do plano, a aprovar |
 
-Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem: detalhe, registrar, momento, convite), `nota_show`, `nota_organizacao` (origem), `interesse_marcado` (tipo), `link_compartilhado`, `imagem_compartilhada` (stories, feed), `whatsapp_aberto`, `seguir`, `buddy_marcado`, `convite_respondido` (aceito, recusado), `foto_atualizada` (origem), `filtro_explorar` (tipo).
+Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem: detalhe, registrar, momento, convite), `nota_show`, `nota_organizacao` (origem), `interesse_marcado` (tipo), `link_compartilhado`, `imagem_compartilhada` (stories, feed), `whatsapp_aberto`, `seguir`, `buddy_marcado`, `convite_respondido` (aceito, recusado), `foto_atualizada` (origem), `filtro_explorar` (tipo), `personalizacao_salva` (formato, carimbo), `historico_aberto`, `wrapped_gerado`.
 
 ---
 
@@ -326,6 +346,21 @@ Decisões do Edmir em 07/10/2026, 14h58 e 15h09 (revisão 4):
 28. **Marcar o @ de quem foi junto**, que recebe o mesmo card no perfil se autorizar (aceite) e se a preferência dele permitir.
 29. **Comunidade funcionando** já nesta prévia, com dados de exemplo marcados.
 
+Decisões do Edmir em 07/10/2026, 16h04 e 16h11 (revisão 5):
+
+30. **Nota com o ingresso inclinado com estrela**, em teste e substituindo o ingresso vertical: Teal onde o ícone é preto, transparente onde é branco.
+31. **Mais espaço entre Artistas e Cidades** no "Seu passaporte".
+32. **Nunca partir um nome no meio da palavra** no "Encontre o seu show" e em qualquer card: se o nome completo não cabe na primeira linha, a palavra seguinte vai inteira para a segunda.
+33. **Legenda só "Foto automática"**, sem citar o Deezer.
+34. **"Atualizar foto" logo abaixo do pôster do show**, fundo Off-white e texto preto.
+35. **"Compartilhar" sai da "Sua memória"** e fica abaixo do "Atualizar foto", em Teal com texto preto.
+36. **"Personalizar" abaixo do Compartilhar**, abrindo as opções na coluna da direita, todas em linhas que abrem e fecham, como no Livvo Virtual Poster. As opções propostas (formato, carimbo, faixa, setor, com quem, fonte, tamanho, posição, frase, cor, @ e casa) foram aprovadas.
+37. **Pôster ou Ingresso** (do Livvo Virtual Poster), só com os carimbos de presença, **mantendo "Show da minha vida"**.
+38. **"Meu histórico"** com os gráficos da Minha história do Livvo Virtual Poster.
+39. **"Gerar meu Wrapped"** no mesmo formato do Livvo Virtual Poster.
+
+Escolhas de execução desta revisão (DRAFT, para o Edmir confirmar): "Show da minha vida" em amarelo das notas e "Eu fui" em Ciano (o vermelho do Estúdio não é da paleta); carimbo padrão "Eu fui" (o mesmo que as imagens de compartilhar já levavam); RAYDIS só para nomes sem acento; "Meu histórico" e "Gerar meu Wrapped" dentro do Passaporte, abaixo dos dois botões que já existiam.
+
 Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
 
 ---
@@ -353,6 +388,9 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/livvo/format.ts` | Datas, notas, plural e hash em pt-BR |
 | `src/livvo/ui.tsx` | Componentes da seção 5 |
 | `src/livvo/Compartilhar.tsx`, `src/livvo/ConcertBuddies.tsx`, `src/livvo/pages/Comunidade.tsx` | Compartilhar e imagens (5.2), Concert Buddies (5.3), Comunidade (5.4) |
+| `src/livvo/Personalizar.tsx`, `src/livvo/Ingresso.tsx` | Painel Personalizar e formato Ingresso (5.5) |
+| `src/livvo/HistoricoWrapped.tsx` | Ponte para o `MyHistory` e o `TourWrappedModal` do A (5.6) |
+| `src/components/RetroTicket.tsx`, `src/components/MyHistory.tsx`, `src/components/TourWrappedModal.tsx` | Componentes do Estúdio reaproveitados sem alteração (escala do ingresso, gráficos e Wrapped) |
 | `src/livvo/fotos.ts`, `src/livvo/AtualizarFoto.tsx` | Padrão de foto, armazenamento, fontes, janela Atualizar foto e janela de admin (seção 5.1) |
 | `server.ts` | Rota `/api/foto` (seção 5.1); `/api/artist-search` do Estúdio reaproveitada |
 | `src/livvo/livvo.css` | Tokens `.lv-app`, troca de DM Mono por Barlow nas classes do Estúdio e os estilos que faltavam (linhas, data, contorno, busca sublinhada) |
@@ -366,6 +404,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 5 (07/10/2026, commit `950d05f`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página: botões sob o pôster, Personalizar (carimbo, faixa, setor, frase, fonte Barlow, Ingresso, Salvar, posição No meio), imagens de Stories e Feed no formato Ingresso e no pôster com carimbo "Show da minha vida", Meu histórico, Gerar meu Wrapped e nomes longos no Explorar (Humberto Gessinger, Móveis Coloniais de Acaju, Ben Harper & The Innocent Criminals) sem palavra partida e sem nome estourando a caixa. O aviso de console `stop-color` vem do `LivvoLogo` do Estúdio, que já existia.
 
 Verificação da revisão 4 (07/10/2026, commits `d150ed5` e `7449220`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página (Comunidade nas 5 abas, marcar Concert Buddy até o aceite, convites, imagens de Stories e Feed geradas, menu de compartilhar). Na prévia publicada, pelo navegador do app: fotos automáticas com o duotone suave no Explorar e na página do show, logo e @ no pôster, menu de compartilhar no computador e no celular. Gerar e baixar a imagem do Instagram não foi feito na prévia publicada (baixaria um arquivo no seu computador); foi conferido no ambiente de teste.
 
