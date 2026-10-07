@@ -7,7 +7,7 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 
 > **Revisão 2 (07/10/2026, à tarde):** o visual foi refeito nos parâmetros do Estúdio (app A), que valem para tudo. O plano de fusão vale para estrutura e fluxos. Em conflito, vale o documento da identidade oficial. Detalhes na seção 4 e nas decisões 9 a 13 da seção 9.
 
-> **Revisão 3 (07/10/2026, 13h13):** as notas passam a usar o **ingresso** (ícone enviado pelo Edmir) no lugar dos discos; botão **Atualizar foto** na memória, com toda foto no padrão Livvo (corte 4:5 + halftone da marca); botão de admin **Atualizar todas as fotos**, com as fontes que o Estúdio já usava (Deezer, Wikimedia Commons, Wikipédia). Decisões 14 a 18 da seção 9 e seção 5.1.
+> **Revisão 3 (07/10/2026, pedido às 13h11 e respostas às 13h32):** as notas passam a usar o **ingresso** (ícone enviado pelo Edmir) no lugar dos discos; botão **Atualizar foto** na memória, com toda foto no padrão Livvo (corte 4:5 + halftone da marca); botão de admin **Atualizar todas as fotos**, com as fontes que o Estúdio já usava (Deezer, Wikimedia Commons, Wikipédia). Decisões 14 a 18 da seção 9 e seção 5.1.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -267,7 +267,7 @@ Decisões do Edmir em 07/10/2026 (revisão 2):
 12. **Ícones: padrão do Estúdio (Lucide)**, no lugar dos Material Symbols citados na identidade oficial.
 13. **Todo documento que existir só no Claude ganha cópia em Markdown na pasta Livvo**, para o ChatGPT e o Codex lerem.
 
-Decisões do Edmir em 07/10/2026, 13h13 (revisão 3):
+Decisões do Edmir em 07/10/2026, 13h11 e 13h32 (revisão 3):
 
 14. **Notas em ingressos** no lugar dos discos: Off-white onde o ícone é branco, Teal onde é preto. Meio ponto como nos discos (metade esquerda).
 15. **Padrão de foto: halftone** nas cores da marca, para pôsteres e ingressos.
