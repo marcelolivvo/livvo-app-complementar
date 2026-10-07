@@ -137,7 +137,7 @@ app.get('/api/catalog/search', (req, res) => {
 
       // 4. Search on Wikipedia / Wikimedia Commons (Free public domain encyclopedia photos)
       const wikiPromise = fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages&format=json&pithumbsize=1200`,
+        `https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages|description&format=json&pithumbsize=1200`,
         { headers: fetchHeaders }
       )
         .then((r) => (r.ok ? r.json() : {}))
@@ -145,7 +145,7 @@ app.get('/api/catalog/search', (req, res) => {
 
       // 5. Search on pt.wikipedia.org for Brazilian artists
       const ptWikiPromise = fetch(
-        `https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages&format=json&pithumbsize=1200`,
+        `https://pt.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(query)}&gsrlimit=5&prop=pageimages|description&format=json&pithumbsize=1200`,
         { headers: fetchHeaders }
       )
         .then((r) => (r.ok ? r.json() : {}))
@@ -186,7 +186,8 @@ app.get('/api/catalog/search', (req, res) => {
       // Process Deezer artists - check name similarity strictly to prevent mismatched artist photos
       (artistData.data || []).forEach((a: any) => {
         const photoUrl = a.picture_xl || a.picture_big || a.picture_medium;
-        if (!photoUrl || photoUrl.includes('/artist//')) return; // skip placeholder/empty images
+        // sem foto: endereço vazio ou a silhueta padrão do Deezer (MD5 de texto vazio)
+        if (!photoUrl || photoUrl.includes('/artist//') || photoUrl.includes('/artist/d41d8cd98f00b204e9800998ecf8427e/')) return;
 
         const isExactMatch = isLegitMatch(a.name);
         const normArtistName = (a.name || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
@@ -199,6 +200,7 @@ app.get('/api/catalog/search', (req, res) => {
           thumbnailUrl: a.picture_medium || a.picture_small,
           source: 'deezer',
           isExactMatch,
+          fans: Number(a.nb_fan) || 0,
         };
 
         if (isExactMatch) {
@@ -217,7 +219,12 @@ app.get('/api/catalog/search', (req, res) => {
       Object.values(wikiPages).forEach((page: any) => {
         if (page?.thumbnail?.source) {
           const title = page.title || query;
-          const isExactMatch = isLegitMatch(title);
+          // Homônimos (ex.: "Oasis", o oásis do deserto): com descrição, só entra página de música
+          const descricao = String(page.description || '');
+          const musical = /band|banda|singer|cantor|cantora|musician|m[uú]sic|rapper|grupo|group|duo|dupla|\bdj\b|compositor|songwriter|orquestra|orchestra|rock|samba|sertanej|pagode|funk|\brap\b|hip.hop|mc\b/i.test(descricao);
+          if (descricao && !musical) return;
+          const semQualificador = title.replace(/\s*\(.*\)\s*$/, '');
+          const isExactMatch = isLegitMatch(title) || (musical && isLegitMatch(semQualificador));
           const normTitle = title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
           const isSubstringMatch = normTitle.startsWith(normQuery) || (normQuery.length >= 6 && normTitle.includes(normQuery));
 
@@ -275,6 +282,11 @@ app.get('/api/catalog/search', (req, res) => {
         }
       }
 
+      // Vários artistas com o mesmo nome no Deezer (ex.: "Oasis"): o de mais fãs vem primeiro
+      const exatosDeezer = artists.filter((a) => a.isExactMatch && a.source === 'deezer').sort((x, y) => (y.fans || 0) - (x.fans || 0));
+      const demais = artists.filter((a) => !(a.isExactMatch && a.source === 'deezer'));
+      artists.splice(0, artists.length, ...exatosDeezer.slice(0, 1), ...demais.filter((a) => a.isExactMatch), ...exatosDeezer.slice(1), ...demais.filter((a) => !a.isExactMatch));
+
       // Best photo calculation: ONLY accept verified exact matches
       const exactArtist = artists.find((a) => a.isExactMatch);
       const bestPhoto = exactArtist ? exactArtist.photoUrl : (artists[0]?.isExactMatch ? artists[0].photoUrl : null);
@@ -296,7 +308,7 @@ app.get('/api/catalog/search', (req, res) => {
   // API Route: devolve uma foto de artista das mesmas fontes do /api/artist-search (Deezer, Wikimedia/Wikipedia,
   // iTunes) pelo próprio domínio, para o navegador poder aplicar o tratamento halftone padrão do Livvo no <canvas>.
   // Só aceita esses domínios (nada de endereço arbitrário) e só imagens de até 6 MB.
-  const HOSTS_FOTO = [/(^|\.)dzcdn\.net$/i, /(^|\.)deezer\.com$/i, /^upload\.wikimedia\.org$/i, /(^|\.)mzstatic\.com$/i];
+  const HOSTS_FOTO = [/(^|\.)dzcdn\.net$/i, /(^|\.)deezer\.com$/i, /^(upload|thumb)\.wikimedia\.org$/i, /(^|\.)mzstatic\.com$/i];
   app.get('/api/foto', async (req, res) => {
     let alvo: URL;
     try {

@@ -38,7 +38,7 @@
   --lv-cream: #ece5d1;
   --lv-muted: #b3ae9f;
   --lv-dim: #8a8577;
-  --lv-nota: #ece5d1; /* notas em Off-white com ingressos Teal (07/10/2026); o amarelo #FFD60A saiu das notas */
+  --lv-nota: #ffd60a; /* números de nota em RAYDIS amarelo; os ingressos de nota são Off-white com contorno Teal (07/10/2026) */
   --lv-tabbar-h: 64px;
   min-height: 100vh;
   background: var(--lv-ink);

@@ -238,13 +238,53 @@ export interface OpcaoFoto {
   fonte: string;
 }
 
-/** Fotos do artista nas fontes do Estúdio (Deezer, Wikimedia Commons, Wikipédia), sem os bancos genéricos. */
+const normalizar = (t: string) =>
+  t
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/^the\s+/, '')
+    .replace(/[^a-z0-9]/g, '');
+
+const QUALIFICADOR_MUSICAL = /band|banda|singer|cantor|cantora|musician|m[uú]sic|rapper|grupo|group|duo|dupla|\bdj\b|compositor|songwriter/i;
+
+/** Imagem vazia do Deezer (silhueta cinza): o hash é o MD5 de texto vazio. */
+const ehSemFoto = (url: string) => /\/artist\/(d41d8cd98f00b204e9800998ecf8427e)?\//i.test(url);
+
+/**
+ * Fotos do artista nas fontes do Estúdio (Deezer, Wikimedia Commons, Wikipédia), sem os bancos genéricos.
+ * Só entram fotos que são mesmo do artista: no Deezer e na Wikipédia, nome igual ao do catálogo
+ * (a busca do Deezer devolve também "Oasis Gospel", "Oasis Acoustic"...); no Wikimedia, arquivo com o
+ * nome do artista no título.
+ */
 export const buscarFotosDoArtista = async (nome: string, fotoCatalogo?: string): Promise<OpcaoFoto[]> => {
+  const alvo = normalizar(nome);
   const lista: OpcaoFoto[] = [];
-  if (fotoCatalogo) lista.push({ url: fotoCatalogo, miniatura: fotoCatalogo, fonte: 'Deezer Oficial' });
+  if (fotoCatalogo && !ehSemFoto(fotoCatalogo)) lista.push({ url: fotoCatalogo, miniatura: fotoCatalogo, fonte: 'Deezer Oficial' });
   const res = await searchArtistMedia(nome).catch(() => null);
+  // Homônimos no Deezer (vários "Oasis"): o servidor põe o de mais fãs primeiro; só ele entra
+  let deezerAceito = false;
   res?.photos
-    .filter((p) => !/acervo|unsplash/i.test(p.source) && !/unsplash\.com/i.test(p.url))
+    .filter((p) => !/acervo|unsplash/i.test(p.source) && !/unsplash\.com/i.test(p.url) && !ehSemFoto(p.url))
+    .filter((p) => {
+      if (/deezer/i.test(p.source)) {
+        if (deezerAceito || normalizar(p.title.replace(/\s*\(Deezer.*\)\s*$/i, '')) !== alvo) return false;
+        deezerAceito = true;
+        return true;
+      }
+      if (/wikip/i.test(p.source)) {
+        // Busca direta na Wikipédia (sem descrição da página): só com qualificador musical, ex. "Oasis (band)"
+        const t = p.title.replace(/\s*-\s*Foto Oficial\s*$/i, '');
+        const q = /\(([^)]*)\)\s*$/.exec(t)?.[1] || '';
+        return QUALIFICADOR_MUSICAL.test(q) && normalizar(t.replace(/\s*\([^)]*\)/g, '')) === alvo;
+      }
+      if (/wikimedia/i.test(p.source)) {
+        const i = p.title.indexOf(' - ');
+        if (i < 0) return normalizar(p.title.replace(/\s*\([^)]*\)/g, '')) === alvo; // retrato do servidor (já filtrado por descrição)
+        return normalizar(p.title.slice(i + 3)).includes(alvo); // foto de show: nome do artista no arquivo
+      }
+      return false;
+    })
     .forEach((p) => {
       if (!lista.some((o) => o.url === p.url)) lista.push({ url: p.url, miniatura: p.thumbUrl || p.url, fonte: p.source });
     });
@@ -253,7 +293,7 @@ export const buscarFotosDoArtista = async (nome: string, fotoCatalogo?: string):
 
 /** Melhor foto do artista para a atualização em lote: catálogo → /api/artist-search (só nome exato). Lança erro se a busca falhar. */
 export const melhorFotoDoArtista = async (nome: string, fotoCatalogo?: string): Promise<{ url: string; fonte: string } | null> => {
-  if (fotoCatalogo) return { url: fotoCatalogo, fonte: 'Deezer Oficial' };
+  if (fotoCatalogo && !ehSemFoto(fotoCatalogo)) return { url: fotoCatalogo, fonte: 'Deezer Oficial' };
   // Falha de rede vira erro (não "sem foto"), para o admin saber que vale tentar de novo
   const r = await fetch(`/api/artist-search?q=${encodeURIComponent(nome)}`);
   if (!r.ok) throw new Error('busca');

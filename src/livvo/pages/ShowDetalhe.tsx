@@ -317,6 +317,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
             <div className="grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block">
               <div>
                 <Poster show={show} />
+                {minha && <BotaoAtualizarFoto show={show} memoria={minha} fotoCatalogo={show.foto} botao className="mt-3" />}
                 <LegendaPoster showId={show.id} artistaId={show.artistaId} />
               </div>
               <div className="min-w-0 lg:hidden">{cabecalho}</div>

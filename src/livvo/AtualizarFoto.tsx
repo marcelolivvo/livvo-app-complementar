@@ -371,22 +371,28 @@ export const AdminFotos: React.FC<{ catalogo: Catalogo | null; fechar: () => voi
   );
 };
 
-/** Botão "Atualizar foto" para a memória (abre o modal). */
-export const BotaoAtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalogo?: string; className?: string; compacto?: boolean }> = ({
-  show,
-  memoria,
-  fotoCatalogo,
-  className = '',
-  compacto,
-}) => {
+/** Botão "Atualizar foto" para a memória (abre o modal). `botao`: botão-ingresso sob o pôster; senão, link. */
+export const BotaoAtualizarFoto: React.FC<{
+  show: Show;
+  memoria: Memoria;
+  fotoCatalogo?: string;
+  className?: string;
+  compacto?: boolean;
+  botao?: boolean;
+}> = ({ show, memoria, fotoCatalogo, className = '', compacto, botao }) => {
   const [aberto, setAberto] = useState(false);
   return (
     <>
-      <button type="button" className={`lv-link ${compacto ? '!text-[12px]' : ''} ${className}`} onClick={() => setAberto(true)}>
-        <ImagePlus className={compacto ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> Atualizar foto
-      </button>
+      {botao ? (
+        <button type="button" className={`lv-ghost w-full !py-2.5 ${className}`} onClick={() => setAberto(true)}>
+          <ImagePlus className="w-4 h-4" /> Atualizar foto
+        </button>
+      ) : (
+        <button type="button" className={`lv-link ${compacto ? '!text-[12px]' : ''} ${className}`} onClick={() => setAberto(true)}>
+          <ImagePlus className={compacto ? 'w-3.5 h-3.5' : 'w-4 h-4'} /> Atualizar foto
+        </button>
+      )}
       {aberto && <AtualizarFoto show={show} memoria={memoria} fotoCatalogo={fotoCatalogo} fechar={() => setAberto(false)} />}
     </>
   );
 };
-
