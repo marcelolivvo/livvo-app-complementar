@@ -3,13 +3,14 @@ import { Check, type LucideIcon } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { Link } from './router';
 import { dataCartao, hash, iniciais, nota as fmtNota } from './format';
-import { useFoto } from './fotos';
+import { useFoto, useFotoAutomatica } from './fotos';
 
-/* Pôster Halftone gerado pelos dados do show -------------------------------------
- * Prioridade de imagem (plano de fusão): foto do usuário → foto licenciada do artista em
- * halftone → pôster gerado pelos dados. Nunca foto de banco nem capa igual para todos.
- * As fotos de artista do catálogo (Deezer) NÃO são usadas aqui: ainda não há licença para
- * usá-las em peças públicas. Quando houver, basta passar a foto licenciada em `fotoLicenciada`.
+/* Pôster do show ---------------------------------------------------------------------
+ * Imagem (decisões de 07/10/2026): foto da pessoa (memória) → foto definida pelo admin → foto
+ * automática do artista (Deezer/Wikimedia, só o artista certo) → pôster halftone gerado pelos dados.
+ * Toda foto aparece com o duotone suave da marca (filtro SVG `#lv-duotone` para a automática;
+ * as salvas já vêm tratadas, ver fotos.ts). Todo pôster leva o logo Livvo no canto superior
+ * esquerdo, como no Estúdio; o @ da pessoa entra só nas memórias e no que é compartilhado.
  */
 
 const PALETAS = [
@@ -20,7 +21,9 @@ const PALETAS = [
   { bg: '#4FDCDE', acc: '#100C1F', fg: '#100C1F' },
 ];
 
-const tamanhoNome = (nome: string): string => {
+export const paletaDoArtista = (artistaIdOuNome: string) => PALETAS[hash(artistaIdOuNome) % PALETAS.length]!;
+
+export const tamanhoNome = (nome: string): string => {
   const maior = Math.max(...nome.split(/\s+/).map((p) => p.length));
   const n = nome.length;
   if (n <= 6 && maior <= 6) return '18cqw';
@@ -30,26 +33,55 @@ const tamanhoNome = (nome: string): string => {
   return '8cqw';
 };
 
-export const Poster: React.FC<{
-  show: Pick<Show, 'id' | 'artista' | 'casa' | 'cidade' | 'uf' | 'ts' | 'artistaId'>;
-  fotoUsuario?: string;
-  fotoLicenciada?: string;
-  /** false: ignora as fotos salvas (usado na prévia do "Atualizar foto") */
-  fotosSalvas?: boolean;
-  className?: string;
-  children?: React.ReactNode;
-}> = ({ show, fotoUsuario, fotoLicenciada, fotosSalvas = true, className = '', children }) => {
-  const h = hash(show.artistaId || show.artista);
-  const p = PALETAS[h % PALETAS.length]!;
-  const [falhou, setFalhou] = useState(false);
-  useEffect(() => setFalhou(false), [show.id]);
-  // Prioridade (plano de fusão): foto da pessoa → foto do artista → pôster gerado pelos dados.
-  // As fotos salvas já vêm padronizadas (halftone 4:5, ver fotos.ts).
+/** Fica true quando o elemento chega perto da tela (para buscar a foto automática só do que aparece). */
+const useVisivel = (ref: React.RefObject<HTMLElement | null>) => {
+  const [visivel, setVisivel] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || visivel) return;
+    if (typeof IntersectionObserver === 'undefined') return setVisivel(true);
+    const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && setVisivel(true), { rootMargin: '300px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref, visivel]);
+  return visivel;
+};
+
+/** Imagem que o pôster vai usar (mesma regra da tela e das imagens de compartilhar). */
+export const useImagemDoPoster = (
+  show: Pick<Show, 'id' | 'artista' | 'artistaId'>,
+  opcoes: { fotosSalvas?: boolean; automatica?: boolean } = {},
+) => {
+  const { fotosSalvas = true, automatica = true } = opcoes;
   const daMemoria = useFoto(fotosSalvas ? `show:${show.id}` : undefined);
   const doArtista = useFoto(fotosSalvas && show.artistaId ? `artista:${show.artistaId}` : undefined);
-  const pronta = fotoUsuario || daMemoria?.url || doArtista?.url;
-  const foto = !falhou ? pronta || fotoLicenciada : undefined;
-  const tratada = Boolean(pronta && foto === pronta);
+  const auto = useFotoAutomatica(show.artista, automatica && !daMemoria && !doArtista);
+  if (daMemoria) return { url: daMemoria.url, tratada: true, origem: 'memoria' as const, fonte: daMemoria.fonte };
+  if (doArtista) return { url: doArtista.url, tratada: true, origem: 'admin' as const, fonte: doArtista.fonte };
+  if (automatica && auto?.url) return { url: auto.url, tratada: false, origem: 'automatica' as const, fonte: auto.fonte || undefined };
+  return null;
+};
+
+export const Poster: React.FC<{
+  show: Pick<Show, 'id' | 'artista' | 'casa' | 'cidade' | 'uf' | 'ts' | 'artistaId'>;
+  /** Foto já tratada que substitui todas as outras (prévia do "Atualizar foto"). */
+  fotoUsuario?: string;
+  /** false: ignora as fotos salvas (usado na prévia do "Atualizar foto") */
+  fotosSalvas?: boolean;
+  /** @ da pessoa sob o logo (só em memórias e no que é compartilhado). */
+  usuario?: string;
+  className?: string;
+  children?: React.ReactNode;
+}> = ({ show, fotoUsuario, fotosSalvas = true, usuario, className = '', children }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const visivel = useVisivel(ref);
+  const p = paletaDoArtista(show.artistaId || show.artista);
+  const h = hash(show.artistaId || show.artista);
+  const imagem = useImagemDoPoster(show, { fotosSalvas, automatica: visivel && !fotoUsuario });
+  const [falhou, setFalhou] = useState<string | null>(null);
+  const url = fotoUsuario || imagem?.url;
+  const foto = url && url !== falhou ? url : undefined;
+  const tratada = Boolean(fotoUsuario || imagem?.tratada);
   const d = dataCartao(show.ts);
   const style = {
     '--p-bg': foto ? '#100C1F' : p.bg,
@@ -60,10 +92,17 @@ export const Poster: React.FC<{
     '--p-name': tamanhoNome(show.artista),
   } as React.CSSProperties;
   return (
-    <div className={`lv-poster ${className}`} style={style} aria-hidden="true">
+    <div ref={ref} className={`lv-poster ${foto ? 'lv-poster--foto' : ''} ${className}`} style={style} aria-hidden="true">
       {foto ? (
         <>
-          <img className={`lv-poster-photo ${tratada ? 'lv-poster-photo--pronta' : ''}`} src={foto} alt="" loading="lazy" onError={() => setFalhou(true)} />
+          <img
+            className={`lv-poster-photo ${tratada ? 'lv-poster-photo--pronta' : 'lv-poster-photo--duo'}`}
+            src={foto}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setFalhou(foto)}
+          />
           <div className="lv-poster-shade" />
         </>
       ) : (
@@ -73,11 +112,15 @@ export const Poster: React.FC<{
         </>
       )}
       <div className="lv-poster-top">
-        <span>
+        <span className="lv-poster-marca">
+          <img src="/livvo/livvo-icon-128.png" alt="" width={64} height={64} />
+          {usuario && <span>@{usuario}</span>}
+        </span>
+        <span className="lv-poster-data">
           <span className="lv-poster-day">{d.dia}</span>
           {d.mes} {d.ano}
+          <span className="lv-poster-uf">{show.uf}</span>
         </span>
-        <span style={{ textAlign: 'right' }}>{show.uf}</span>
       </div>
       <div className="lv-poster-bottom">
         <div className="lv-poster-name">{show.artista}</div>
@@ -97,9 +140,9 @@ export const Poster: React.FC<{
 const TEAL = '#2FB8BA';
 const OFFWHITE = '#ECE5D1';
 const APAGADO = '#3A3159';
-const CONTORNO_INGRESSO =
+export const CONTORNO_INGRESSO =
   'M4,1 H16 A3,3 0 0 1 19,4 V13 A2,2 0 0 0 19,17 V26 A3,3 0 0 1 16,29 H4 A3,3 0 0 1 1,26 V17 A2,2 0 0 0 1,13 V4 A3,3 0 0 1 4,1 Z';
-const BARRAS: Array<[number, number]> = [
+export const BARRAS: Array<[number, number]> = [
   [4.4, 1.1],
   [6.2, 1.6],
   [8.5, 0.7],
@@ -108,7 +151,7 @@ const BARRAS: Array<[number, number]> = [
   [13.6, 0.7],
   [15, 0.7],
 ];
-const PALHETA = 'M10,26.4 C7.7,24.5 5.7,21.9 6,19.9 C6.2,18.6 7.9,18.1 10,18.1 C12.1,18.1 13.8,18.6 14,19.9 C14.3,21.9 12.3,24.5 10,26.4 Z';
+export const PALHETA = 'M10,26.4 C7.7,24.5 5.7,21.9 6,19.9 C6.2,18.6 7.9,18.1 10,18.1 C12.1,18.1 13.8,18.6 14,19.9 C14.3,21.9 12.3,24.5 10,26.4 Z';
 
 const Disco: React.FC<{ fill: 0 | 0.5 | 1; id: string; interativo?: boolean }> = ({ fill, id, interativo }) => {
   const traco = fill ? TEAL : interativo ? 'rgba(47,184,186,0.55)' : APAGADO;

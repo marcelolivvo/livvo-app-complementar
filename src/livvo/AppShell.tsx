@@ -25,6 +25,7 @@ import { adminCatalog } from '../services/adminCatalogService';
 import { LoginModal } from '../components/LoginModal';
 import { AdminFotos } from './AtualizarFoto';
 import { useCatalogo } from './data/catalog';
+import { tabelaDuotone } from './fotos';
 
 /** Modo admin da prévia: ?admin=1 liga, ?admin=0 desliga (igual ao Estúdio). No site final, vem do login. */
 export const useAdmin = (): boolean => {
@@ -242,6 +243,17 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         ))}
       </nav>
 
+      {/* Duotone suave da marca para fotos automáticas (mesmo mapa de cores de fotos.ts) */}
+      <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true" focusable="false">
+        <filter id="lv-duotone" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0" />
+          <feComponentTransfer>
+            <feFuncR type="table" tableValues={tabelaDuotone(0)} />
+            <feFuncG type="table" tableValues={tabelaDuotone(1)} />
+            <feFuncB type="table" tableValues={tabelaDuotone(2)} />
+          </feComponentTransfer>
+        </filter>
+      </svg>
       <Avisos />
       <LoginModal />
       {admin && fotosAdmin && <AdminFotos catalogo={catalogo} fechar={() => setFotosAdmin(false)} />}

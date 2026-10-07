@@ -48,7 +48,7 @@ const escolherMomento = (lv: Livvo, cat: Catalogo, pass: Passaporte): Momento | 
   return null;
 };
 
-const CartaoMomento: React.FC<{ m: Momento }> = ({ m }) => {
+const CartaoMomento: React.FC<{ m: Momento; usuario: string }> = ({ m, usuario }) => {
   const { show } = m;
   const titulo =
     m.tipo === 'amanha'
@@ -69,7 +69,7 @@ const CartaoMomento: React.FC<{ m: Momento }> = ({ m }) => {
       rotulo="Momento"
       canhoto={
         <Link to={`/show/${show.id}`} aria-label={`Abrir ${show.artista}`}>
-          <Poster show={show} />
+          <Poster show={show} usuario={m.tipo === 'completar' || m.tipo === 'neste_dia' ? usuario : undefined} />
         </Link>
       }
     >
@@ -350,7 +350,7 @@ export const Inicio: React.FC = () => {
           {!catalogo ? (
             <div className="lv-skel" style={{ height: 168 }} aria-busy="true" />
           ) : momento ? (
-            <CartaoMomento key={`${momento.tipo}-${momento.show.id}`} m={momento} />
+            <CartaoMomento key={`${momento.tipo}-${momento.show.id}`} m={momento} usuario={lv.perfil.usuario} />
           ) : pass.shows === 0 ? (
             <Bilhete esquerda={<>Livvo · <b>Comece por aqui</b></>}>
               <div className="lv-stage p-6 sm:p-8">

@@ -102,13 +102,8 @@ app.get('/api/catalog/search', (req, res) => {
   });
 
   // API Route: Search Artist Photos & Posters via Deezer, iTunes, Wikimedia Commons & Wikipedia (Free & Open APIs)
-  app.get('/api/artist-search', async (req, res) => {
-    const query = String(req.query.q || '').trim();
-    if (!query) {
-      return res.status(400).json({ error: 'Query param "q" is required' });
-    }
-
-    try {
+  // Busca de fotos do artista (Deezer, iTunes, Wikipédia/Wikimedia), usada pelo Estúdio e pelo Livvo final
+  const pesquisarArtista = async (query: string) => {
       const fetchHeaders = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) LivvoApp/1.0 (https://livvo.app)',
         'Accept': 'application/json, text/plain, */*',
@@ -304,16 +299,50 @@ app.get('/api/catalog/search', (req, res) => {
       const bestPhoto = exactArtist ? exactArtist.photoUrl : (artists[0]?.isExactMatch ? artists[0].photoUrl : null);
       const bestPoster = posters[0]?.posterUrl || null;
 
-      return res.json({
+      return {
         query,
         bestPhotoUrl: bestPhoto,
         bestPosterUrl: bestPoster,
         artists,
         posters,
-      });
+      };
+  };
+
+  app.get('/api/artist-search', async (req, res) => {
+    const query = String(req.query.q || '').trim();
+    if (!query) {
+      return res.status(400).json({ error: 'Query param "q" is required' });
+    }
+    try {
+      return res.json(await pesquisarArtista(query));
     } catch (err: any) {
       console.error('Erro na rota /api/artist-search:', err);
       return res.status(500).json({ error: 'Falha ao buscar mídias do artista' });
+    }
+  });
+
+  // Livvo final: foto automática de cada artista para pôsteres, cards e ingressos (só o artista certo).
+  // Resposta curta e com cache na CDN, porque a grade do Explorar pede uma por artista.
+  const fotoArtistaCache = new Map<string, { em: number; dados: { url: string | null; fonte: string | null } }>();
+  app.get('/api/foto-artista', async (req, res) => {
+    const nome = String(req.query.nome || '').trim().slice(0, 120);
+    if (!nome) return res.status(400).json({ error: 'Informe o nome do artista' });
+    const chave = nome.toLowerCase();
+    const guardado = fotoArtistaCache.get(chave);
+    if (guardado && Date.now() - guardado.em < 6 * 3600 * 1000) {
+      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
+      return res.json(guardado.dados);
+    }
+    try {
+      const r: any = await pesquisarArtista(nome);
+      const melhor = (r.artists || []).find((a: any) => a.isExactMatch && a.photoUrl === r.bestPhotoUrl);
+      const dados = { url: r.bestPhotoUrl || null, fonte: melhor ? (melhor.source === 'deezer' ? 'Deezer' : 'Wikimedia') : null };
+      fotoArtistaCache.set(chave, { em: Date.now(), dados });
+      res.setHeader('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
+      return res.json(dados);
+    } catch (err) {
+      console.error('Erro na rota /api/foto-artista:', err);
+      return res.status(502).json({ error: 'Falha ao buscar a foto' });
     }
   });
 

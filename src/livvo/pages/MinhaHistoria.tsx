@@ -5,7 +5,9 @@ import { dataCartao, nota } from '../format';
 import { Link } from '../router';
 import { calcularPassaporte } from '../stats';
 import { livvo, useLivvo } from '../store';
-import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagProxima, avisar } from '../ui';
+import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagExemplo, TagProxima, avisar } from '../ui';
+import { concertBuddies } from '../data/social';
+import { ListaBuddies } from '../ConcertBuddies';
 import { CamposPassaporte, ProgressoFaixa } from './Inicio';
 import { LivvoCredencialCard, exportarCredencialPNG } from '../../components/LivvoCredencialCard';
 import { PassportIcon } from '../../components/PassportIcon';
@@ -97,6 +99,7 @@ export const MinhaHistoria: React.FC = () => {
   const { catalogo } = useCatalogo();
   const lv = useLivvo();
   const pass = useMemo(() => calcularPassaporte(lv.memorias, catalogo), [lv.memorias, catalogo]);
+  const buddies = useMemo(() => concertBuddies(pass.memoriasComShow, lv.exemplos), [pass, lv.exemplos]);
   const [foto, setFoto] = useState<string | null>(lerFoto);
   const [gerando, setGerando] = useState(false);
   const inputFoto = useRef<HTMLInputElement>(null);
@@ -252,6 +255,13 @@ export const MinhaHistoria: React.FC = () => {
         </div>
       </Bilhete>
 
+      {buddies.length > 0 && (
+        <section aria-label="Concert Buddies" className="max-w-[880px]">
+          <Grupo titulo="Concert Buddies · mais shows juntos" extra={buddies.some((b) => b.exemplo) ? <TagExemplo /> : undefined} />
+          <ListaBuddies buddies={buddies} limite={4} />
+        </section>
+      )}
+
       <div className="mt-8 flex flex-wrap items-baseline justify-between gap-3">
         <h2 className="lv-display text-[24px] sm:text-[28px]">
           Carteira de ingressos <span className="lv-num text-[#4FDCDE] ml-1">{pass.shows}</span>
@@ -285,7 +295,7 @@ export const MinhaHistoria: React.FC = () => {
                     rotulo={`${show.artista}, ${show.casa}`}
                     canhoto={
                       <Link to={`/show/${show.id}`} tabIndex={-1} aria-hidden="true">
-                        <Poster show={show} />
+                        <Poster show={show} usuario={lv.perfil.usuario} />
                       </Link>
                     }
                   >

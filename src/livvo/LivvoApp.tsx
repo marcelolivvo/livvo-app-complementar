@@ -9,6 +9,7 @@ import { ShowDetalhe } from './pages/ShowDetalhe';
 import { Registrar } from './pages/Registrar';
 import { MinhaHistoria } from './pages/MinhaHistoria';
 import { EmBreve } from './pages/EmBreve';
+import { Comunidade } from './pages/Comunidade';
 import './livvo.css';
 
 // O laboratório (Estúdio, Wallet, área interna) só carrega quando alguém abre /estudio
@@ -76,22 +77,7 @@ export const LivvoApp: React.FC = () => {
       pagina = <MinhaHistoria />;
       break;
     case 'comunidade':
-      pagina = (
-        <EmBreve
-          kicker="Comunidade"
-          titulo="Quem viveu os mesmos shows que você"
-          texto="A comunidade do Livvo nasce do show: quem estava lá, quem foi com você e o que as pessoas que você segue estão vivendo."
-          itens={[
-            'Seguindo: o que amigos registraram e avaliaram, com o ingresso em miniatura.',
-            'Shows em comum: pessoas que foram aos mesmos shows que você.',
-            'Fomos juntos: convites de quem marcou você numa memória.',
-            'Convidar amigos pelo WhatsApp.',
-            'Contadores só a partir de 1 e nenhum ranking global por padrão.',
-          ]}
-          parte={4}
-          acao={{ to: '/explorar', rotulo: 'Enquanto isso, veja quem foi aos seus shows' }}
-        />
-      );
+      pagina = <Comunidade />;
       break;
     case 'alertas':
       pagina = (

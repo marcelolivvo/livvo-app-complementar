@@ -1,12 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, Check, ExternalLink, MessageCircle, Share2, Ticket, UserCheck, UserPlus } from 'lucide-react';
 import { ehFuturo, useCatalogo, type Show } from '../data/catalog';
-import { MIN_AMOSTRA_NOTAS, socialDoShow, type ResenhaExemplo } from '../data/social';
+import { MIN_AMOSTRA_NOTAS, concertBuddies, socialDoShow, type ResenhaExemplo } from '../data/social';
 import { dataCartao, dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
 import { Link, navigate, useRoute } from '../router';
 import { livvo, nivelVerificacao, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
 import { BotaoAtualizarFoto } from '../AtualizarFoto';
-import { useFoto } from '../fotos';
+import { BotaoCompartilhar } from '../Compartilhar';
+import { MarcarBuddies } from '../ConcertBuddies';
+import { calcularPassaporte } from '../stats';
+import { useImagemDoPoster } from '../ui';
 import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
 
 const ROTULO_VISIBILIDADE = { privado: 'Só você vê', seguidores: 'Visível para quem te segue', publico: 'Visível para todos' };
@@ -19,7 +22,7 @@ const Bloco: React.FC<{ titulo: string; extra?: React.ReactNode; children: React
 );
 
 /** A memória do usuário, como canhoto de ingresso: notas em 1 toque e escada de verificação. */
-const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focarOrg: boolean }> = ({ memoria, show, recem, focarOrg }) => {
+const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focarOrg: boolean; usuario: string }> = ({ memoria, show, recem, focarOrg, usuario }) => {
   const orgRef = useRef<HTMLDivElement>(null);
   const nivel = nivelVerificacao(memoria);
   const [confirmar, setConfirmar] = useState(false);
@@ -92,21 +95,25 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
             {confirmar ? 'Toque de novo para tirar da sua história' : 'Desfazer registro'}
           </button>
         </div>
+        <div className="mt-4 flex justify-end">
+          <BotaoCompartilhar show={show} memoria={memoria} usuario={usuario} />
+        </div>
       </div>
     </div>
   );
 };
 
 /** Legenda do pôster: de onde vem a imagem. */
-const LegendaPoster: React.FC<{ showId: string; artistaId?: string }> = ({ showId, artistaId }) => {
-  const daMemoria = useFoto(`show:${showId}`);
-  const doArtista = useFoto(artistaId ? `artista:${artistaId}` : undefined);
-  const foto = daMemoria || doArtista;
-  return (
-    <p className="lv-eyebrow mt-3 text-center hidden lg:block">
-      {foto ? `Foto no padrão Livvo · ${foto.origem === 'upload' ? 'sua foto' : foto.fonte || 'fonte do artista'}` : 'Pôster gerado pelos dados do show'}
-    </p>
-  );
+const LegendaPoster: React.FC<{ show: Show }> = ({ show }) => {
+  const img = useImagemDoPoster(show);
+  const texto = !img
+    ? 'Pôster gerado pelos dados do show'
+    : img.origem === 'memoria'
+      ? `Sua foto no padrão Livvo${img.fonte && img.fonte !== 'Sua foto' ? ` · ${img.fonte.replace(/ \(.*\)$/, '')}` : ''}`
+      : img.origem === 'admin'
+        ? `Foto do artista · ${img.fonte || 'Livvo'}`
+        : `Foto automática do artista · ${img.fonte || 'Deezer'}`;
+  return <p className="lv-eyebrow mt-3 text-center hidden lg:block">{texto}</p>;
 };
 
 const CardResenha: React.FC<{ r: ResenhaExemplo; exemplo: boolean }> = ({ r, exemplo }) => (
@@ -183,6 +190,11 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
     if (!show || !catalogo) return [];
     return (catalogo.artistas.get(show.artistaId)?.shows || []).filter((s) => s.id !== show.id).slice(0, 10);
   }, [show, catalogo]);
+  const juntos = useMemo(() => {
+    const m = new Map<string, number>();
+    concertBuddies(calcularPassaporte(lv.memorias, catalogo).memoriasComShow, lv.exemplos).forEach((b) => m.set(b.pessoa.usuario, b.shows.length));
+    return m;
+  }, [lv.memorias, catalogo, lv.exemplos]);
   const outrosNaCasa = useMemo(() => {
     if (!show || !catalogo) return [];
     return catalogo.shows.filter((s) => s.casa === show.casa && s.cidade === show.cidade && s.id !== show.id).slice(0, 10);
@@ -294,13 +306,16 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
         >
           <ArrowLeft className="w-4 h-4" /> Voltar
         </button>
-        <button
-          type="button"
-          className="lv-ghost"
-          onClick={() => compartilharLink(url, `${show.artista} · ${show.casa}`, `${show.artista} · ${show.casa} · ${dataCurta(show.ts)}`)}
-        >
-          <Share2 className="w-4 h-4" /> Compartilhar
-        </button>
+        {/* Com memória, o Compartilhar fica dentro do box "Sua memória" (canto inferior direito) */}
+        {!minha && (
+          <button
+            type="button"
+            className="lv-ghost"
+            onClick={() => compartilharLink(url, `${show.artista} · ${show.casa}`, `${show.artista} · ${show.casa} · ${dataCurta(show.ts)}`)}
+          >
+            <Share2 className="w-4 h-4" /> Compartilhar
+          </button>
+        )}
       </div>
 
       <Bilhete
@@ -316,9 +331,9 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
           <div className="lv-stage p-4 sm:p-6 lg:p-8">
             <div className="grid grid-cols-[minmax(0,38%)_minmax(0,1fr)] gap-4 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)] sm:gap-6 lg:block">
               <div>
-                <Poster show={show} />
+                <Poster show={show} usuario={minha ? lv.perfil.usuario : undefined} />
                 {minha && <BotaoAtualizarFoto show={show} memoria={minha} fotoCatalogo={show.foto} botao className="mt-3" />}
-                <LegendaPoster showId={show.id} artistaId={show.artistaId} />
+                <LegendaPoster show={show} />
               </div>
               <div className="min-w-0 lg:hidden">{cabecalho}</div>
             </div>
@@ -367,7 +382,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
               </div>
             ) : minha ? (
               <div className="lg:mt-7">
-                <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} />
+                <MinhaMemoria memoria={minha} show={show} recem={recem} focarOrg={query.get('avaliar') === 'org'} usuario={lv.perfil.usuario} />
               </div>
             ) : (
               <div className="lg:mt-7">
@@ -478,18 +493,22 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
             </Bloco>
           )}
 
-          {/* Com quem ------------------------------------------------------------- */}
-          <Bloco titulo={futuro ? 'Vai com alguém?' : 'Foi com alguém?'}>
-            <div className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
-              <p className="lv-sub flex-1 min-w-[200px]">
-                {futuro
-                  ? 'Chame quem vai com você. Depois do show, vocês guardam a mesma memória.'
-                  : 'Mande para quem estava com você: cada um guarda o show na própria história.'}
-              </p>
-              <a className="lv-ghost shrink-0" href={`https://wa.me/?text=${encodeURIComponent(textoWhats)}`} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
-              </a>
-            </div>
+          {/* Com quem / Concert Buddies -------------------------------------------- */}
+          <Bloco titulo={futuro ? 'Vai com alguém?' : 'Foi com alguém? · Concert Buddies'}>
+            {!futuro && minha ? (
+              <MarcarBuddies show={show} memoria={minha} pessoasDoShow={soc.pessoas} juntos={juntos} textoWhats={textoWhats} />
+            ) : (
+              <div className="py-4 border-b border-dashed border-[#282141] flex flex-wrap items-center gap-3">
+                <p className="lv-sub flex-1 min-w-[200px]">
+                  {futuro
+                    ? 'Chame quem vai com você. Depois do show, vocês marcam um ao outro e guardam a mesma memória.'
+                    : 'Registre que você foi para marcar o @ de quem estava com você (Concert Buddies).'}
+                </p>
+                <a className="lv-ghost shrink-0" href={`https://wa.me/?text=${encodeURIComponent(textoWhats)}`} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
+                </a>
+              </div>
+            )}
           </Bloco>
 
           {/* Mais shows ------------------------------------------------------------ */}

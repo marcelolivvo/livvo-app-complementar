@@ -16,6 +16,27 @@ export type Interesse = 'quero_ir' | 'tenho_ingresso';
 /** Escada de verificação (substitui o selo "ingresso verificado"). */
 export type Verificacao = 'registrado' | 'com_foto' | 'com_ingresso' | 'presenca_confirmada';
 
+/** Concert Buddy marcado numa memória: vira convite; o show só entra na história da pessoa se ela aceitar. */
+export type StatusMarcacao = 'pendente' | 'aceita' | 'recusada';
+export interface Marcacao {
+  usuario: string;
+  status: StatusMarcacao;
+  em: number;
+}
+
+/** Convite recebido ("Fomos juntos"): alguém marcou você num show. */
+export interface Convite {
+  id: string;
+  de: string; // @ de quem marcou
+  showId: string;
+  em: number;
+  status: 'pendente' | 'aceito' | 'recusado';
+  exemplo?: boolean;
+}
+
+/** Quem pode marcar você como Concert Buddy. */
+export type QuemPodeMarcar = 'todos' | 'seguindo' | 'ninguem';
+
 export interface Memoria {
   id: string;
   showId: string;
@@ -26,6 +47,8 @@ export interface Memoria {
   dimensoes?: Partial<Record<DimensaoId, number>>;
   setor?: string;
   comQuem?: string[];
+  /** Concert Buddies marcados nesta memória. */
+  buddies?: Marcacao[];
   fotoUrl?: string;
   ingressoAnexado?: boolean;
   presencaConfirmadaPor?: string;
@@ -44,6 +67,11 @@ interface Estado {
   notasOrgNoMes: { mes: string; ids: string[] };
   /** Pessoas seguidas (@usuario). */
   seguindo?: string[];
+  /** Convites "Fomos juntos" recebidos. */
+  convites?: Convite[];
+  quemPodeMarcar?: QuemPodeMarcar;
+  /** Marca que a comunidade de exemplo (seguindo e convites) já foi semeada nesta conta. */
+  comunidadeV1?: boolean;
 }
 
 const CHAVE = 'livvo_final_v1';
@@ -54,6 +82,17 @@ const mesAtual = () => {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}`;
 };
+
+/** Convites de exemplo para a conta de demonstração ver o outro lado do Concert Buddy. */
+const convitesDemo = (): Convite[] => {
+  const agora = Date.now();
+  return [
+    { id: 'cv-1', de: 'jufreitas', showId: '5376db79', em: agora - 3 * 3600e3, status: 'pendente', exemplo: true },
+    { id: 'cv-2', de: 'rafamoraes', showId: '35899db', em: agora - 26 * 3600e3, status: 'pendente', exemplo: true },
+    { id: 'cv-3', de: 'helenacosta', showId: '6343aa8f', em: agora - 4 * 86400e3, status: 'pendente', exemplo: true },
+  ];
+};
+const SEGUINDO_DEMO = ['helenacosta', 'rafamoraes', 'jufreitas', 'lucasamaral'];
 
 const estadoDemo = (): Estado => {
   const agora = Date.now();
@@ -71,7 +110,10 @@ const estadoDemo = (): Estado => {
     interesses: { ...INTERESSES_DEMO },
     exemplos: true,
     notasOrgNoMes: { mes: mesAtual(), ids: [] },
-    seguindo: [],
+    seguindo: [...SEGUINDO_DEMO],
+    convites: convitesDemo(),
+    quemPodeMarcar: 'seguindo',
+    comunidadeV1: true,
   };
 };
 
@@ -80,7 +122,15 @@ const ler = (): Estado | null => {
     const bruto = localStorage.getItem(CHAVE);
     if (!bruto) return null;
     const e = JSON.parse(bruto) as Estado;
-    return e?.versao === 1 ? e : null;
+    if (e?.versao !== 1) return null;
+    // Contas criadas antes da Comunidade: semeia quem a demonstração segue e os convites de exemplo
+    if (!e.comunidadeV1) {
+      e.seguindo = Array.from(new Set([...(e.seguindo || []), ...SEGUINDO_DEMO]));
+      e.convites = convitesDemo();
+      e.quemPodeMarcar = e.quemPodeMarcar || 'seguindo';
+      e.comunidadeV1 = true;
+    }
+    return e;
   } catch {
     return null;
   }
@@ -133,6 +183,8 @@ export interface Livvo {
   exemplos: boolean;
   notasOrgNoMes: string[];
   seguindo: string[];
+  convites: Convite[];
+  quemPodeMarcar: QuemPodeMarcar;
   memoriaDoShow: (showId: string) => Memoria | undefined;
 }
 
@@ -146,6 +198,9 @@ export const useLivvo = (): Livvo => {
     exemplos: e.exemplos,
     notasOrgNoMes: e.notasOrgNoMes.mes === mesAtual() ? e.notasOrgNoMes.ids : [],
     seguindo: logado ? e.seguindo || [] : [],
+    // convites de exemplo só aparecem com a comunidade de exemplo ligada
+    convites: logado ? (e.convites || []).filter((c) => e.exemplos || !c.exemplo) : [],
+    quemPodeMarcar: e.quemPodeMarcar || 'seguindo',
     memoriaDoShow: (showId) => (logado ? e.memorias.find((m) => m.showId === showId) : undefined),
   };
 };
@@ -224,6 +279,74 @@ export const livvo = {
     const atual = estado.seguindo || [];
     const seguindo = atual.includes(usuario) ? atual.filter((u) => u !== usuario) : [...atual, usuario];
     salvar({ ...estado, seguindo });
+  },
+
+  /** Marca um Concert Buddy na memória (convite pendente até a pessoa aceitar). */
+  marcarBuddy(memoriaId: string, usuario: string, aoAceitar?: () => void) {
+    if (!this.exigirLogin()) return;
+    const memorias = estado.memorias.map((m) => {
+      if (m.id !== memoriaId || (m.buddies || []).some((b) => b.usuario === usuario)) return m;
+      return { ...m, buddies: [...(m.buddies || []), { usuario, status: 'pendente' as const, em: Date.now() }], atualizadaEm: Date.now() };
+    });
+    salvar({ ...estado, memorias });
+    // Prévia: as pessoas de exemplo aceitam sozinhas depois de alguns segundos (no site final, a pessoa decide)
+    if (estado.exemplos && aoAceitar) {
+      window.setTimeout(() => {
+        const m = estado.memorias.find((x) => x.id === memoriaId);
+        if (!m || !(m.buddies || []).some((b) => b.usuario === usuario && b.status === 'pendente')) return;
+        salvar({
+          ...estado,
+          memorias: estado.memorias.map((x) =>
+            x.id !== memoriaId ? x : { ...x, buddies: (x.buddies || []).map((b) => (b.usuario === usuario ? { ...b, status: 'aceita' as const } : b)) },
+          ),
+        });
+        aoAceitar();
+      }, 3500);
+    }
+  },
+
+  desmarcarBuddy(memoriaId: string, usuario: string) {
+    if (!this.exigirLogin()) return;
+    salvar({
+      ...estado,
+      memorias: estado.memorias.map((m) => (m.id !== memoriaId ? m : { ...m, buddies: (m.buddies || []).filter((b) => b.usuario !== usuario) })),
+    });
+  },
+
+  /** Aceitar ou recusar um convite "Fomos juntos". Aceitar cria a memória (ou liga a pessoa à que já existe). */
+  responderConvite(id: string, aceitar: boolean) {
+    if (!this.exigirLogin()) return;
+    const convite = (estado.convites || []).find((c) => c.id === id);
+    if (!convite) return;
+    const convites = (estado.convites || []).map((c) => (c.id === id ? { ...c, status: aceitar ? ('aceito' as const) : ('recusado' as const) } : c));
+    if (!aceitar) return salvar({ ...estado, convites });
+    const agora = Date.now();
+    const buddy: Marcacao = { usuario: convite.de, status: 'aceita', em: agora };
+    const existente = estado.memorias.find((m) => m.showId === convite.showId);
+    const memorias = existente
+      ? estado.memorias.map((m) =>
+          m.id !== existente.id || (m.buddies || []).some((b) => b.usuario === convite.de) ? m : { ...m, buddies: [...(m.buddies || []), buddy] },
+        )
+      : [
+          {
+            id: `m-${convite.showId}-${agora.toString(36)}`,
+            showId: convite.showId,
+            criadaEm: agora,
+            atualizadaEm: agora,
+            visibilidade: VISIBILIDADE_PADRAO,
+            origem: 'usuario' as const,
+            buddies: [buddy],
+          },
+          ...estado.memorias,
+        ];
+    const interesses = { ...estado.interesses };
+    delete interesses[convite.showId];
+    salvar({ ...estado, convites, memorias, interesses });
+  },
+
+  definirQuemPodeMarcar(valor: QuemPodeMarcar) {
+    if (!this.exigirLogin()) return;
+    salvar({ ...estado, quemPodeMarcar: valor });
   },
 
   alternarExemplos() {

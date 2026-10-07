@@ -121,3 +121,82 @@ export const atividadeExemplo = (shows: Show[], quantidade = 3) => {
     return { pessoa, show, notaShow: meia(3.5 + ((r >>> 6) % 4) * 0.5), horas: 1 + ((r >>> 9) % 20) };
   });
 };
+
+/* Concert Buddies e Comunidade (exemplo) -------------------------------------------------- */
+
+const POR_USUARIO = new Map(PESSOAS_EXEMPLO.map((p) => [p.usuario, p]));
+
+/** Pessoa pelo @ (pessoas de exemplo); @ desconhecido vira um perfil só com o @. */
+export const pessoaPorUsuario = (usuario: string): PessoaExemplo =>
+  POR_USUARIO.get(usuario) || { nome: `@${usuario}`, usuario, cidade: '' };
+
+/** Preferência de marcação de cada pessoa de exemplo (uma delas não aceita, para mostrar a regra). */
+export const pessoaAceitaMarcacao = (usuario: string): boolean => usuario !== 'igornunes';
+
+/** Concert Buddies de exemplo nas memórias da demonstração (só com a comunidade de exemplo ligada). */
+export const buddiesExemplo = (show: Show): string[] => {
+  const h = rnd(show.id, 77);
+  if (/dave matthews/i.test(show.artista)) return h % 3 === 0 ? ['helenacosta', 'lucasamaral'] : ['helenacosta'];
+  if (/biquini|nenhum de n|vanguart|racionais/i.test(show.artista)) return ['rafamoraes'];
+  return h % 4 === 0 ? ['jufreitas'] : [];
+};
+
+export interface Buddy {
+  pessoa: PessoaExemplo;
+  shows: Show[];
+  exemplo: boolean;
+}
+
+/** "Mais shows juntos": marcações aceitas + buddies de exemplo, por pessoa. */
+export const concertBuddies = (itens: Array<{ memoria: Memoria; show: Show }>, exemplos: boolean): Buddy[] => {
+  const mapa = new Map<string, Buddy>();
+  itens.forEach(({ memoria, show }) => {
+    const usuarios = new Map<string, boolean>();
+    (memoria.buddies || []).filter((b) => b.status === 'aceita').forEach((b) => usuarios.set(b.usuario, POR_USUARIO.has(b.usuario)));
+    if (exemplos) buddiesExemplo(show).forEach((u) => usuarios.set(u, true));
+    usuarios.forEach((ehExemplo, u) => {
+      if (!exemplos && ehExemplo) return;
+      const b = mapa.get(u) || { pessoa: pessoaPorUsuario(u), shows: [], exemplo: ehExemplo };
+      if (!b.shows.some((s) => s.id === show.id)) b.shows.push(show);
+      mapa.set(u, b);
+    });
+  });
+  return Array.from(mapa.values()).sort((a, b) => b.shows.length - a.shows.length || a.pessoa.nome.localeCompare(b.pessoa.nome, 'pt-BR'));
+};
+
+/** Pessoas (de exemplo) que foram aos mesmos shows que você. */
+export const showsEmComum = (itens: Array<{ memoria?: Memoria; show: Show }>, exemplos: boolean) => {
+  if (!exemplos) return [];
+  const mapa = new Map<string, { pessoa: PessoaExemplo; shows: Show[] }>();
+  itens.forEach(({ show, memoria }) => {
+    socialDoShow(show, true, memoria).pessoas.forEach((p) => {
+      const x = mapa.get(p.usuario) || { pessoa: p, shows: [] };
+      x.shows.push(show);
+      mapa.set(p.usuario, x);
+    });
+  });
+  return Array.from(mapa.values()).sort((a, b) => b.shows.length - a.shows.length);
+};
+
+/** Atividade de exemplo de quem você segue (registros recentes do catálogo). */
+export const atividadeDeQuemSegue = (shows: Show[], seguindo: string[], quantidade = 8) => {
+  const conhecidos = seguindo.filter((u) => POR_USUARIO.has(u));
+  const passados = shows.filter((s) => !s.exemplo).slice(0, 120);
+  if (!conhecidos.length || !passados.length) return [];
+  const dia = new Date().toDateString();
+  const usados = new Set<string>();
+  return Array.from({ length: Math.min(quantidade, conhecidos.length * 3) }, (_, i) => {
+    const r = rnd(`${dia}:seg`, i);
+    const usuario = conhecidos[i % conhecidos.length]!;
+    let k = (r % passados.length + i * 13) % passados.length;
+    while (usados.has(passados[k]!.id) && usados.size < passados.length) k = (k + 1) % passados.length;
+    const show = passados[k]!;
+    usados.add(show.id);
+    return {
+      pessoa: POR_USUARIO.get(usuario)!,
+      show,
+      notaShow: meia(3.5 + ((r >>> 6) % 4) * 0.5),
+      horas: 1 + i * 3 + ((r >>> 9) % 3),
+    };
+  });
+};

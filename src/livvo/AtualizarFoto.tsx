@@ -45,6 +45,7 @@ export const AtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalog
   fotoCatalogo,
   fechar,
 }) => {
+  const lv = useLivvo();
   const atual = useFoto(`show:${show.id}`);
   const doArtista = useFoto(show.artistaId ? `artista:${show.artistaId}` : undefined);
   const [opcoes, setOpcoes] = useState<OpcaoFoto[] | null>(null);
@@ -91,7 +92,7 @@ export const AtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalog
   const voltarAoGerado = async () => {
     await removerFoto(`show:${show.id}`);
     livvo.atualizar(memoria.id, { fotoUrl: undefined });
-    avisar(doArtista ? 'Voltou para a foto do artista' : 'Voltou para o pôster gerado');
+    avisar(doArtista ? 'Voltou para a foto do artista' : 'Voltou para a foto automática do artista');
     fechar();
   };
 
@@ -114,10 +115,10 @@ export const AtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalog
         <div className="grid md:grid-cols-[260px_28px_minmax(0,1fr)]">
           <div className="lv-stage p-5 sm:p-6">
             <div className="max-w-[220px] mx-auto md:max-w-none">
-              <Poster show={show} fotosSalvas={false} fotoUsuario={mostrada || doArtista?.url} />
+              <Poster show={show} fotosSalvas={false} fotoUsuario={mostrada || doArtista?.url} usuario={lv.perfil.usuario} />
             </div>
             <p className="lv-eyebrow mt-3 text-center">
-              {previa ? 'Prévia · ainda não salva' : atual ? `Atual · ${atual.fonte || 'sua foto'}` : doArtista ? 'Atual · foto do artista' : 'Atual · pôster gerado'}
+              {previa ? 'Prévia · ainda não salva' : atual ? `Atual · ${atual.fonte || 'sua foto'}` : doArtista ? 'Atual · foto do artista' : 'Atual · foto automática do artista'}
             </p>
           </div>
           <div className="lv-perf hidden md:block" aria-hidden="true" />
@@ -126,7 +127,7 @@ export const AtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalog
             <p className="lv-meta mt-1">
               {show.casa} · {show.cidade}
             </p>
-            <p className="lv-sub mt-3">Toda foto entra no padrão Livvo: corte no formato do pôster e retícula halftone nas cores da marca. Vale para o pôster e para o ingresso.</p>
+            <p className="lv-sub mt-3">Toda foto entra no padrão Livvo: corte no formato do pôster e duotone suave nas cores da marca. Vale para o pôster e para o ingresso.</p>
 
             <div className="mt-5">
               <input
@@ -188,7 +189,7 @@ export const AtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalog
               </button>
               {atual && !previa && (
                 <button type="button" className="lv-link" onClick={voltarAoGerado}>
-                  {doArtista ? 'Voltar à foto do artista' : 'Voltar ao pôster gerado'}
+                  {doArtista ? 'Voltar à foto do artista' : 'Voltar à foto automática'}
                 </button>
               )}
             </div>
@@ -296,7 +297,7 @@ export const AdminFotos: React.FC<{ catalogo: Catalogo | null; fechar: () => voi
           <h2 className="lv-display text-[26px] sm:text-[30px]">Atualizar todas as fotos</h2>
           <p className="lv-sub mt-2 max-w-2xl">
             Busca a foto de cada artista nas mesmas fontes do Estúdio (Deezer, Wikimedia Commons e Wikipédia, só com nome exato), aplica o padrão Livvo (corte 4:5 e
-            halftone) e coloca nos pôsteres e ingressos de todos os shows do artista. Foto enviada por uma pessoa na própria memória continua valendo para ela.
+            duotone suave) e coloca nos pôsteres e ingressos de todos os shows do artista. Foto enviada por uma pessoa na própria memória continua valendo para ela.
           </p>
           <p className="lv-meta mt-2">{comFoto === null ? ' ' : `${comFoto} ${comFoto === 1 ? 'artista com foto' : 'artistas com foto'} agora.`}</p>
 
