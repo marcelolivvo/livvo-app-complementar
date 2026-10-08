@@ -1420,6 +1420,27 @@
 /* Gráfico de destino no Meu histórico */
 .lv-app .lv-hist-block.lv-hist-alvo { outline: 2px solid var(--lv-cyan); outline-offset: 8px; border-radius: 4px; transition: outline-color 1.2s ease; }
 
+/* Stickers do Passaporte: imagens oficiais com alfa, sem cards ou fundos nas peças. */
+.lv-conquistas-filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+.lv-conquistas-filtros button {
+  border: 1px solid var(--lv-line-2);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--lv-muted);
+  padding: 7px 11px;
+  font: 600 12px 'Barlow', sans-serif;
+  cursor: pointer;
+}
+.lv-conquistas-filtros button[aria-pressed='true'] { color: var(--lv-ink); border-color: var(--lv-cyan); background: var(--lv-cyan); }
+.lv-conquistas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); gap: 24px 14px; }
+.lv-conquista { min-width: 0; margin: 0; text-align: center; background: transparent; border: 0; }
+.lv-conquista img { display: block; width: min(100%, 128px); height: auto; aspect-ratio: 1; object-fit: contain; margin: 0 auto 8px; background: transparent; }
+.lv-conquista[data-status='locked'] img { filter: grayscale(1); opacity: 0.38; }
+.lv-conquista[data-status='soon'] img { filter: grayscale(1); opacity: 0.2; }
+.lv-conquista figcaption { font: 700 13px/1.2 'Barlow', sans-serif; color: var(--lv-cream); }
+.lv-conquista-status { display: block; margin-top: 3px; font: 600 11px/1.25 'Barlow', sans-serif; color: var(--lv-muted); }
+.lv-conquista[data-status='unlocked'] .lv-conquista-status { color: var(--lv-cyan); }
+
 /* Foto padrão 4:5 (revisão 7): a foto do canhoto dos ingressos, sem textos ---------- */
 .lv-foto {
   --foto-w: 72px;
