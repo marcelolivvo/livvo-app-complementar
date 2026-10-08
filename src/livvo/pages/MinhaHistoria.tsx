@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { BarChart3, Camera, Plus, Share2, Sparkles } from 'lucide-react';
+import { Award, BarChart3, Camera, Plus, Share2, Sparkles } from 'lucide-react';
 import { useCatalogo } from '../data/catalog';
 import { dataCartao, nota } from '../format';
 import { Link, useRoute } from '../router';
@@ -17,6 +17,7 @@ import { BotaoAtualizarFoto } from '../AtualizarFoto';
 // Gráficos e Wrapped do Livvo Virtual Poster: carregados só quando a pessoa abre (revisão 5)
 const MeuHistorico = lazy(() => import('../HistoricoWrapped').then((m) => ({ default: m.MeuHistorico })));
 const MeuWrapped = lazy(() => import('../HistoricoWrapped').then((m) => ({ default: m.MeuWrapped })));
+const MinhasConquistas = lazy(() => import('../Conquistas').then((m) => ({ default: m.MinhasConquistas })));
 
 /**
  * Minha História — o Passaporte com a mesma cara da Wallet do Estúdio:
@@ -109,6 +110,7 @@ export const MinhaHistoria: React.FC = () => {
   const [gerando, setGerando] = useState(false);
   const [historico, setHistorico] = useState(false);
   const [wrapped, setWrapped] = useState(false);
+  const [conquistas, setConquistas] = useState(false);
   const inputFoto = useRef<HTMLInputElement>(null);
   const abrirHistorico = () => {
     setHistorico((v) => !v);
@@ -278,6 +280,20 @@ export const MinhaHistoria: React.FC = () => {
                 <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.2} />
                 <span>Gerar meu Wrapped</span>
               </button>
+              <button
+                type="button"
+                className="lv-btn lv-btn--stub lv-btn--cyan"
+                aria-expanded={conquistas}
+                aria-controls="minhas-conquistas"
+                onClick={() => {
+                  setConquistas((aberto) => !aberto);
+                  if (!conquistas) window.setTimeout(() => document.getElementById('minhas-conquistas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+                }}
+                disabled={!catalogo}
+              >
+                <Award className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+                <span>Minhas Conquistas</span>
+              </button>
             </div>
           </div>
 
@@ -307,6 +323,11 @@ export const MinhaHistoria: React.FC = () => {
         {historico && (
           <Suspense fallback={<div className="lv-skel m-5" style={{ height: 240 }} aria-busy="true" />}>
             <MeuHistorico pass={pass} fechar={() => setHistorico(false)} />
+          </Suspense>
+        )}
+        {conquistas && (
+          <Suspense fallback={<div className="lv-skel m-5" style={{ height: 240 }} aria-busy="true" />}>
+            <MinhasConquistas pass={pass} fechar={() => setConquistas(false)} />
           </Suspense>
         )}
       </Bilhete>
