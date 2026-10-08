@@ -1,6 +1,6 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 7: foto padrão 4:5, janela do Eu fui, caixas na Comunidade, Compartilhar shows juntos e Artistas favoritos) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 8: página de entrada do Livvo em /bem-vindo) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
@@ -16,6 +16,8 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 > **Revisão 6 (07/10/2026, pedido às 17h05 e respostas às 17h09):** chave **Pôster | Ingresso** acima do pôster (grava na hora) e fora do Personalizar; **sem carimbo por padrão**; na página do show, "Como foi" na largura toda, Resenhas e Quem foi lado a lado e a **faixa Setlist · Foi com alguém? · Mais shows do artista · Mais shows nesta casa** lado a lado (drop down no celular); **"N shows juntos" abre a janela** com os ingressos de vocês e convida a avaliar; **convites mostram os shows em comum**; Minha História sem "Compartilhar credencial", Concert Buddies em **caixas** (5 com mais shows) e **números do passaporte clicáveis**. Seções 5.3, 5.5, 6.3, 6.5 e decisões 40 a 49.
 
 > **Revisão 7 (07/10/2026, pedido às 19h23 e respostas às 19h28):** **foto padrão 4:5** (a foto do canhoto dos ingressos, sem textos) no Registrar, no Início (Sua agenda, Vem aí, Quem você segue) e em toda a Comunidade; **janela depois do "Eu fui"** com o pôster padrão e o convite a compartilhar; **Concert Buddies, Shows em comum e Pessoas em caixas** lado a lado que quebram a linha; **janela de shows juntos com as duas fotos e Compartilhar**; **Artistas favoritos** (Favoritar discreto e seção na Minha História antes de Concert Buddies). Seções 5.7, 5.8, 6.1, 6.4, 6.5, 6.6, 7 e decisões 50 a 58.
+
+> **Revisão 8 (07/10/2026, pedido às 21h05 e respostas às 21h11):** a homepage do Livvo (`site/homepage-inicial-livvo.html`, no visual do Livvo final) vira a **página de entrada** da prévia, em `/bem-vindo`. Quem chega sem ter entrado vai para ela; o **ícone do app** leva a ela sem sair da conta; **Pedir acesso** abre o Entrar da prévia; os links da prévia vão ao Explorar; **Entrar** discreto no cabeçalho. A página é uma **cópia ligada ao app** (`public/bem-vindo/index.html`). Seções 2, 6.0 e decisões 59 a 64.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -42,7 +44,9 @@ Os endereços de show precisam ser definidos agora e nunca mais mudar, porque v�
 
 | Rota | Tela | Pública sem login? |
 | --- | --- | --- |
-| `/` | Início (logado) ou entrada simples (visitante) | Sim |
+| `/` | Início (logado). Sem ter entrado, redireciona para `/bem-vindo` | Sim |
+| `/bem-vindo` | Página de entrada do Livvo (homepage), página estática fora do app (sem faixa de prévia, barra inferior e menu do app) | Sim |
+| `/entrar` | Abre a janela de entrar; depois de entrar, vai ao Início | Sim |
 | `/explorar` | Shows: busca, Passados e Próximos, filtros | Sim |
 | `/explorar?q=&aba=proximos&cidade=&ano=&casa=&fui=1` | Mesma tela com filtros na URL (dá para compartilhar uma busca) | Sim |
 | `/show/:id` | Detalhe do show. `:id` = Setlist ID do catálogo (ex.: `/show/435f27c7`) | Sim, para ler |
@@ -228,6 +232,15 @@ Na Minha História, abaixo de "Registrar show" e "Compartilhar credencial": **Me
 
 ## 6. Telas
 
+### 6.0 Página de entrada (`public/bem-vindo/index.html`, revisão 8)
+
+A homepage do Livvo no visual do Livvo final (feita em 07/10 a partir de `site/homepage-inicial-livvo.html`), servida pelo app em `/bem-vindo` como página estática, fora do `AppShell`.
+
+- **Cópia ligada ao app:** `public/bem-vindo/index.html` é uma cópia do arquivo da pasta com só estas mudanças: fontes e imagens do próprio app (`/fonts`, `/brand`, ícone `/livvo/livvo-icon-256.png`, `img/` com o ingresso `02-teal-wordmark` e as duas fotos de show), "Pedir acesso", "Quero entrar no Livvo" e "Pedir acesso ao beta" levam a `/entrar`; "Explorar a experiência", "Conhecer a plataforma", "Explorar a prévia" e "Testar a prévia" levam a `/explorar`; "Entrar" discreto no cabeçalho (no celular, dentro do menu). Para quem já entrou, o "Entrar" vira "Abrir o Livvo" e os botões de acesso levam ao Início (lido da sessão da prévia, `livvo_login_sim_v1`). A mesma cópia fica na pasta do Livvo em `site/homepage-entrada-app/`; mudanças na página do app são feitas nessa cópia e depois sincronizadas no repositório.
+- **Quando aparece:** quem abre a raiz sem ter entrado é levado para `/bem-vindo`. A primeira visita não entra mais sozinha na conta de demonstração: o Entrar é que abre essa conta. Quem já entrou e toca no **ícone do app** (cabeçalho) também vai para `/bem-vindo`, sem sair da conta.
+- **Servir a página:** na Vercel, `vercel.json` reescreve `/bem-vindo` e `/bem-vindo/` para `/bem-vindo/index.html` antes da regra do app; no servidor local, `server.ts` faz o mesmo. No site final de B, a página de entrada deve ser renderizada no servidor (é a página que o Google e as prévias de link vão ler).
+- **Frase de posicionamento:** a página usa "A música ao vivo ainda não tem o seu lugar definitivo.", decisão do Edmir de 07/10 às 20h52.
+
 ### 6.1 Início (`src/livvo/pages/Inicio.tsx`)
 
 **Logado**, no computador em duas colunas (principal + lateral de 360 px a partir de 1100 px); no celular em uma coluna, nesta ordem:
@@ -411,9 +424,20 @@ Decisões do Edmir em 07/10/2026, 19h23 e 19h28 (revisão 7):
 57. **Sem favoritos escolhidos**, a seção mostra os 5 artistas mais vistos.
 58. **Com mais de 5 favoritos**, aparecem os 5 com mais shows da pessoa.
 
+Decisões do Edmir em 07/10/2026, 21h05 e 21h11 (revisão 8):
+
+59. **A homepage do Livvo é a página de entrada** da prévia, para quem entra direto.
+60. **Quem já entrou e toca no ícone do app** também vai para essa página, sem sair da conta.
+61. **"Pedir acesso" e "Quero entrar no Livvo" abrem o Entrar da prévia** (no lugar do e-mail).
+62. **Os links da prévia** ("Explorar a experiência", "Conhecer a plataforma", "Explorar a prévia", "Testar a prévia") levam ao Explorar.
+63. **"Entrar" discreto no cabeçalho** da página.
+64. **Cópia ligada ao app:** a página do app é uma cópia do arquivo da pasta, mantida em `site/homepage-entrada-app/` e ligada a `public/bem-vindo/index.html`.
+
+Escolha de execução da revisão 8 (para o Edmir confirmar): a primeira visita não entra mais sozinha na conta de demonstração, para quem chega ver a página de entrada; o Entrar abre essa conta.
+
 Escolhas de execução da revisão 5 (DRAFT, para o Edmir confirmar): "Show da minha vida" em amarelo das notas e "Eu fui" em Ciano (o vermelho do Estúdio não é da paleta);  RAYDIS só para nomes sem acento; "Meu histórico" e "Gerar meu Wrapped" dentro do Passaporte, abaixo dos dois botões que já existiam.
 
-Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e séries têm os seus apps. A música ao vivo **encontrou** o seu lugar definitivo." (o plano de fusão de 06/10 ainda traz "ainda não tem"). A landing da parte 4 vai usar a versão oficial.
+Lembrete de marca: na página de entrada, a frase de posicionamento é "Filmes e séries têm os seus apps. A música ao vivo **ainda não tem** o seu lugar definitivo.", por decisão do Edmir de 07/10 às 20h52 (antes, desde 06/10, este handoff registrava "encontrou" como a versão oficial).
 
 ---
 
@@ -443,6 +467,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `src/livvo/Personalizar.tsx`, `src/livvo/Ingresso.tsx` | Painel Personalizar e formato Ingresso (5.5) |
 | `src/livvo/HistoricoWrapped.tsx` | Ponte para o `MyHistory` e o `TourWrappedModal` do A (5.6) |
 | `src/livvo/Favoritos.tsx` | Favoritar e Artistas favoritos (5.8) |
+| `public/bem-vindo/` | Página de entrada (cópia ligada ao app) e as imagens dela (6.0) |
+| `src/livvo/pages/Entrar.tsx` | Rota `/entrar` (6.0) |
 | `src/components/RetroTicket.tsx`, `src/components/MyHistory.tsx`, `src/components/TourWrappedModal.tsx` | Componentes do Estúdio reaproveitados sem alteração (escala do ingresso, gráficos e Wrapped) |
 | `src/livvo/fotos.ts`, `src/livvo/AtualizarFoto.tsx` | Padrão de foto, armazenamento, fontes, janela Atualizar foto e janela de admin (seção 5.1) |
 | `server.ts` | Rota `/api/foto` (seção 5.1); `/api/artist-search` do Estúdio reaproveitada |
@@ -457,6 +483,8 @@ Lembrete de marca: a frase de posicionamento oficial desde 06/10 é "Filmes e s�
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 8 (07/10/2026, commit `88acc2a`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página e sem arquivo faltando: visitante na raiz vai para `/bem-vindo` (mesma altura de página do arquivo original, 4854 px no computador), Entrar abre a janela e depois o Início, o ícone do app leva de volta à página com "Abrir o Livvo" no cabeçalho, e "Explorar a experiência" leva ao Explorar.
 
 Verificação da revisão 7 (07/10/2026, commit `c6d6859`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página: Registrar com a foto do artista, Eu fui abrindo a janela do pôster, Favoritar, Início com as fotos, as 5 abas da Comunidade (caixas quebrando a linha), janela de shows juntos com as duas fotos e a imagem de Stories gerada, Artistas favoritos na Minha História e o coração na página do show. No ambiente de teste a internet é bloqueada, então as fotos aparecem como retícula; a foto automática foi conferida na prévia publicada.
 
