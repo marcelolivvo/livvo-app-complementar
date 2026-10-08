@@ -1,6 +1,6 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 8: página de entrada do Livvo em /bem-vindo) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 9: página de entrada com fotos novas e Comece agora) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
@@ -18,6 +18,8 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 > **Revisão 7 (07/10/2026, pedido às 19h23 e respostas às 19h28):** **foto padrão 4:5** (a foto do canhoto dos ingressos, sem textos) no Registrar, no Início (Sua agenda, Vem aí, Quem você segue) e em toda a Comunidade; **janela depois do "Eu fui"** com o pôster padrão e o convite a compartilhar; **Concert Buddies, Shows em comum e Pessoas em caixas** lado a lado que quebram a linha; **janela de shows juntos com as duas fotos e Compartilhar**; **Artistas favoritos** (Favoritar discreto e seção na Minha História antes de Concert Buddies). Seções 5.7, 5.8, 6.1, 6.4, 6.5, 6.6, 7 e decisões 50 a 58.
 
 > **Revisão 8 (07/10/2026, pedido às 21h05 e respostas às 21h11):** a homepage do Livvo (`site/homepage-inicial-livvo.html`, no visual do Livvo final) vira a **página de entrada** da prévia, em `/bem-vindo`. Quem chega sem ter entrado vai para ela; o **ícone do app** leva a ela sem sair da conta; **Pedir acesso** abre o Entrar da prévia; os links da prévia vão ao Explorar; **Entrar** discreto no cabeçalho. A página é uma **cópia ligada ao app** (`public/bem-vindo/index.html`). Seções 2, 6.0 e decisões 59 a 64.
+
+> **Revisão 9 (07/10/2026, pedido às 21h24 e respostas às 21h27):** na página de entrada, **fotos novas** (enviadas pelo Edmir) com o duotone teal, **furos do cartão da frase de posicionamento em cima e embaixo** a 25% da borda esquerda e **"Comece agora"** no lugar de "Pedir acesso", "Quero entrar no Livvo", "Explorar a prévia" e "Pedir acesso ao beta" (sem "Testar a prévia" e sem as frases sobre o beta fechado). Seção 6.0 e decisões 65 a 69.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -239,6 +241,7 @@ A homepage do Livvo no visual do Livvo final (feita em 07/10 a partir de `site/h
 - **Cópia ligada ao app:** `public/bem-vindo/index.html` é uma cópia do arquivo da pasta com só estas mudanças: fontes e imagens do próprio app (`/fonts`, `/brand`, ícone `/livvo/livvo-icon-256.png`, `img/` com o ingresso `02-teal-wordmark` e as duas fotos de show), "Pedir acesso", "Quero entrar no Livvo" e "Pedir acesso ao beta" levam a `/entrar`; "Explorar a experiência", "Conhecer a plataforma", "Explorar a prévia" e "Testar a prévia" levam a `/explorar`; "Entrar" discreto no cabeçalho (no celular, dentro do menu). Para quem já entrou, o "Entrar" vira "Abrir o Livvo" e os botões de acesso levam ao Início (lido da sessão da prévia, `livvo_login_sim_v1`). A mesma cópia fica na pasta do Livvo em `site/homepage-entrada-app/`; mudanças na página do app são feitas nessa cópia e depois sincronizadas no repositório.
 - **Quando aparece:** quem abre a raiz sem ter entrado é levado para `/bem-vindo`. A primeira visita não entra mais sozinha na conta de demonstração: o Entrar é que abre essa conta. Quem já entrou e toca no **ícone do app** (cabeçalho) também vai para `/bem-vindo`, sem sair da conta.
 - **Servir a página:** na Vercel, `vercel.json` reescreve `/bem-vindo` e `/bem-vindo/` para `/bem-vindo/index.html` antes da regra do app; no servidor local, `server.ts` faz o mesmo. No site final de B, a página de entrada deve ser renderizada no servidor (é a página que o Google e as prévias de link vão ler).
+- **Revisão 9:** a abertura usa a foto do show com a plateia de mãos para cima (`img/show-abertura.jpg`, IMG_6117) e o ingresso "Tem noites que passam" usa a do naipe de metais (`img/show-ingresso.jpg`, IMG_6177), as duas com o duotone teal da página (filtro `#lv-duotone`: Preto Profundo → Teal → Off-white) e otimizadas a 1600 px. As outras duas fotos enviadas (orquestra, IMG_5999, e Dave Matthews Band) ficam de reserva na cópia da pasta, sem uso. O cartão "Filmes e séries têm os seus apps…" tem os furos de picote em cima e embaixo, a 25% da borda esquerda (meio círculo de 22 px para dentro do cartão). Todos os botões de acesso dizem **"Comece agora"** e levam ao Entrar da prévia (quem já entrou vai ao Início); saíram "Testar a prévia", "Beta fechado com acesso por convite · Explore uma prévia agora" e "O beta está em fase fechada. O pedido de acesso abre seu aplicativo de e-mail.". "Explorar a experiência" e "Conhecer a plataforma" continuam levando ao Explorar. O original `site/homepage-inicial-livvo.html` não mudou.
 - **Frase de posicionamento:** a página usa "A música ao vivo ainda não tem o seu lugar definitivo.", decisão do Edmir de 07/10 às 20h52.
 
 ### 6.1 Início (`src/livvo/pages/Inicio.tsx`)
@@ -433,6 +436,14 @@ Decisões do Edmir em 07/10/2026, 21h05 e 21h11 (revisão 8):
 63. **"Entrar" discreto no cabeçalho** da página.
 64. **Cópia ligada ao app:** a página do app é uma cópia do arquivo da pasta, mantida em `site/homepage-entrada-app/` e ligada a `public/bem-vindo/index.html`.
 
+Decisões do Edmir em 07/10/2026, 21h24 e 21h27 (revisão 9):
+
+65. **Fotos da página de entrada trocadas** pelas enviadas, com filtro em tons de teal: abertura com IMG_6117, ingresso com IMG_6177; as outras duas de reserva.
+66. **Furos do cartão da frase de posicionamento em cima e embaixo**, a cerca de 25% da borda esquerda.
+67. **"Pedir acesso ao beta" vira "Comece agora"** e sai "Testar a prévia"; onde houver algo sobre a prévia, "Comece agora".
+68. **"Comece agora" abre o Entrar da prévia.**
+69. **"Pedir acesso" do cabeçalho e "Quero entrar no Livvo" também viram "Comece agora"**; as mudanças valem só para a cópia ligada ao app (o original da pasta fica como está).
+
 Escolha de execução da revisão 8 (para o Edmir confirmar): a primeira visita não entra mais sozinha na conta de demonstração, para quem chega ver a página de entrada; o Entrar abre essa conta.
 
 Escolhas de execução da revisão 5 (DRAFT, para o Edmir confirmar): "Show da minha vida" em amarelo das notas e "Eu fui" em Ciano (o vermelho do Estúdio não é da paleta);  RAYDIS só para nomes sem acento; "Meu histórico" e "Gerar meu Wrapped" dentro do Passaporte, abaixo dos dois botões que já existiam.
@@ -483,6 +494,8 @@ Lembrete de marca: na página de entrada, a frase de posicionamento é "Filmes e
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 9 (07/10/2026, commit `a1ea17a`): `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página e sem arquivo faltando: 4 botões "Comece agora" (nenhum texto de prévia ou beta), o último levando a `/entrar`, fotos novas carregadas e furos do cartão para dentro, em cima e embaixo.
 
 Verificação da revisão 8 (07/10/2026, commit `88acc2a`): `tsc` e `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página e sem arquivo faltando: visitante na raiz vai para `/bem-vindo` (mesma altura de página do arquivo original, 4854 px no computador), Entrar abre a janela e depois o Início, o ícone do app leva de volta à página com "Abrir o Livvo" no cabeçalho, e "Explorar a experiência" leva ao Explorar.
 
