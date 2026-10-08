@@ -1,6 +1,6 @@
 # Livvo final, prévia parte 1: navegação, Início, Explorar e Detalhe do show
 
-Status: **DRAFT** · 07/10/2026 (revisão 9: página de entrada com fotos novas e Comece agora) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
+Status: **DRAFT** · 07/10/2026 (revisão 10: 4 botões da Minha História numa linha e ingressos com furos só em cima e embaixo) · ramo `livvo-final` do repositório `marcelolivvo/livvo-app-complementar`
 Para: Greg (implementação no livvomusic.com.br) · Decisões de produto: Edmir · Preparado por: Claude
 
 Este documento descreve a "cara" do Livvo final que está sendo montada dentro do ambiente A (app da Vercel), enquanto o site B (livvomusic.com.br) segue no ar com os beta testers. A prévia junta as partes fortes de B (catálogo, Eu fui, Nota do Show e Nota da Organização, quem foi, setlist, navegação com barra inferior) com o que foi criado em A (linguagem de bilheteria, Passaporte, faixas de acesso, pôster halftone, carimbo). Ela segue o "Plano de fusão Livvo" de 06/10/2026.
@@ -20,6 +20,8 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 > **Revisão 8 (07/10/2026, pedido às 21h05 e respostas às 21h11):** a homepage do Livvo (`site/homepage-inicial-livvo.html`, no visual do Livvo final) vira a **página de entrada** da prévia, em `/bem-vindo`. Quem chega sem ter entrado vai para ela; o **ícone do app** leva a ela sem sair da conta; **Pedir acesso** abre o Entrar da prévia; os links da prévia vão ao Explorar; **Entrar** discreto no cabeçalho. A página é uma **cópia ligada ao app** (`public/bem-vindo/index.html`). Seções 2, 6.0 e decisões 59 a 64.
 
 > **Revisão 9 (07/10/2026, pedido às 21h24 e respostas às 21h27):** na página de entrada, **fotos novas** (enviadas pelo Edmir) com o duotone teal, **furos do cartão da frase de posicionamento em cima e embaixo** a 25% da borda esquerda e **"Comece agora"** no lugar de "Pedir acesso", "Quero entrar no Livvo", "Explorar a prévia" e "Pedir acesso ao beta" (sem "Testar a prévia" e sem as frases sobre o beta fechado). Seção 6.0 e decisões 65 a 69.
+
+> **Revisão 10 (07/10/2026, pedido às 21h51):** na Minha História, **"Minhas Conquistas" logo depois de "Registrar show"** e os **4 botões numa linha só**, sem quebrar o texto; o **"Registrar show"** do cabeçalho no mesmo modelo do "Comece agora" da página de entrada; e a regra: **ingressos e botões-ingresso têm os furos sempre em cima e embaixo, nunca nas laterais**. Seções 4, 5 e 6.5 e decisões 70 a 72.
 
 > Importante: pelo plano de fusão, **B continua sendo a base técnica**. Esta prévia é a referência visual e de comportamento. Reaproveitar ou reescrever os componentes no stack de B é decisão do Greg.
 
@@ -106,7 +108,8 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e a cor dos
 | Picote com meias-luas: horizontal no celular, vertical a partir de 1024 px | `.lv-perf` | Entre o palco (pôster) e o canhoto (ações) no Detalhe do show |
 | Campos de identificação: rótulo + número RAYDIS + nota em Ciano, separados por picote vertical | `.lv-fields` | Passaporte (Shows · Artistas · Cidades com "desde 1998", "mais visto: …", "em 3 estados"), contagem regressiva, médias da comunidade (número em RAYDIS amarelo + ingressos) |
 | Marcas de picote como progresso (24 marcas) + percentual | `.lv-ticks` | Faixa do Passaporte, missões (versão fina) |
-| Botão-ingresso com canhoto (furos em cima e embaixo, ícone no canhoto, picote tracejado) | `.lv-btn--stub` (+ `--cyan`, `--cream`, `--teal`) | Ações principais: Eu fui, Quero ir/Tenho ingresso marcado, Minha História, Registrar, Compartilhar credencial |
+| Botão-ingresso com canhoto (furos em cima e embaixo, ícone no canhoto, picote tracejado) | `.lv-btn--stub` (+ `--cyan`, `--cream`, `--teal`) | Ações principais: Eu fui, Quero ir/Tenho ingresso marcado, Minha História, Registrar (inclusive o "Registrar show" do cabeçalho, desde a revisão 10), Comece agora |
+| **Regra dos furos** (revisão 10) | Ingressos e botões-ingresso têm os furos **sempre em cima e embaixo, nunca nas laterais** | Botão-ingresso sem canhoto (`.lv-btn`): furos a 25% da borda esquerda. "+ Registrar" da barra inferior: furos no centro, em cima e embaixo. "Sua memória" (`.lv-passport`): meio círculo para dentro a 25%, em cima e embaixo. Picote horizontal da página-ingresso no celular: só a linha tracejada (o picote vertical do computador já tem os furos em cima e embaixo). Carteira, Ingresso de memória e cartão da página de entrada já seguiam a regra. A Credencial Backstage (credencial, não ingresso) ficou como está |
 | Botão com recortes laterais | `.lv-btn` | Eu fui nas linhas do Registrar, Registrar show no topo |
 | Botão de contorno / link | `.lv-ghost`, `.lv-link` | Ações secundárias |
 | Campo sublinhado com rótulo em caixa alta (sem caixa) | `.lv-input` + `.lv-label` | Busca e filtros CIDADE · ANO · CASA do Explorar, busca de artista do Registrar |
@@ -302,7 +305,7 @@ Página-ingresso com tira "Livvo · Registrar show / Passo 1 de 2" (e "Passo 2 d
 Mesma página de identificação da Wallet do Estúdio, sem a linha MRZ:
 1. Tira "Livvo · Passaporte de fã / Titular @toboi"; ícone de passaporte e **"Passaporte Oficial de Shows"** em Alfa Teal; "Cada show que você registra vira um carimbo aqui. Os antigos contam também."
 2. TITULAR · NOME (Alfa) e @ em Ciano; campos Shows · Artistas · Cidades; 24 marcas com "Faltam N shows para o nível X" e percentual.
-3. Botões-canhoto "Registrar show" (Ciano), **"Meu histórico"** (Teal) e **"Gerar meu Wrapped"** (Creme), seção 5.6. O "Compartilhar credencial" saiu na revisão 6: fica só o "Compartilhar" embaixo da credencial. **Números clicáveis** (revisão 6): Shows rola até a Carteira de ingressos; Artistas e Cidades abrem o Meu histórico e levam ao gráfico "Artistas mais vistos" ou "Cidades", destacado por 2 s. No Início, os mesmos números levam à Minha História (`/minha-historia?ver=carteira|artistas|cidades`). Os campos Shows · Artistas · Cidades ganharam mais espaço entre si (revisão 5).
+3. Botões-canhoto **numa linha só**, na largura toda do Passaporte (revisão 10): **"Registrar show"** (Ciano), **"Minhas Conquistas"** (Creme; abre a galeria de conquistas, `src/livvo/Conquistas.tsx`), **"Meu histórico"** (Teal) e **"Gerar meu Wrapped"** (Creme), seção 5.6. Texto, canhoto e margens acompanham a largura da linha (texto de 11,5 a 13,5 px), sem quebrar texto; abaixo de 720 px, os 4 continuam numa linha que rola de lado. O "Compartilhar credencial" saiu na revisão 6: fica só o "Compartilhar" embaixo da credencial. **Números clicáveis** (revisão 6): Shows rola até a Carteira de ingressos; Artistas e Cidades abrem o Meu histórico e levam ao gráfico "Artistas mais vistos" ou "Cidades", destacado por 2 s. No Início, os mesmos números levam à Minha História (`/minha-historia?ver=carteira|artistas|cidades`). Os campos Shows · Artistas · Cidades ganharam mais espaço entre si (revisão 5).
 4. À direita (abaixo no celular): **Credencial Backstage** com os dados da conta (nome, @, shows, desde, nível e acesso calculados pelos shows, Nº de cadastro de teste 16), "Adicionar foto" / "Trocar foto" (mesmo tratamento e mesma chave `livvo_user_photo_v1` do Estúdio: até 1024 px, mantém transparência, tenta 640 px sem espaço, aviso para HEIC) e "Compartilhar" (PNG em resolução cheia pelo menu do celular ou download).
 5. **Carteira de ingressos 25**: memórias por ano em ingressos de contorno Ciano (duas colunas a partir de 1024 px): pôster no canhoto, artista em Alfa, data, casa · cidade, nota do show em ingressos ou "Sem nota", e "Falta a organização" (leva direto à nota). O canhoto mostra a personalização da memória e o nome do artista quebra em até duas linhas, sem cortar palavra.
 As abas Números, Coleção (medalhas, desafios, stickers), Agenda e Listas entram na parte 3.
@@ -444,6 +447,12 @@ Decisões do Edmir em 07/10/2026, 21h24 e 21h27 (revisão 9):
 68. **"Comece agora" abre o Entrar da prévia.**
 69. **"Pedir acesso" do cabeçalho e "Quero entrar no Livvo" também viram "Comece agora"**; as mudanças valem só para a cópia ligada ao app (o original da pasta fica como está).
 
+Decisões do Edmir em 07/10/2026, 21h51 (revisão 10):
+
+70. **"Minhas Conquistas" logo depois de "Registrar show"** na Minha História, e os **4 botões numa única linha**, sem quebrar o texto.
+71. **O "Registrar show" usa o modelo do "Comece agora"** da página de entrada.
+72. **Ingressos sempre com os furos em cima e embaixo, nunca nas laterais.**
+
 Escolha de execução da revisão 8 (para o Edmir confirmar): a primeira visita não entra mais sozinha na conta de demonstração, para quem chega ver a página de entrada; o Entrar abre essa conta.
 
 Escolhas de execução da revisão 5 (DRAFT, para o Edmir confirmar): "Show da minha vida" em amarelo das notas e "Eu fui" em Ciano (o vermelho do Estúdio não é da paleta);  RAYDIS só para nomes sem acento; "Meu histórico" e "Gerar meu Wrapped" dentro do Passaporte, abaixo dos dois botões que já existiam.
@@ -478,6 +487,7 @@ Lembrete de marca: na página de entrada, a frase de posicionamento é "Filmes e
 | `src/livvo/Personalizar.tsx`, `src/livvo/Ingresso.tsx` | Painel Personalizar e formato Ingresso (5.5) |
 | `src/livvo/HistoricoWrapped.tsx` | Ponte para o `MyHistory` e o `TourWrappedModal` do A (5.6) |
 | `src/livvo/Favoritos.tsx` | Favoritar e Artistas favoritos (5.8) |
+| `src/livvo/Conquistas.tsx` | Galeria Minhas Conquistas (figurinhas do Passaporte, com filtros) |
 | `public/bem-vindo/` | Página de entrada (cópia ligada ao app) e as imagens dela (6.0) |
 | `src/livvo/pages/Entrar.tsx` | Rota `/entrar` (6.0) |
 | `src/components/RetroTicket.tsx`, `src/components/MyHistory.tsx`, `src/components/TourWrappedModal.tsx` | Componentes do Estúdio reaproveitados sem alteração (escala do ingresso, gráficos e Wrapped) |
@@ -494,6 +504,8 @@ Lembrete de marca: na página de entrada, a frase de posicionamento é "Filmes e
 | `public/livvo/` | Catálogo recortado e ícone oficial reduzido |
 | `src/components/LoginModal.tsx` | Texto ajustado para o novo contexto |
 | `index.html` | Título, descrição e ícone da aba |
+
+Verificação da revisão 10 (07/10/2026, commit `b4fb651`): `tsc` e `npm run build` sem erros; medição em 390, 720, 768, 1024, 1280, 1440 e 1920 px: os 4 botões numa linha em todas, sem texto quebrado e sem estourar o botão (no celular a linha rola de lado); Playwright em 390 × 844 e 1440 × 900 sem erros de página (Minha História, Minhas Conquistas, página do show com "Sua memória" e o picote).
 
 Verificação da revisão 9 (07/10/2026, commit `a1ea17a`): `npm run build` sem erros; Playwright em 390 × 844 e 1440 × 900 sem erros de página e sem arquivo faltando: 4 botões "Comece agora" (nenhum texto de prévia ou beta), o último levando a `/entrar`, fotos novas carregadas e furos do cartão para dentro, em cima e embaixo.
 
