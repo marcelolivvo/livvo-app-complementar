@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { StickerState } from '../services/stickerService';
-import { avaliarConquistas, MIN_SHOWS_CONQUISTAS } from './conquistas';
+import { avaliarConquistas, MIN_SHOWS_CONQUISTAS } from './conquistasLogic';
 import type { Passaporte } from './stats';
 import { Picotes, Stub } from './ui';
 

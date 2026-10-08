@@ -4,7 +4,7 @@ import { TourWrappedModal } from '../components/TourWrappedModal';
 import { FAN_MEDAL_TIERS, type FanStats } from '../services/walletService';
 import type { Show } from './data/catalog';
 import type { Passaporte } from './stats';
-import { paraIngressosA } from './conquistas';
+import { paraIngressosA } from './conquistasLogic';
 import { useImagemDoPoster } from './ui';
 
 /**

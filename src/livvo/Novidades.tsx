@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Award, Bell, X } from 'lucide-react';
 import type { StickerState } from '../services/stickerService';
-import { avaliarConquistas } from './conquistas';
+import { avaliarConquistas } from './conquistasLogic';
 import { useCatalogo, type Show } from './data/catalog';
 import { atividadeDeQuemSegue } from './data/social';
 import type { PessoaExemplo } from './data/demo';
