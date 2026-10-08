@@ -138,9 +138,15 @@ export const MinhaHistoria: React.FC = () => {
     };
     window.setTimeout(procurar, 80);
   };
-  const ver = query.get('ver') as AlvoPassaporte | null;
+  const ver = query.get('ver') as AlvoPassaporte | 'conquistas' | null;
   useEffect(() => {
-    if (ver && catalogo && ['carteira', 'artistas', 'cidades'].includes(ver)) window.setTimeout(() => irPara(ver), 150);
+    // ?ver=conquistas vem do aviso de nova conquista (revisão 11)
+    if (ver === 'conquistas' && catalogo) {
+      setConquistas(true);
+      window.setTimeout(() => document.getElementById('minhas-conquistas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
+      return;
+    }
+    if (ver && catalogo && ['carteira', 'artistas', 'cidades'].includes(ver)) window.setTimeout(() => irPara(ver as AlvoPassaporte), 150);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ver, Boolean(catalogo)]);
 
@@ -249,6 +255,15 @@ export const MinhaHistoria: React.FC = () => {
 
             {!catalogo ? (
               <div className="lv-skel mt-7" style={{ height: 120, maxWidth: 620 }} aria-busy="true" />
+            ) : pass.shows === 0 ? (
+              // Conta zerada (revisão 11): boas-vindas no lugar dos zeros
+              <div className="lv-passaporte-vazio mt-7">
+                <div className="lv-kicker lv-kicker--cyan">Passaporte em branco</div>
+                <p className="lv-h3 mt-1.5">Seu primeiro carimbo está a um show de distância.</p>
+                <p className="lv-meta mt-1.5 max-w-[520px]">
+                  Registre o último show que você viu. Os números, o nível de acesso e o Wrapped aparecem a partir do primeiro show; as conquistas, a partir do quinto.
+                </p>
+              </div>
             ) : (
               <>
                 <div className="mt-7">
@@ -262,7 +277,7 @@ export const MinhaHistoria: React.FC = () => {
 
           </div>
 
-          {/* 4 botões numa linha (07/10, 21h51): Registrar show, Minhas Conquistas, Meu histórico e Gerar meu Wrapped */}
+          {/* 4 botões: numa linha no computador (07/10, 21h51) e em grade 2 × 2 no celular (revisão 11) */}
           <div className="lv-acoes-4 order-2 lg:order-3 lg:col-span-2 -mt-1 lg:-mt-3">
             <Stub icone={Plus} to="/registrar">
               Registrar show
@@ -288,7 +303,7 @@ export const MinhaHistoria: React.FC = () => {
               aria-expanded={historico}
               aria-controls="meu-historico"
               onClick={abrirHistorico}
-              disabled={!catalogo}
+              disabled={!catalogo || pass.shows === 0}
             >
               <BarChart3 className="w-4 h-4 shrink-0" strokeWidth={2.2} />
               <span>Meu histórico</span>
@@ -310,11 +325,13 @@ export const MinhaHistoria: React.FC = () => {
                 </button>
               )}
             </div>
-            <span className="lv-eyebrow">Credencial teste · com os seus dados</span>
+            {/* Um só "Adicionar foto" (sobre a credencial) e sem o rótulo de teste (revisão 11) */}
             <div className="flex flex-wrap justify-center gap-x-5 gap-y-2">
-              <button type="button" className="lv-link" onClick={() => inputFoto.current?.click()}>
-                <Camera className="w-4 h-4" /> {foto ? 'Trocar foto' : 'Adicionar foto'}
-              </button>
+              {foto && (
+                <button type="button" className="lv-link" onClick={() => inputFoto.current?.click()}>
+                  <Camera className="w-4 h-4" /> Trocar foto
+                </button>
+              )}
               <button type="button" className="lv-link" onClick={compartilharCredencial} disabled={gerando}>
                 <Share2 className="w-4 h-4" /> Compartilhar
               </button>

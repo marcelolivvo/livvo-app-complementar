@@ -258,6 +258,11 @@ export const nivelVerificacao = (m: Memoria): Verificacao => {
   return 'registrado';
 };
 
+/**
+ * Rótulos da escada de verificação. GUARDADOS, sem uso na tela: o Livvo não mostra a escada nem usa
+ * "verificado" até ter ferramenta de verificação (N1, 06/10/2026; revisão 11). Na tela vale a frase
+ * VERIFICATION_SOON de utils/livvoBrand.ts.
+ */
 export const ROTULO_VERIFICACAO: Record<Verificacao, string> = {
   registrado: 'Registrado',
   com_foto: 'Com foto',
@@ -425,3 +430,61 @@ export const livvo = {
     guestService.logout();
   },
 };
+
+/* Pôster grátis do visitante (decisão de 07/10/2026, revisão 11) ------------------------------
+ * Sem login, a pessoa cria e compartilha 1 pôster. Para guardar na história ou criar o 2º pôster,
+ * entra no Livvo. Quem toca em "Entrar e guardar" tem o show registrado logo depois do login.
+ */
+const CHAVE_VISITANTE = 'livvo_poster_visitante_v1';
+interface PosterVisitante {
+  showId: string;
+  em: number;
+  guardarAoEntrar?: boolean;
+}
+const lerVisitante = (): PosterVisitante | null => {
+  try {
+    const bruto = localStorage.getItem(CHAVE_VISITANTE);
+    return bruto ? (JSON.parse(bruto) as PosterVisitante) : null;
+  } catch {
+    return null;
+  }
+};
+const gravarVisitante = (v: PosterVisitante | null) => {
+  try {
+    if (v) localStorage.setItem(CHAVE_VISITANTE, JSON.stringify(v));
+    else localStorage.removeItem(CHAVE_VISITANTE);
+  } catch {
+    /* sem armazenamento: vale só nesta sessão */
+  }
+};
+
+export const posterVisitante = {
+  /** Pode criar (ou reabrir) o pôster grátis deste show? */
+  podeCriar(showId: string): boolean {
+    const v = lerVisitante();
+    return !v || v.showId === showId;
+  },
+  criar(showId: string) {
+    const v = lerVisitante();
+    if (!v) gravarVisitante({ showId, em: Date.now() });
+  },
+  /** "Entrar e guardar na minha história": abre o login e registra o show assim que a pessoa entra. */
+  guardarAoEntrar(showId: string) {
+    gravarVisitante({ ...(lerVisitante() || { showId, em: Date.now() }), showId, guardarAoEntrar: true });
+    guestService.requestLogin();
+  },
+  /** Opção de teste no menu da prévia. */
+  zerar() {
+    gravarVisitante(null);
+  },
+};
+
+// Depois do login, guarda o pôster do visitante na história (se ele pediu)
+guestService.onChange(() => {
+  if (!guestService.isLoggedIn()) return;
+  const v = lerVisitante();
+  if (!v?.guardarAoEntrar) return;
+  gravarVisitante({ showId: v.showId, em: v.em });
+  livvo.registrar(v.showId);
+});
+

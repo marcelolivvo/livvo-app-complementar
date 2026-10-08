@@ -9,8 +9,16 @@ import { DIMENSOES, PESSOAS_EXEMPLO, RESENHA_ORGANIZACAO, RESENHA_SHOW, type Dim
  * e pode ser desligado no menu da conta (para ver os estados vazios reais).
  */
 
-/** Amostra mínima para mostrar notas médias na prévia (proposta; o plano sugere 30 para relatórios B2B). */
-export const MIN_AMOSTRA_NOTAS = 3;
+/**
+ * Médias das notas (decisão de 07/10/2026, revisão 11): entram só as notas de memórias públicas ou para
+ * seguidores (as privadas nunca entram). A média aparece na página pública a partir de 5 avaliações;
+ * os relatórios para produtoras e casas (B2B) só usam médias com 30 ou mais.
+ */
+export const MIN_AMOSTRA_NOTAS = 5;
+export const MIN_AMOSTRA_RELATORIOS = 30;
+
+/** A nota desta memória pode entrar na média? (privada não entra) */
+export const entraNaMedia = (m?: Pick<Memoria, 'visibilidade'> | null) => Boolean(m) && m!.visibilidade !== 'privado';
 
 const CASAS_GRANDES = /est[aá]dio|allianz|morumb|arena|parque|campo de marte|jockey|aut[oó]dromo|maracan|mineir|fonte nova|nilton santos|memorial/i;
 
@@ -42,7 +50,7 @@ export const socialDoShow = (show: Show, exemplos: boolean, minha?: Memoria): So
   const minhaConta = minha ? 1 : 0;
   if (!exemplos) {
     const media =
-      minha?.notaShow !== undefined && minha?.notaOrganizacao !== undefined && MIN_AMOSTRA_NOTAS <= 1
+      minha?.notaShow !== undefined && minha?.notaOrganizacao !== undefined && entraNaMedia(minha) && MIN_AMOSTRA_NOTAS <= 1
         ? { show: minha.notaShow, organizacao: minha.notaOrganizacao, amostra: 1 }
         : undefined;
     return { ...VAZIO, registros: minhaConta, media };
@@ -76,9 +84,10 @@ export const socialDoShow = (show: Show, exemplos: boolean, minha?: Memoria): So
     return { pessoa, notaShow, notaOrganizacao, dimensoes: dims, texto, setor: setores[(r >>> 7) % setores.length] };
   });
 
-  // Notas médias: resenhas + avaliações sem texto (amostra) + a sua, se houver.
+  // Notas médias: resenhas + avaliações sem texto (amostra; na prévia, todas públicas ou para seguidores)
+  // + a sua, se houver e se a memória não for privada.
   const amostraExtra = Math.max(0, Math.floor(base * 0.4));
-  const amostra = resenhas.length + amostraExtra + (minha?.notaShow !== undefined ? 1 : 0);
+  const amostra = resenhas.length + amostraExtra + (minha?.notaShow !== undefined && entraNaMedia(minha) ? 1 : 0);
   let media: SocialShow['media'];
   if (amostra >= MIN_AMOSTRA_NOTAS && resenhas.length) {
     const ms = resenhas.reduce((s, x) => s + x.notaShow, 0) / resenhas.length;

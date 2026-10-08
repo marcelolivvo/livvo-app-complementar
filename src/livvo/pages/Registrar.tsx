@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, Search, Star, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Plus, Search, Star, X } from 'lucide-react';
 import { buscarArtistas, ehFuturo, useCatalogo, type Artista, type Show } from '../data/catalog';
 import { dataCartao, plural } from '../format';
 import { Link, navigate, setQuery, useRoute } from '../router';
-import { livvo, useLivvo, type Memoria } from '../store';
+import { useLivvo, type Memoria } from '../store';
 import { Modal } from '../AtualizarFoto';
 import { BotaoCompartilhar } from '../Compartilhar';
 import { BotaoFavoritar } from '../Favoritos';
+import { useEuFui } from '../PosterVisitante';
 import { Bilhete, CaixaData, CarimboFui, FotoArtista, Grupo, Linha, Poster, TagProxima, avisar } from '../ui';
 
 /**
@@ -91,6 +92,7 @@ export const Registrar: React.FC = () => {
   const [termo, setTermo] = useState(query.get('q') || '');
   const [recentes, setRecentes] = useState<string[]>([]);
   const [janela, setJanela] = useState<{ show: Show; memoria: Memoria } | null>(null);
+  const visitante = useEuFui();
   const artistaId = query.get('artista');
   const artista = artistaId ? catalogo?.artistas.get(artistaId) : undefined;
 
@@ -163,14 +165,14 @@ export const Registrar: React.FC = () => {
                         type="button"
                         className="lv-btn lv-btn--cyan !py-2.5 !px-4"
                         onClick={() => {
-                          const m = livvo.registrar(s.id);
+                          const m = visitante.euFui(s, lv.logado);
                           if (m) {
                             setRecentes((r) => [...r, s.id]);
                             setJanela({ show: s, memoria: m });
                           }
                         }}
                       >
-                        <Check className="w-4 h-4" strokeWidth={3} /> Eu fui
+                        <Plus className="w-4 h-4" strokeWidth={3} /> Eu fui
                       </button>
                     )
                   }
@@ -178,6 +180,7 @@ export const Registrar: React.FC = () => {
               );
             })}
             {recentes.length > 0 && <p className="lv-meta mt-3">Toque no carimbo para dar a nota do show e da organização.</p>}
+            {visitante.janela}
             {janela && <JanelaEuFui show={janela.show} memoria={janela.memoria} usuario={lv.perfil.usuario} fechar={() => setJanela(null)} />}
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <p className="lv-sub flex-1 min-w-[220px]">Não achou a data? Você vai poder pedir a inclusão com data, casa e cidade.</p>

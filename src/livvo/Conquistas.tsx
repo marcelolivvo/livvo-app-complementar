@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { evaluateStickers, sortStickers, type StickerState } from '../services/stickerService';
-import { paraIngressosA } from './HistoricoWrapped';
+import { Plus } from 'lucide-react';
+import type { StickerState } from '../services/stickerService';
+import { avaliarConquistas, MIN_SHOWS_CONQUISTAS } from './conquistas';
 import type { Passaporte } from './stats';
+import { Picotes, Stub } from './ui';
 
 type Filtro = 'all' | StickerState['status'];
 
@@ -15,9 +17,11 @@ const FILTROS: Array<{ id: Filtro; label: string }> = [
 /** Coleção do Passaporte: arquivos Color oficiais com transparência, sem cards. */
 export const MinhasConquistas: React.FC<{ pass: Passaporte; fechar: () => void }> = ({ pass, fechar }) => {
   const [filtro, setFiltro] = useState<Filtro>('all');
-  const stickers = useMemo(() => sortStickers(evaluateStickers(paraIngressosA(pass.memoriasComShow))), [pass]);
+  const stickers = useMemo(() => avaliarConquistas(pass), [pass]);
   const conquistadas = stickers.filter((sticker) => sticker.status === 'unlocked').length;
   const visiveis = stickers.filter((sticker) => filtro === 'all' || sticker.status === filtro);
+  // N2 (06/10/2026): a primeira conquista chega com 5 shows registrados
+  const faltam = Math.max(0, MIN_SHOWS_CONQUISTAS - pass.shows);
 
   return (
     <section id="minhas-conquistas" className="lv-hist lv-conquistas" aria-label="Minhas Conquistas">
@@ -29,19 +33,36 @@ export const MinhasConquistas: React.FC<{ pass: Passaporte; fechar: () => void }
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="lv-display text-[clamp(22px,4vw,32px)] text-[#ECE5D1]">Minhas Conquistas</h2>
-            <p className="lv-sub mt-2">{conquistadas} de {stickers.length} conquistadas</p>
+            <p className="lv-sub mt-2">
+              {faltam > 0 ? `${stickers.length} conquistas para colecionar` : `${conquistadas} de ${stickers.length} conquistadas`}
+            </p>
           </div>
-          <div className="lv-conquistas-filtros" role="group" aria-label="Filtrar conquistas">
-            {FILTROS.map(({ id, label }) => (
-              <button key={id} type="button" aria-pressed={filtro === id} onClick={() => setFiltro(id)}>
-                {label}
-              </button>
-            ))}
-          </div>
+          {faltam === 0 && (
+            <div className="lv-conquistas-filtros" role="group" aria-label="Filtrar conquistas">
+              {FILTROS.map(({ id, label }) => (
+                <button key={id} type="button" aria-pressed={filtro === id} onClick={() => setFiltro(id)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
+        {faltam > 0 && (
+          <div className="lv-conquistas-trava mt-6">
+            <p className="lv-h3">
+              {faltam === 1 ? 'Falta 1 show' : `Faltam ${faltam} shows`} para a sua primeira conquista
+            </p>
+            <p className="lv-meta mt-1">As conquistas começam a partir de {MIN_SHOWS_CONQUISTAS} shows registrados. Os shows antigos contam também.</p>
+            <Picotes total={MIN_SHOWS_CONQUISTAS} feitos={pass.shows} className="mt-3 max-w-[280px]" />
+            <Stub icone={Plus} to="/registrar" className="mt-4">
+              Registrar show
+            </Stub>
+          </div>
+        )}
+
         {visiveis.length ? (
-          <div className="lv-conquistas-grid mt-7">
+          <div className="lv-conquistas-grid mt-7" data-travada={faltam > 0 || undefined}>
             {visiveis.map((sticker) => (
               <figure
                 key={sticker.slug}

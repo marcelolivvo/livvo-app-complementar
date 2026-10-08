@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Bell,
   BookOpen,
   Compass,
   FlaskConical,
@@ -18,7 +17,8 @@ import {
   Images,
 } from 'lucide-react';
 import { Link, useRoute } from './router';
-import { livvo, useLivvo } from './store';
+import { livvo, posterVisitante, useLivvo } from './store';
+import { AvisoConquista, SinoAtividade } from './Novidades';
 import { Avatar, Avisos, avisar } from './ui';
 import { guestService } from '../services/guestService';
 import { adminCatalog } from '../services/adminCatalogService';
@@ -70,7 +70,7 @@ const MenuConta: React.FC<{ fechar: () => void; admin: boolean; abrirFotos: () =
       ) : (
         <div className="px-2.5 pt-2 pb-3">
           <div className="font-extrabold text-[14.5px]">Você está como visitante</div>
-          <p className="lv-meta mt-1">Páginas de show abrem sem login. Para registrar, entre.</p>
+          <p className="lv-meta mt-1">Páginas de show abrem sem login, e você cria 1 pôster sem conta. Para guardar na sua história, entre.</p>
         </div>
       )}
       <div className="lv-menu-sep" />
@@ -128,9 +128,12 @@ const MenuConta: React.FC<{ fechar: () => void; admin: boolean; abrirFotos: () =
         type="button"
         className="lv-menu-item"
         role="menuitem"
-        onClick={acao(() => guestService.resetGuestCards(), 'Contagem do Estúdio zerada')}
+        onClick={acao(() => {
+          guestService.resetGuestCards();
+          posterVisitante.zerar();
+        }, 'Pôster grátis e cards sem login zerados')}
       >
-        <Ticket /> Zerar cards sem login do Estúdio
+        <Ticket /> Zerar pôster grátis e cards sem login
       </button>
       <div className="lv-menu-sep" />
       {logado ? (
@@ -201,9 +204,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <Plus className="w-4 h-4 shrink-0" strokeWidth={3} />
             <span>Registrar show</span>
           </Link>
-          <Link to="/alertas" className="lv-iconbtn" aria-label="Alertas" aria-current={path.startsWith('/alertas') ? 'page' : undefined}>
-            <Bell className="w-5 h-5" />
-          </Link>
+          {/* Sino (revisão 11): ponto quando quem você segue registrou algo novo, e o painel de atividade */}
+          <SinoAtividade alertasAtivo={path.startsWith('/alertas')} />
           <div className="relative" ref={menuRef}>
             <button
               type="button"
@@ -257,6 +259,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </filter>
       </svg>
       <Avisos />
+      <AvisoConquista />
       <LoginModal />
       {admin && fotosAdmin && <AdminFotos catalogo={catalogo} fechar={() => setFotosAdmin(false)} />}
     </div>

@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { ArrowRight, Check, UserCheck, UserPlus, X } from 'lucide-react';
 import { useCatalogo } from '../data/catalog';
 import { PESSOAS_EXEMPLO } from '../data/demo';
-import { atividadeDeQuemSegue, concertBuddies, pessoaPorUsuario, showsEmComum } from '../data/social';
+import { concertBuddies, pessoaPorUsuario, showsEmComum } from '../data/social';
+import { haQuanto, useAtividade } from '../Novidades';
 import { dataCurta, plural } from '../format';
 import { Link, setQuery, useRoute } from '../router';
 import { calcularPassaporte } from '../stats';
@@ -61,10 +62,8 @@ export const Comunidade: React.FC = () => {
   const pass = useMemo(() => calcularPassaporte(lv.memorias, catalogo), [lv.memorias, catalogo]);
   const buddies = useMemo(() => concertBuddies(pass.memoriasComShow, lv.exemplos), [pass, lv.exemplos]);
   const emComum = useMemo(() => showsEmComum(pass.memoriasComShow, lv.exemplos), [pass, lv.exemplos]);
-  const atividade = useMemo(
-    () => (catalogo && lv.exemplos ? atividadeDeQuemSegue(catalogo.shows, lv.seguindo, 9) : []),
-    [catalogo, lv.exemplos, lv.seguindo],
-  );
+  // Mesma atividade do sino e do Início (revisão 11)
+  const atividade = useAtividade(9);
   const pendentes = lv.convites.filter((c) => c.status === 'pendente');
   const respondidos = lv.convites.filter((c) => c.status !== 'pendente');
 
@@ -151,7 +150,7 @@ export const Comunidade: React.FC = () => {
           ) : (
             <section>
               <Grupo titulo="O que quem você segue está vivendo" extra={<TagExemplo />} />
-              {atividade.map(({ pessoa, show, notaShow, horas }) => (
+              {atividade.map(({ pessoa, show, notaShow, em }) => (
                 <Linha
                   key={`${pessoa.usuario}-${show.id}`}
                   to={`/show/${show.id}`}
@@ -162,7 +161,7 @@ export const Comunidade: React.FC = () => {
                       {pessoa.nome} <span className="font-semibold text-[#B3AE9F]">registrou</span> {show.artista}
                     </>
                   }
-                  sub={`${show.casa} · ${show.cidade} · há ${horas} h`}
+                  sub={`${show.casa} · ${show.cidade} · ${haQuanto(em)}`}
                   nota={<Discos valor={notaShow} tamanho={13} rotulo="Nota do show" />}
                 />
               ))}

@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, Image as ImageIcon, MessageCircle, Share2, SlidersHorizontal, Ticket, UserCheck, UserPlus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ExternalLink, Image as ImageIcon, MessageCircle, Plus, Share2, SlidersHorizontal, Ticket, UserCheck, UserPlus } from 'lucide-react';
 import { ehFuturo, useCatalogo, type Show } from '../data/catalog';
 import { MIN_AMOSTRA_NOTAS, concertBuddies, socialDoShow, type Buddy, type ResenhaExemplo } from '../data/social';
 import { dataCartao, dataCurta, dataLonga, diasAte, nota, plural, quando } from '../format';
 import { Link, navigate, useRoute } from '../router';
-import { livvo, nivelVerificacao, personalizacaoDe, ROTULO_VERIFICACAO, useLivvo, type Interesse, type Memoria } from '../store';
+import { livvo, personalizacaoDe, useLivvo, type Interesse, type Memoria } from '../store';
+import { VERIFICATION_SOON } from '../../utils/livvoBrand';
+import { useEuFui } from '../PosterVisitante';
 import { BotaoAtualizarFoto } from '../AtualizarFoto';
 import { BotaoCompartilhar } from '../Compartilhar';
 import { BotaoFavoritar } from '../Favoritos';
@@ -64,11 +66,10 @@ const BlocoFaixa: React.FC<{ titulo: string; resumo?: string; extra?: React.Reac
   );
 };
 
-/** A memória do usuário, como canhoto de ingresso: notas em 1 toque e escada de verificação. */
-const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focar: 'show' | 'org' | null }> = ({ memoria, show, recem, focar }) => {
+/** A memória do usuário, como canhoto de ingresso: notas em 1 toque. Sem escada de verificação (N1, revisão 11). */
+const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; focar: 'show' | 'org' | null; acoes?: React.ReactNode }> = ({ memoria, show, recem, focar, acoes }) => {
   const orgRef = useRef<HTMLDivElement>(null);
   const showRef = useRef<HTMLDivElement>(null);
-  const nivel = nivelVerificacao(memoria);
   const [confirmar, setConfirmar] = useState(false);
   useEffect(() => {
     if (!confirmar) return;
@@ -118,14 +119,13 @@ const MinhaMemoria: React.FC<{ memoria: Memoria; show: Show; recem: boolean; foc
       </div>
       <p className="lv-meta mt-4">Duas notas para o artista não pagar pela fila do bar. Toque no ingresso: a metade esquerda vale meio ponto.</p>
 
+      {/* No celular, os três botões do pôster vêm logo depois das notas, menores (revisão 11) */}
+      {acoes}
+
       <div className="mt-4 pt-4 border-t border-dashed border-[#3A3159]">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="lv-label">Verificação</span>
-          <span className="lv-tag lv-tag--teal">{ROTULO_VERIFICACAO[nivel]}</span>
-        </div>
-        <p className="lv-meta mt-2 leading-snug">Suba o selo com uma foto sua do show, o ingresso ou um amigo que confirme que você estava lá.</p>
+        {/* N1: sem escada de verificação e sem "verificado" até existir a ferramenta */}
+        <p className="lv-meta leading-snug">{VERIFICATION_SOON}</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-          <BotaoAtualizarFoto show={show} memoria={memoria} fotoCatalogo={show.foto} />
           <span className="inline-flex items-center gap-2 text-[13px] font-bold text-[#B3AE9F]">
             <Ticket className="w-4 h-4 text-[#2FB8BA]" /> Ingresso de Memória <TagProxima parte={2} />
           </span>
@@ -217,6 +217,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
   const [recem, setRecem] = useState(false);
   const [rascunho, setRascunho] = useState<RascunhoPersonalizacao | null>(null);
   const celular = useCelular();
+  const visitante = useEuFui();
   useEffect(() => {
     setRecem(false);
     setRascunho(null);
@@ -311,7 +312,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
   };
 
   const euFui = () => {
-    const m = livvo.registrar(show.id);
+    const m = visitante.euFui(show, lv.logado);
     if (m) {
       setRecem(true);
       avisar('Show guardado na sua história');
@@ -434,7 +435,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
               <div className={`min-w-0 lg:hidden ${rascunho ? 'hidden' : ''}`}>{cabecalho}</div>
               {/* Botões sob o pôster (07/10/2026): Atualizar foto, Compartilhar e Personalizar */}
               {minha && (
-                <div className={`${ingresso || rascunho ? '' : 'col-span-2'} lg:mt-4 grid gap-2.5 sm:max-w-[420px] lg:max-w-none`}>
+                <div className={`${ingresso || rascunho ? '' : 'col-span-2'} lg:mt-4 gap-2.5 sm:max-w-[420px] lg:max-w-none ${celular && !rascunho ? 'hidden' : 'grid'}`}>
                   <BotaoAtualizarFoto show={show} memoria={minha} fotoCatalogo={show.foto} botao />
                   <BotaoCompartilhar show={show} memoria={minha} usuario={lv.perfil.usuario} perso={perso} detalhes={detalhes} botao />
                   <button type="button" className="lv-btn-perso" aria-expanded={Boolean(rascunho)} aria-controls="painel-personalizar" onClick={abrirPersonalizar}>
@@ -480,7 +481,7 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
                       aria-pressed={false}
                       onClick={() => marcar('quero_ir')}
                     >
-                      {!interesse && <Check className="w-4 h-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />}
+                      {!interesse && <Plus className="w-4 h-4 shrink-0" strokeWidth={2.4} aria-hidden="true" />}
                       <span>Quero ir</span>
                     </button>
                   )}
@@ -505,14 +506,35 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
               </div>
             ) : minha ? (
               <div className="lg:mt-7">
-                <MinhaMemoria memoria={minha} show={show} recem={recem} focar={query.get('avaliar') === 'org' ? 'org' : query.get('avaliar') === 'show' ? 'show' : null} />
+                <MinhaMemoria
+                  memoria={minha}
+                  show={show}
+                  recem={recem}
+                  focar={query.get('avaliar') === 'org' ? 'org' : query.get('avaliar') === 'show' ? 'show' : null}
+                  acoes={
+                    celular ? (
+                      <div className="lv-acoes-show mt-4">
+                        <BotaoAtualizarFoto show={show} memoria={minha} fotoCatalogo={show.foto} fantasma />
+                        <BotaoCompartilhar show={show} memoria={minha} usuario={lv.perfil.usuario} perso={perso} detalhes={detalhes} />
+                        <button type="button" className="lv-ghost" aria-expanded={false} aria-controls="painel-personalizar" onClick={abrirPersonalizar}>
+                          <SlidersHorizontal className="w-4 h-4" /> Personalizar
+                        </button>
+                      </div>
+                    ) : undefined
+                  }
+                />
               </div>
             ) : (
               <div className="lg:mt-7">
-                <Stub icone={Check} onClick={euFui} className="w-full sm:w-auto sm:min-w-[240px]">
+                <Stub icone={Plus} onClick={euFui} className="w-full sm:w-auto sm:min-w-[240px]">
                   Eu fui
                 </Stub>
-                <p className="lv-meta mt-3">Guarde este show na sua história. Leva um toque; as notas você dá logo depois.</p>
+                <p className="lv-meta mt-3">
+                  {lv.logado
+                    ? 'Guarde este show na sua história. Leva um toque; as notas você dá logo depois.'
+                    : 'Crie o pôster deste show e compartilhe, sem precisar de conta. Para guardar na sua história, entre no Livvo.'}
+                </p>
+                {visitante.janela}
               </div>
             )}
 
@@ -567,7 +589,8 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
             </div>
           )}
           <p className="lv-meta mt-3">
-            Média de {plural(soc.media.amostra, 'avaliação', 'avaliações')}. As médias só aparecem a partir de {MIN_AMOSTRA_NOTAS}.
+            Média de {plural(soc.media.amostra, 'avaliação', 'avaliações')} públicas ou para seguidores. Notas de memórias privadas não entram, e a média só
+            aparece a partir de {MIN_AMOSTRA_NOTAS}.
           </p>
         </Bloco>
       )}

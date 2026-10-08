@@ -16,7 +16,7 @@ import {
 import { livvo, useLivvo, type Memoria } from './store';
 import { Bilhete, Grupo, Picotes, Poster, Stub, avisar } from './ui';
 
-/** Marca na memória de que a foto foi enviada pela pessoa (sobe a escada de verificação para "Com foto"). */
+/** Marca na memória de que a foto foi enviada pela pessoa (guardado para a verificação, que chega em breve; N1). */
 const marcaUpload = (showId: string) => `livvo-foto:show:${showId}`;
 
 export const Modal: React.FC<{ rotulo: string; fechar: () => void; children: React.ReactNode }> = ({ rotulo, fechar, children }) => {
@@ -144,7 +144,7 @@ export const AtualizarFoto: React.FC<{ show: Show; memoria: Memoria; fotoCatalog
               <Stub icone={Upload} cor="cream" onClick={() => input.current?.click()} disabled={Boolean(tratando)}>
                 {tratando === 'upload' ? 'Tratando…' : 'Enviar uma foto sua'}
               </Stub>
-              <p className="lv-meta mt-2">Foto sua do show sobe a memória para “Com foto”.</p>
+              <p className="lv-meta mt-2">Uma foto sua do show deixa a memória mais sua.</p>
             </div>
 
             <Grupo titulo="Fotos do artista" extra={<span className="lv-meta">Deezer · Wikimedia · Wikipédia</span>} />
@@ -380,13 +380,19 @@ export const BotaoAtualizarFoto: React.FC<{
   className?: string;
   compacto?: boolean;
   botao?: boolean;
-}> = ({ show, memoria, fotoCatalogo, className = '', compacto, botao }) => {
+  /** Botão contornado e menor (página do show no celular, revisão 11). */
+  fantasma?: boolean;
+}> = ({ show, memoria, fotoCatalogo, className = '', compacto, botao, fantasma }) => {
   const [aberto, setAberto] = useState(false);
   return (
     <>
       {botao ? (
         <button type="button" className={`lv-btn lv-btn--stub lv-btn--cream w-full whitespace-nowrap ${className}`} onClick={() => setAberto(true)}>
           <ImagePlus className="w-4 h-4 shrink-0" strokeWidth={2.2} /> <span>Atualizar foto</span>
+        </button>
+      ) : fantasma ? (
+        <button type="button" className={`lv-ghost ${className}`} onClick={() => setAberto(true)}>
+          <ImagePlus className="w-4 h-4" /> Atualizar foto
         </button>
       ) : (
         <button type="button" className={`lv-link ${compacto ? '!text-[12px]' : ''} ${className}`} onClick={() => setAberto(true)}>

@@ -10,8 +10,9 @@
      LivvoCredencial.render(elemento, { nome, usuario, shows, numero, desde, foto, nivel?, recortada? })
      LivvoCredencial.exportarPNG(dados)  -> Promise<Blob>  (PNG transparente 2239 x 3605 px: peça + margem do brilho)
 
-   - nivel: calculado pelo nº de shows (Bronze até 10, Prata 11-25, Ouro 26-50, Platina 51-100, Lenda Viva 101+).
-     Pode ser forçado com `nivel` ("Fã Platina", "platina"...).
+   - nivel: calculado pelo nº de shows (até 10, 11-25, 26-50, 51-100, 101+). A pílula mostra "Nível 1" a "Nível 5":
+     o Livvo usa só as faixas de acesso, sem os nomes de medalha (decisão de 07/10/2026, revisão 11).
+     Pode ser forçado com `nivel` (chave antiga "platina" ou o nome da faixa, "Backstage").
    - acesso (tarja de baixo): sempre derivado do nível — PISTA, PISTA PREMIUM, CAMAROTE, BACKSTAGE, ALL ACCESS —
      em RAYDIS, sem distorção (duas linhas quando o rótulo tem duas palavras e isso deixa a letra maior).
    - foto: com fundo transparente (recortada) a pessoa fica sobre a moldura off-white, saindo pelo topo;
@@ -43,11 +44,11 @@
   var COR = { texto: '#140827', arroba: '#150F2C', rotulo: '#0C112B', numero: '#05122A', pilula: '#7DCBDD', acesso: '#76CFDB' };
 
   var NIVEIS = [
-    { max: 10, nivel: 'Fã Bronze', acesso: 'PISTA', chave: 'bronze' },
-    { max: 25, nivel: 'Fã Prata', acesso: 'PISTA PREMIUM', chave: 'prata' },
-    { max: 50, nivel: 'Fã Ouro', acesso: 'CAMAROTE', chave: 'ouro' },
-    { max: 100, nivel: 'Fã Platina', acesso: 'BACKSTAGE', chave: 'platina' },
-    { max: Infinity, nivel: 'Lenda Viva', acesso: 'ALL ACCESS', chave: 'lenda' }
+    { max: 10, nivel: 'Nível 1', faixa: 'Pista', acesso: 'PISTA', chave: 'bronze' },
+    { max: 25, nivel: 'Nível 2', faixa: 'Pista Premium', acesso: 'PISTA PREMIUM', chave: 'prata' },
+    { max: 50, nivel: 'Nível 3', faixa: 'Camarote', acesso: 'CAMAROTE', chave: 'ouro' },
+    { max: 100, nivel: 'Nível 4', faixa: 'Backstage', acesso: 'BACKSTAGE', chave: 'platina' },
+    { max: Infinity, nivel: 'Nível 5', faixa: 'All Access', acesso: 'ALL ACCESS', chave: 'lenda' }
   ];
   function nivelPorShows(n) {
     n = Math.max(0, parseInt(n, 10) || 0);
@@ -55,7 +56,7 @@
   }
   function nivelPorNome(nome) {
     var k = String(nome || '').toLowerCase();
-    for (var i = 0; i < NIVEIS.length; i++) if (k.indexOf(NIVEIS[i].chave) >= 0) return NIVEIS[i];
+    for (var i = 0; i < NIVEIS.length; i++) if (k.indexOf(NIVEIS[i].chave) >= 0 || k === NIVEIS[i].faixa.toLowerCase()) return NIVEIS[i];
     return null;
   }
 
@@ -334,7 +335,7 @@
       // acesso na tarja Preto Profundo
       desenharAcesso(ctx, d.nivel.acesso);
 
-      canvas.setAttribute('aria-label', 'Credencial de fã Livvo de ' + (d.nome || 'usuário') + ', Nº ' + d.numero + ', ' + d.shows + ' shows desde ' + d.desde + ', ' + d.nivel.nivel + ', acesso ' + d.nivel.acesso);
+      canvas.setAttribute('aria-label', 'Credencial de fã Livvo de ' + (d.nome || 'usuário') + ', Nº ' + d.numero + ', ' + d.shows + ' shows desde ' + d.desde + ', ' + d.nivel.nivel + ', faixa ' + d.nivel.faixa);
       return { nivel: d.nivel.nivel, acesso: d.nivel.acesso, foto: modo, exportavel: !foto || foto.cors };
     });
   }

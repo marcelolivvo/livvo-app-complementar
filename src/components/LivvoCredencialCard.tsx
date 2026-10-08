@@ -15,7 +15,7 @@ export interface DadosCredencial {
   numero: number;
   desde?: number;
   foto?: string | null;
-  nivel?: string; // título do nível da Wallet ("Fã Platina"...); sem nível, calcula pelos shows
+  nivel?: string; // nível vindo do Estúdio ("Fã Platina" vira "Nível 4"); sem nível, calcula pelos shows (só faixas, revisão 11)
 }
 
 interface LivvoCredencialAPI {

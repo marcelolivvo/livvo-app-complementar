@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
 import { MyHistory } from '../components/MyHistory';
 import { TourWrappedModal } from '../components/TourWrappedModal';
-import { FAN_MEDAL_TIERS, type CollectedTicket, type FanStats } from '../services/walletService';
-import type { CardTemplateConfig } from '../types';
+import { FAN_MEDAL_TIERS, type FanStats } from '../services/walletService';
 import type { Show } from './data/catalog';
 import type { Passaporte } from './stats';
-import { personalizacaoDe } from './store';
+import { paraIngressosA } from './conquistas';
 import { useImagemDoPoster } from './ui';
 
 /**
@@ -15,32 +14,10 @@ import { useImagemDoPoster } from './ui';
  * Carregado sob demanda (só quando a pessoa abre um dos dois).
  */
 
-const CONFIG_VAZIA = {} as CardTemplateConfig;
+export { paraIngressosA };
 
 /** Endereço externo passa pelo /api/foto (mesmo domínio) para o html-to-image ler a foto no Wrapped. */
 const viaServidor = (url: string) => (/^(data:|blob:|\/)/.test(url) ? url : `/api/foto?url=${encodeURIComponent(url)}`);
-
-export const paraIngressosA = (memoriasComShow: Passaporte['memoriasComShow']): CollectedTicket[] =>
-  memoriasComShow
-    .slice()
-    .sort((a, b) => a.show.ts - b.show.ts)
-    .map(({ memoria, show }) => {
-      const p = personalizacaoDe(memoria);
-      return {
-        id: memoria.id,
-        showCode: show.id,
-        artistName: show.artista,
-        tourName: show.turne,
-        venue: show.casa,
-        city: show.cidade,
-        state: show.uf,
-        date: show.data, // dd/mm/aaaa, o formato que o historyService do A lê
-        config: CONFIG_VAZIA,
-        collectedAt: memoria.criadaEm,
-        stampType: p.carimbo === 'eu_fui' ? 'eu-fui' : p.carimbo === 'show_da_minha_vida' ? 'saudade' : 'none',
-        favoriteSong: p.faixa || undefined,
-      };
-    });
 
 /** FanStats do A a partir do Passaporte (nível = faixa do Passaporte, não as medalhas do Estúdio). */
 export const statsDoPassaporte = (pass: Passaporte): FanStats => {

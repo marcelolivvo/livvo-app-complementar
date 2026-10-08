@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, BookOpen, Check, Compass, Plus } from 'lucide-react';
 import { ehFuturo, useCatalogo, type Catalogo, type Show } from '../data/catalog';
-import { atividadeExemplo } from '../data/social';
 import { dataCartao, dataCurta, dataLonga, dataParaTs, diasAte, hojeTs, nota, quando } from '../format';
 import { Link } from '../router';
 import { calcularPassaporte, type Passaporte } from '../stats';
 import { livvo, useLivvo, type Livvo } from '../store';
+import { haQuanto, lerVistaAgora, marcarAtividadeVista, useAtividade } from '../Novidades';
 import { Avatar, Bilhete, CaixaData, CardShow, Discos, FotoArtista, Grupo, IngressoContorno, Linha, Picotes, Poster, Stub, TagExemplo, avisar } from '../ui';
 
 /* Cartão de momento: um só pedido por vez ---------------------------------------------
@@ -103,7 +103,7 @@ const CartaoMomento: React.FC<{ m: Momento; usuario: string }> = ({ m, usuario }
             <span className="lv-meta">{m.faltam > 1 ? `${m.faltam} memórias sem essa nota` : 'É a última que falta'}</span>
           </div>
         ) : m.tipo === 'como_foi' ? (
-          <Stub icone={Check} to={`/show/${show.id}`}>
+          <Stub icone={Plus} to={`/show/${show.id}`}>
             Eu fui
           </Stub>
         ) : (
@@ -121,7 +121,7 @@ const CartaoMomento: React.FC<{ m: Momento; usuario: string }> = ({ m, usuario }
 export const textoFaltam = (pass: Passaporte) =>
   pass.proximaFaixa ? (
     <>
-      Faltam <b className="text-[#ECE5D1]">{pass.faltam}</b> {pass.faltam === 1 ? 'show' : 'shows'} para o nível {pass.proximaFaixa}
+      {pass.faltam === 1 ? 'Falta' : 'Faltam'} <b className="text-[#ECE5D1]">{pass.faltam}</b> {pass.faltam === 1 ? 'show' : 'shows'} para o nível {pass.proximaFaixa}
     </>
   ) : (
     <>Você chegou ao nível mais alto: {pass.faixa}</>
@@ -361,7 +361,13 @@ export const Inicio: React.FC = () => {
   const lv = useLivvo();
   const pass = useMemo(() => calcularPassaporte(lv.memorias, catalogo), [lv.memorias, catalogo]);
   const momento = useMemo(() => (catalogo ? escolherMomento(lv, catalogo, pass) : null), [lv, catalogo, pass]);
-  const atividade = useMemo(() => (catalogo && lv.exemplos ? atividadeExemplo(catalogo.shows) : []), [catalogo, lv.exemplos]);
+  // O que quem você segue está vivendo (revisão 11): destaca o que é novo desde a última visita
+  const atividade = useAtividade(6);
+  const [vistaAntes] = useState(lerVistaAgora);
+  const novos = atividade.filter((x) => x.em > vistaAntes).length;
+  useEffect(() => {
+    if (lv.logado && atividade.length) marcarAtividadeVista();
+  }, [lv.logado, atividade.length]);
 
   const vemAi = useMemo(() => {
     if (!catalogo) return [];
@@ -431,24 +437,34 @@ export const Inicio: React.FC = () => {
           </section>
         )}
 
-        <section aria-label="Atividade">
-          <Grupo titulo="Quem você segue" extra={atividade.length > 0 ? <TagExemplo /> : undefined} />
+        <section aria-label="O que quem você segue está vivendo">
+          <Grupo titulo="O que quem você segue está vivendo" extra={atividade.length > 0 ? <TagExemplo /> : undefined} />
+          {novos > 0 && (
+            <p className="lv-novidades-aviso">
+              <span className="lv-sino-ponto lv-sino-ponto--inline" aria-hidden="true" />
+              {novos === 1 ? '1 novidade' : `${novos} novidades`} desde a sua última visita
+            </p>
+          )}
           {atividade.length > 0 ? (
-            atividade.map(({ pessoa, show, notaShow, horas }) => (
-              <Linha
-                key={`${pessoa.usuario}-${show.id}`}
-                to={`/show/${show.id}`}
-                foto
-                inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
-                titulo={
-                  <>
-                    {pessoa.nome} <span className="font-semibold text-[#B3AE9F]">registrou</span> {show.artista}
-                  </>
-                }
-                sub={`${show.casa} · há ${horas} h`}
-                nota={<Discos valor={notaShow} tamanho={13} rotulo="Nota do show" />}
-              />
-            ))
+            atividade.map(({ pessoa, show, notaShow, em }) => {
+              const novo = em > vistaAntes;
+              return (
+                <div key={`${pessoa.usuario}-${show.id}`} className="lv-ativ-linha" data-novo={novo || undefined}>
+                  <Linha
+                    to={`/show/${show.id}`}
+                    foto
+                    inicio={<FotoArtista nome={show.artista} artistaId={show.artistaId} />}
+                    titulo={
+                      <>
+                        {pessoa.nome} <span className="font-semibold text-[#B3AE9F]">registrou</span> {show.artista}
+                      </>
+                    }
+                    sub={`${show.casa} · ${haQuanto(em)}`}
+                    nota={novo ? <span className="lv-tag lv-tag--cyan">Novo</span> : <Discos valor={notaShow} tamanho={13} rotulo="Nota do show" />}
+                  />
+                </div>
+              );
+            })
           ) : (
             <div className="py-4">
               <p className="lv-sub">Siga quem foi aos mesmos shows que você e veja o que essas pessoas estão vivendo.</p>

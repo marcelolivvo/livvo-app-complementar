@@ -1602,8 +1602,97 @@
   white-space: nowrap;
   justify-content: flex-start;
 }
+/* Celular (revisão 11): grade 2 × 2, os 4 botões sempre visíveis; o texto pode ir para 2 linhas */
 @media (max-width: 719px) {
-  .lv-acoes-4 { overflow-x: auto; scrollbar-width: none; margin-right: -20px; padding-right: 20px; scroll-snap-type: x proximity; }
-  .lv-acoes-4::-webkit-scrollbar { display: none; }
-  .lv-acoes-4 > .lv-btn--stub { flex: 0 0 auto; --stub: 40px; gap: 22px; padding: 13px 16px 13px 13px !important; font-size: 13px; scroll-snap-align: start; }
+  .lv-acoes-4 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .lv-acoes-4 > .lv-btn--stub {
+    width: 100%;
+    --stub: 34px;
+    gap: 16px;
+    padding: 12px 10px 12px 10px !important;
+    font-size: 12.5px;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: left;
+    min-height: 52px;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------------------------
+   Revisão 11 (08/10/2026)
+   --------------------------------------------------------------------------------------------- */
+
+/* Página do show no celular: os três botões vêm depois das notas, contornados e menores */
+.lv-acoes-show { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lv-acoes-show > * { min-width: 0; }
+.lv-acoes-show .lv-ghost {
+  width: 100%; height: 100%; flex-direction: column; justify-content: center; gap: 5px;
+  padding: 9px 4px; font-size: 11.5px; line-height: 1.15; text-align: center; white-space: normal;
+}
+
+/* Minhas Conquistas antes de 5 shows */
+.lv-conquistas-trava { padding: 18px; border: 1.5px dashed var(--lv-line-2); border-radius: 12px; background: rgba(79, 220, 222, 0.04); }
+.lv-conquistas-grid[data-travada] .lv-conquista img { filter: grayscale(1); opacity: 0.28; }
+
+/* Passaporte em branco (conta zerada) */
+.lv-passaporte-vazio { max-width: 620px; padding: 18px; border: 1.5px dashed var(--lv-line-2); border-radius: 12px; }
+
+/* Sino: ponto de novidade e painel de atividade */
+.lv-sino { position: relative; }
+.lv-sino-ponto {
+  position: absolute; top: 8px; right: 9px; width: 9px; height: 9px; border-radius: 999px;
+  background: var(--lv-cyan); box-shadow: 0 0 0 2px var(--lv-ink), 0 0 10px rgba(79, 220, 222, 0.8);
+  animation: lvPulso 2.2s ease-out infinite;
+}
+.lv-sino-ponto--inline { position: static; display: inline-block; flex: 0 0 auto; }
+@keyframes lvPulso {
+  0% { box-shadow: 0 0 0 2px var(--lv-ink), 0 0 0 2px rgba(79, 220, 222, 0.55); }
+  70% { box-shadow: 0 0 0 2px var(--lv-ink), 0 0 0 9px rgba(79, 220, 222, 0); }
+  100% { box-shadow: 0 0 0 2px var(--lv-ink), 0 0 0 9px rgba(79, 220, 222, 0); }
+}
+.lv-painel-ativ { width: min(380px, calc(100vw - 24px)); padding-bottom: 6px; }
+@media (max-width: 640px) {
+  .lv-painel-ativ { position: fixed; left: 12px; right: 12px; top: calc(var(--lv-top-h, 64px) + 8px); width: auto; max-height: calc(100vh - 170px); overflow-y: auto; }
+}
+.lv-painel-lista { list-style: none; margin: 8px 0 4px; padding: 0; }
+.lv-painel-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: var(--lv-cream); }
+.lv-painel-item:hover { background: var(--lv-raise); }
+.lv-painel-item[data-novo] { background: rgba(79, 220, 222, 0.07); box-shadow: inset 3px 0 0 var(--lv-cyan); }
+.lv-novidades-aviso { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; font-weight: 700; color: var(--lv-cyan); }
+.lv-ativ-linha[data-novo] { box-shadow: inset 3px 0 0 var(--lv-cyan); background: linear-gradient(90deg, rgba(79, 220, 222, 0.07), transparent 70%); }
+.lv-ativ-linha[data-novo] > * { padding-left: 10px; }
+
+/* Aviso animado de nova conquista */
+.lv-conq-aviso-fundo {
+  position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(8, 6, 16, 0.78); backdrop-filter: blur(3px);
+  animation: lvFadeIn 0.25s ease-out both;
+}
+.lv-conq-aviso {
+  position: relative; width: min(420px, 100%); padding: 26px 22px 22px; text-align: center;
+  background: var(--lv-paper); border: 1.5px solid var(--lv-cyan); border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6), 0 0 40px rgba(79, 220, 222, 0.18);
+  animation: lvConqSobe 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+.lv-conq-aviso-x { position: absolute; top: 8px; right: 8px; }
+.lv-conq-aviso-palco { position: relative; width: 190px; height: 190px; margin: 10px auto 12px; display: grid; place-items: center; }
+.lv-conq-aviso-palco img { position: relative; width: 168px; height: 168px; object-fit: contain; animation: lvConqSticker 0.9s cubic-bezier(0.18, 1.2, 0.3, 1) 0.15s both; }
+.lv-conq-aviso-raios {
+  position: absolute; inset: 0; border-radius: 999px;
+  background: conic-gradient(from 0deg, rgba(79, 220, 222, 0) 0deg, rgba(79, 220, 222, 0.28) 20deg, rgba(79, 220, 222, 0) 40deg, rgba(255, 214, 10, 0.2) 60deg, rgba(79, 220, 222, 0) 80deg, rgba(79, 220, 222, 0.28) 110deg, rgba(79, 220, 222, 0) 130deg, rgba(255, 214, 10, 0.2) 160deg, rgba(79, 220, 222, 0) 180deg, rgba(79, 220, 222, 0.28) 210deg, rgba(79, 220, 222, 0) 230deg, rgba(255, 214, 10, 0.2) 260deg, rgba(79, 220, 222, 0) 280deg, rgba(79, 220, 222, 0.28) 310deg, rgba(79, 220, 222, 0) 330deg);
+  -webkit-mask: radial-gradient(circle, #000 30%, transparent 70%); mask: radial-gradient(circle, #000 30%, transparent 70%);
+  animation: lvGira 9s linear infinite, lvFadeIn 0.6s ease-out 0.3s both;
+}
+@keyframes lvFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lvConqSobe { from { opacity: 0; transform: translateY(24px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes lvConqSticker {
+  0% { opacity: 0; transform: scale(0.2) rotate(-25deg); }
+  60% { opacity: 1; transform: scale(1.12) rotate(6deg); }
+  80% { transform: scale(0.96) rotate(-2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes lvGira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .lv-conq-aviso-fundo, .lv-conq-aviso, .lv-conq-aviso-palco img, .lv-conq-aviso-raios, .lv-sino-ponto { animation: none !important; }
 }
