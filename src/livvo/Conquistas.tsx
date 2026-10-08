@@ -7,21 +7,24 @@ import { Picotes, Stub } from './ui';
 
 type Filtro = 'all' | StickerState['status'];
 
+// Ordem dos filtros: decisão do Edmir de 08/10/2026, 06h18 (Conquistadas, A conquistar, Todas, Em breve)
 const FILTROS: Array<{ id: Filtro; label: string }> = [
-  { id: 'all', label: 'Todas' },
   { id: 'unlocked', label: 'Conquistadas' },
   { id: 'locked', label: 'A conquistar' },
+  { id: 'all', label: 'Todas' },
   { id: 'soon', label: 'Em breve' },
 ];
 
 /** Coleção do Passaporte: arquivos Color oficiais com transparência, sem cards. */
 export const MinhasConquistas: React.FC<{ pass: Passaporte; fechar: () => void }> = ({ pass, fechar }) => {
-  const [filtro, setFiltro] = useState<Filtro>('all');
+  // Abre no primeiro filtro (Conquistadas)
+  const [filtro, setFiltro] = useState<Filtro>('unlocked');
   const stickers = useMemo(() => avaliarConquistas(pass), [pass]);
   const conquistadas = stickers.filter((sticker) => sticker.status === 'unlocked').length;
-  const visiveis = stickers.filter((sticker) => filtro === 'all' || sticker.status === filtro);
   // N2 (06/10/2026): a primeira conquista chega com 5 shows registrados
   const faltam = Math.max(0, MIN_SHOWS_CONQUISTAS - pass.shows);
+  // Antes de 5 shows os filtros somem e a galeria mostra todas
+  const visiveis = stickers.filter((sticker) => faltam > 0 || filtro === 'all' || sticker.status === filtro);
 
   return (
     <section id="minhas-conquistas" className="lv-hist lv-conquistas" aria-label="Minhas Conquistas">

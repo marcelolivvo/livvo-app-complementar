@@ -2,7 +2,7 @@
 
 Status: **DRAFT** para avaliação do Greg · 08/10/2026 · revisão 11 · preparado por Claude, decisões de produto do Edmir.
 
-> **Novo na revisão 11 (08/10):** correções da análise de 07/10 e as decisões que estavam em aberto: sem escada de verificação ("Em breve, o Livvo vai verificar a sua presença nos shows."), conquistas a partir de 5 shows, "encontrou" na frase de posicionamento, só as faixas de acesso, visitante com 1 pôster grátis, médias só com notas públicas e de seguidores (mínimo 5; 30 nos relatórios), aviso animado de nova conquista e sino com "O que quem você segue está vivendo". Detalhes no topo do HANDOFF, seção 5.9 e decisões 73 a 86.
+> **Novo na revisão 11 (08/10):** correções da análise de 07/10 e as decisões que estavam em aberto: sem escada de verificação ("Em breve, o Livvo vai verificar a sua presença nos shows."), conquistas a partir de 5 shows, "encontrou" na frase de posicionamento, só as faixas de acesso, visitante com 1 pôster grátis, médias só com notas públicas e de seguidores (mínimo 5; 30 nos relatórios), aviso animado de nova conquista e sino com "O que quem você segue está vivendo". Às 06h18: botões da Minha História na ordem Registrar show, Meu histórico, Gerar meu Wrapped e Minhas Conquistas, e filtros das conquistas na ordem Conquistadas, A conquistar, Todas e Em breve. Detalhes no topo do HANDOFF, seção 5.9 e decisões 73 a 88.
 
 Esta pasta reúne tudo o que foi montado hoje para a "cara" do Livvo final. É uma **prévia de referência visual e de comportamento**, feita dentro do app A (Vercel). Pelo plano de fusão de 06/10/2026, **o site B (livvomusic.com.br) continua sendo a base técnica**: reaproveitar ou reescrever estes componentes no stack de B é decisão sua.
 
@@ -40,18 +40,18 @@ npm run build      # tsc -b + vite build
    - Regra fixa: ingressos e botões-ingresso têm os furos **só em cima e embaixo**.
 4. **Seção 7:** modelo de dados proposto para o banco de B. Esta é a parte que mais pede a sua decisão.
 5. **Seção 8:** o que é real e o que é exemplo.
-6. **Seção 9:** as 86 decisões já tomadas com o Edmir (as escolhas que estavam em DRAFT foram aprovadas em 08/10).
+6. **Seção 9:** as 88 decisões já tomadas com o Edmir (as escolhas que estavam em DRAFT foram aprovadas em 08/10).
 7. **Seção 11:** mapa dos arquivos.
 
 ## 4. Telas
 
-58 capturas em [`telas/`](telas/), tiradas em celular (390 × 844) e computador (1440 × 900). O prefixo indica a revisão:
+60 capturas em [`telas/`](telas/), tiradas em celular (390 × 844) e computador (1440 × 900). O prefixo indica a revisão:
 
 - **sem prefixo:** telas principais;
 - **`r7-`:** fotos, janela do Eu fui, Comunidade em caixas, favoritos;
 - **`r8-` e `r9-`:** página de entrada;
 - **`r10-`:** Minha História com os 4 botões e Minhas Conquistas;
-- **`r11-`:** grade 2 × 2, notas logo abaixo do pôster no celular, sino com novidades, conta zerada, aviso de nova conquista, conquistas travadas e pôster do visitante.
+- **`r11-`:** grade 2 × 2, notas logo abaixo do pôster no celular, sino com novidades, conta zerada, aviso de nova conquista, conquistas travadas, filtros das conquistas e pôster do visitante.
 
 Quando uma captura antiga diferir de uma nova, valem a **mais nova** e a **prévia publicada**.
 

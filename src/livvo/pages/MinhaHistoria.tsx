@@ -277,7 +277,8 @@ export const MinhaHistoria: React.FC = () => {
 
           </div>
 
-          {/* 4 botões: numa linha no computador (07/10, 21h51) e em grade 2 × 2 no celular (revisão 11) */}
+          {/* 4 botões: Registrar show, Meu histórico, Gerar meu Wrapped e Minhas Conquistas (ordem do Edmir, 08/10 às 06h18);
+              numa linha no computador e em grade 2 × 2 no celular (revisão 11) */}
           <div className="lv-acoes-4 order-2 lg:order-3 lg:col-span-2 -mt-1 lg:-mt-3">
             <Stub icone={Plus} to="/registrar">
               Registrar show
