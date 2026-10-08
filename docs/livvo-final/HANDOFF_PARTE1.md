@@ -88,7 +88,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e a cor dos
 | `--lv-raise` | `#1E1833` | Hover de linhas e menu |
 | `--lv-line` / `--lv-line-2` | `#282141` / `#3A3159` | Bordas, picotes, discos vazios |
 | `--lv-cyan` / `--lv-cyan-hi` | `#4FDCDE` / `#22E3E6` | Ação principal (um por tela), item ativo, carimbo |
-| `--lv-teal` | `#2FB8BA` | Ícones de apoio, selo de verificação |
+| `--lv-teal` | `#2FB8BA` | Ícones de apoio (o selo da escada de verificação saiu da tela na revisão 11) |
 | `--lv-cream` | `#ECE5D1` | Texto principal, botão selecionado |
 | `--lv-muted` / `--lv-dim` | `#B3AE9F` / `#8A8577` | Texto secundário e rótulos |
 | `--lv-nota` | `#FFD60A` | Números de nota em RAYDIS (amarelo, decisão de 07/10/2026 à tarde). Os ingressos de nota usam Off-white `#ECE5D1` (preenchimento) e Teal `#2FB8BA` (contorno e detalhes) |
@@ -98,7 +98,7 @@ Mesmos tokens do Estúdio ("Bilheteria"), mais a superfície elevada e a cor dos
 | Alfa Slab One | Títulos de página e seção, nome do artista no pôster e nos ingressos. Título do Passaporte em **Teal** (como "Passaporte Oficial de Shows" do Estúdio) |
 | RAYDIS 700 | Números grandes (campos do Passaporte, contagem regressiva, notas, dia no pôster e nas listas). Nunca em texto com acento |
 | Barlow 600/700 | Todos os rótulos em caixa alta: tira do ingresso, rótulos de campo, cabeçalhos de grupo, etiquetas, barra inferior, textos do pôster. **Substitui o DM Mono do Estúdio** (a identidade oficial manda Barlow) |
-| Plus Jakarta Sans | Corpo do texto, **provisório até a decisão #22** (a identidade oficial indica fonte do sistema; o Estúdio usa Plus Jakarta) |
+| Plus Jakarta Sans | Corpo do texto no app e no site (**decisão #22 tomada em 08/10/2026**; nos impressos, Barlow). O registro na identidade oficial aguarda a aprovação do texto pelo Edmir |
 
 **Gramática "Bilheteria" do Estúdio (vale para todas as telas).** As classes vêm de `src/index.css` (as mesmas do Estúdio e da Wallet) e funcionam dentro de `.lv-app`; `src/livvo/livvo.css` só troca DM Mono por Barlow e acrescenta o que faltava.
 
@@ -164,7 +164,7 @@ Regras visuais aplicadas:
 | --- | --- |
 | **Padrão Livvo** (`padronizar`) | Toda foto enviada ou escolhida vira um JPEG 640 × 800 (4:5): recorte centralizado e puxado para cima (rostos) e **duotone suave** (mapa de cores Preto Profundo → azul-petróleo escuro → Teal → Teal claro → Off-white, com ajuste leve de níveis), que mantém os detalhes da foto. Feito no `<canvas>` do navegador. Fotos salvas com o halftone antigo são ignoradas (`v` do tratamento) |
 | **Foto automática** (`/api/foto-artista?nome=` e `useFotoAutomatica`) | Todo artista busca sozinho a foto principal, pela mesma regra da "foto certa do artista" abaixo. Resposta com cache na CDN (7 dias) e no navegador (3 dias), até 4 pedidos ao mesmo tempo. A foto aparece com o mesmo duotone por um filtro SVG (`#lv-duotone`, em `AppShell.tsx`), sem copiar a imagem |
-| **Atualizar foto** (memória) | Botão logo abaixo do pôster na página do show, link em "Sua memória" e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar à foto automática" (ou à foto do artista). Só a foto enviada pela pessoa sobe a memória para "Com foto" na escada de verificação |
+| **Atualizar foto** (memória) | Botão logo abaixo do pôster na página do show, link em "Sua memória" e em cada ingresso da Carteira. Abre uma janela com a prévia do pôster: **Enviar uma foto sua** ou escolher uma das **Fotos do artista** (Deezer Oficial, Wikimedia Commons, Wikipédia; até 12). Salvar, Cancelar e "Voltar à foto automática" (ou à foto do artista). A foto enviada pela pessoa fica marcada na memória (base para a verificação, que chega em breve; a escada não aparece na tela desde a revisão 11) |
 | **Atualizar todas as fotos** (admin) | Menu da conta, só com `?admin=1`. Escopo: artistas da conta e da agenda (rápido) ou todo o catálogo da prévia (653 artistas). Para cada artista: foto do catálogo (Deezer) ou a melhor foto do `/api/artist-search` (só nome exato), padronizada e salva para todos os pôsteres e ingressos do artista. 3 em paralelo, progresso em picotes com %, Parar, opção de refazer quem já tem foto, lista de quem ficou sem foto nas fontes e "Voltar todos aos pôsteres gerados" (pede segundo toque) |
 | **`GET /api/foto?url=`** | Busca a imagem pelo próprio domínio para o canvas poder tratá-la. Só HTTPS e só os domínios das fontes (`*.dzcdn.net`, `*.deezer.com`, `upload.wikimedia.org`, `thumb.wikimedia.org`, `*.mzstatic.com`), só `image/*`, até 6 MB, cache de 7 dias. Qualquer outro endereço responde 403 |
 | **Armazenamento na prévia** | IndexedDB do navegador (`livvo_final_fotos`), chaves `show:<id>` e `artista:<id>`, com origem e fonte. No site final: armazenamento de arquivos de B, com a foto do artista compartilhada por todos e a da memória só da pessoa |
@@ -334,16 +334,17 @@ Nesta prévia tudo fica no navegador (`localStorage`, chave `livvo_final_v1`), c
 
 | Entidade | Campos | Observações |
 | --- | --- | --- |
-| **Memória** | `id`, `showId`, `criadaEm`, `atualizadaEm`, `notaShow` (0,5–5), `notaOrganizacao` (0,5–5), `dimensoes` (mapa id → nota), `setor`, `comQuem` (@), `fotoUrl`, `ingressoAnexado`, `presencaConfirmadaPor`, `relato`, `personalizacao`, `visibilidade` (`privado` / `seguidores` / `publico`) | Uma memória por pessoa e show. O nível da escada de verificação é calculado, não gravado |
+| **Pôster grátis do visitante** | na prévia, no navegador (`livvo_poster_visitante_v1`): `showId`, `em`, `guardarAoEntrar` | No site: contar no servidor (aparelho e IP), 1 por visitante; depois do login, vira memória (revisão 11) |
+| **Memória** | `id`, `showId`, `criadaEm`, `atualizadaEm`, `notaShow` (0,5–5), `notaOrganizacao` (0,5–5), `dimensoes` (mapa id → nota), `setor`, `comQuem` (@), `fotoUrl`, `ingressoAnexado`, `presencaConfirmadaPor`, `relato`, `personalizacao`, `visibilidade` (`privado` / `seguidores` / `publico`) | Uma memória por pessoa e show. O nível da escada de verificação é calculado, não gravado, e não aparece na tela (N1, revisão 11) |
 | **Personalização da memória** | `personalizacao`: `formato` (`poster` / `ingresso`), `carimbo` (`nenhum` / `eu_fui` / `show_da_minha_vida`), `cor` (`ciano` / `teal` / `offwhite`), `fonte` (`alfa` / `barlow` / `raydis`), `tamanho` (`p` / `m` / `g`), `posicao` (`cima` / `meio` / `baixo`), `frase`, `faixa`, `mostrarSetor`, `mostrarComQuem`, `mostrarCasa`, `mostrarUsuario` | Guardada como objeto parcial; o que falta usa o padrão (`PERSONALIZACAO_PADRAO`). O setor escolhido no painel grava no campo `setor` da memória |
 | **Artistas favoritos** | `favoritos`: lista de ids de artista do catálogo, na ordem em que foram favoritados | Por pessoa. A seção da Minha História ordena por número de shows da pessoa |
 | **Interesse** | `showId` → `quero_ir` ou `tenho_ingresso` | Some quando a pessoa registra o show (vira memória) |
 | **Seguindo** | lista de @ | Base da Comunidade |
 | **Concert Buddy (marcação)** | na memória: `buddies` = lista de `{ usuario, status (pendente / aceita / recusada), em }` | A marcação gera um convite para a outra pessoa. `comQuem` fica para compatibilidade com B |
 | **Convite "Fomos juntos"** | `id`, `de` (@ de quem marcou), `showId`, `em`, `status` (`pendente` / `aceito` / `recusado`) | Aceitar cria a memória ou liga a pessoa à memória existente |
-| **Preferência de marcação** | `quemPodeMarcar`: `todos` / `seguindo` / `ninguem` | Proposta de padrão: `seguindo` |
+| **Preferência de marcação** | `quemPodeMarcar`: `todos` / `seguindo` / `ninguem` | Padrão `seguindo` ("Quem eu sigo", aprovado em 08/10) |
 | **Foto** | por memória (`show:<id>`) e por artista (`artista:<id>`, admin): imagem tratada, `origem`, `fonte`, versão do tratamento | No site final, armazenamento de arquivos de B; a foto automática é só uma referência (endereço e fonte), não uma cópia |
-| **Dimensões (IDs fixos)** | `entrada_saida`, `seguranca`, `som`, `visao_palco`, `clima_publico`, `bares_banheiros` | Fixar os IDs agora evita quebrar séries históricas (decisão irreversível nº 2). As três últimas são propostas do plano, a aprovar |
+| **Dimensões (IDs fixos)** | `entrada_saida`, `seguranca`, `som`, `visao_palco`, `clima_publico`, `bares_banheiros` | Fixar os IDs agora evita quebrar séries históricas (decisão irreversível nº 2). As três últimas foram aprovadas em 08/10/2026 |
 
 Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem: detalhe, registrar, momento, convite), `nota_show`, `nota_organizacao` (origem), `interesse_marcado` (tipo), `link_compartilhado`, `imagem_compartilhada` (stories, feed), `whatsapp_aberto`, `seguir`, `buddy_marcado`, `convite_respondido` (aceito, recusado), `foto_atualizada` (origem), `filtro_explorar` (tipo), `personalizacao_salva` (formato, carimbo), `historico_aberto`, `wrapped_gerado`.
 
@@ -366,8 +367,8 @@ Eventos sugeridos para a medição do beta (PostHog): `show_registrado` (origem:
 ## 9. Decisões tomadas nesta prévia (DRAFT, aguardam o Edmir)
 
 1. **Visibilidade padrão da memória: Seguidores** (proposta do plano de fusão). As 25 memórias de demonstração também ficaram em Seguidores.
-2. **Médias agregadas usam todas as notas** (inclusive de memórias não públicas, sem identificar ninguém); **listas de pessoas e resenhas mostram só memórias públicas.** Precisa de confirmação, porque afeta privacidade e o B2B.
-3. **Amostra mínima para mostrar médias: 3 avaliações** nesta prévia. O plano sugere 30 para relatórios de parceiros; para a página pública do show, o número final é decisão do Edmir.
+2. ~~Médias agregadas usam todas as notas~~ (substituída pela decisão 85: só notas públicas e de seguidores). **Médias agregadas usam todas as notas** (inclusive de memórias não públicas, sem identificar ninguém); **listas de pessoas e resenhas mostram só memórias públicas.** Precisa de confirmação, porque afeta privacidade e o B2B.
+3. ~~Amostra mínima de 3~~ (substituída pela decisão 85: mínimo de 5 na página e 30 nos relatórios). **Amostra mínima para mostrar médias: 3 avaliações** nesta prévia. O plano sugere 30 para relatórios de parceiros; para a página pública do show, o número final é decisão do Edmir.
 4. **Faixas do Passaporte** iguais às da Credencial Backstage: Pista até 10, Pista Premium 11–25, Camarote 26–50, Backstage 51–100, All Access 101+. Shows resgatados do passado contam igual.
 5. **Cartão de momento:** contagem regressiva só aparece no topo quando faltam até 3 dias; antes disso o show fica na Agenda.
 6. ~~Fotos de artista do catálogo fora até haver licença~~ (substituída pela decisão 16).
