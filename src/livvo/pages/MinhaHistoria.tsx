@@ -282,20 +282,6 @@ export const MinhaHistoria: React.FC = () => {
             <Stub icone={Plus} to="/registrar">
               Registrar show
             </Stub>
-            <button
-              type="button"
-              className="lv-btn lv-btn--stub lv-btn--cream"
-              aria-expanded={conquistas}
-              aria-controls="minhas-conquistas"
-              onClick={() => {
-                setConquistas((aberto) => !aberto);
-                if (!conquistas) window.setTimeout(() => document.getElementById('minhas-conquistas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
-              }}
-              disabled={!catalogo}
-            >
-              <Award className="w-4 h-4 shrink-0" strokeWidth={2.2} />
-              <span>Minhas Conquistas</span>
-            </button>
             {/* Do Livvo Virtual Poster: gráficos da Minha história e o Wrapped (07/10/2026) */}
             <button
               type="button"
@@ -311,6 +297,20 @@ export const MinhaHistoria: React.FC = () => {
             <button type="button" className="lv-btn lv-btn--stub lv-btn--cream" onClick={() => setWrapped(true)} disabled={!catalogo || pass.shows === 0}>
               <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.2} />
               <span>Gerar meu Wrapped</span>
+            </button>
+            <button
+              type="button"
+              className="lv-btn lv-btn--stub lv-btn--cream"
+              aria-expanded={conquistas}
+              aria-controls="minhas-conquistas"
+              onClick={() => {
+                setConquistas((aberto) => !aberto);
+                if (!conquistas) window.setTimeout(() => document.getElementById('minhas-conquistas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+              }}
+              disabled={!catalogo}
+            >
+              <Award className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+              <span>Minhas Conquistas</span>
             </button>
           </div>
           <div className="lv-badge-slot order-3 lg:order-2">
