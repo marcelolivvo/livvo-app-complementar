@@ -34,7 +34,7 @@ Este documento descreve a "cara" do Livvo final que está sendo montada dentro d
 | Prévia na Vercel | `https://livvo-app-complementar-git-livvo-final-livvo1.vercel.app` (padrão de endereço da Vercel; pede login na Vercel, como as outras prévias) |
 | Rodar no computador | `npm install` e `npm run dev` (servidor Express + Vite na porta 3000) |
 | Conferir tipos e build | `npm run build` (roda `tsc -b` e `vite build`) |
-| Conta de demonstração | Abre sozinha na primeira visita: Marcelo Ferreira, @toboi, com as 25 memórias reais dele no site atual |
+| Conta de demonstração | A primeira visita abre a página de entrada (`/bem-vindo`); "Comece agora" ou "Entrar" com qualquer e-mail abre a conta de demonstração: Marcelo Ferreira, @toboi, com as 25 memórias reais dele no site atual |
 | Ver como visitante | Menu da conta (avatar) → "Sair e ver como visitante". Qualquer e-mail na tela de entrar volta para a conta de demonstração (login simulado, nada é enviado) |
 | Comunidade de exemplo | Menu da conta → "Comunidade de exemplo" liga e desliga pessoas, números, resenhas e atividade fictícios. Desligada, mostra os estados vazios reais |
 | Restaurar ou zerar | Menu da conta → "Restaurar as 25 memórias" ou "Começar do zero" |
