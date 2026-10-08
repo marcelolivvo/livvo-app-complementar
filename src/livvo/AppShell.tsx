@@ -196,9 +196,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             ))}
           </nav>
           <div className="flex-1" />
-          <Link to="/registrar" className="lv-btn lv-btn--cyan lv-reg-top" aria-current={registrarAtivo ? 'page' : undefined}>
-            <Plus className="w-4 h-4" strokeWidth={3} />
-            Registrar show
+          {/* Mesmo modelo do "Comece agora" da página de entrada: canhoto com ícone, picote e furos em cima e embaixo */}
+          <Link to="/registrar" className="lv-btn lv-btn--stub lv-btn--cyan lv-reg-top" aria-current={registrarAtivo ? 'page' : undefined}>
+            <Plus className="w-4 h-4 shrink-0" strokeWidth={3} />
+            <span>Registrar show</span>
           </Link>
           <Link to="/alertas" className="lv-iconbtn" aria-label="Alertas" aria-current={path.startsWith('/alertas') ? 'page' : undefined}>
             <Bell className="w-5 h-5" />

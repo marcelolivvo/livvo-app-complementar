@@ -1548,3 +1548,62 @@
 /* Com a foto padrão a linha é alta: título e apoio quebram (palavra inteira) em vez de cortar */
 .lv-app .lv-show--foto .lv-show-t,
 .lv-app .lv-show--foto .lv-show-s { white-space: normal; overflow: visible; text-overflow: clip; }
+
+/* Ingressos e botões-ingresso (07/10, 21h51): furos de picote SEMPRE em cima e embaixo, nunca nas laterais --------
+   Botão-ingresso sem canhoto: furos a 25% da borda esquerda. "Sua memória": meio círculo para dentro, em cima e embaixo.
+   Picote horizontal da página-ingresso no celular: só a linha tracejada, sem furos nas laterais. */
+.lv-app .lv-btn:not(.lv-btn--stub) {
+  -webkit-mask:
+    radial-gradient(circle at 25% 0, transparent 6.5px, #000 7px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 25% 100%, transparent 6.5px, #000 7px) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle at 25% 0, transparent 6.5px, #000 7px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 25% 100%, transparent 6.5px, #000 7px) bottom / 100% 51% no-repeat;
+}
+.lv-app .lv-tab-reg-btn {
+  -webkit-mask:
+    radial-gradient(circle at 50% 0, transparent 6px, #000 6.5px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 50% 100%, transparent 6px, #000 6.5px) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle at 50% 0, transparent 6px, #000 6.5px) top / 100% 51% no-repeat,
+    radial-gradient(circle at 50% 100%, transparent 6px, #000 6.5px) bottom / 100% 51% no-repeat;
+}
+.lv-app .lv-passport::before,
+.lv-app .lv-passport::after {
+  top: auto;
+  bottom: auto;
+  left: 25%;
+  right: auto;
+  width: 20px;
+  height: 11px;
+  margin: 0 0 0 -10px;
+  transform: none;
+  background: var(--lv-paper);
+  border: 1.5px solid var(--lv-cyan);
+}
+.lv-app .lv-passport::before { top: -1.5px; border-top: 0; border-radius: 0 0 11px 11px; }
+.lv-app .lv-passport::after { bottom: -1.5px; border-bottom: 0; border-radius: 11px 11px 0 0; }
+@media (max-width: 1023px) {
+  .lv-app .lv-perf::after { background: none; }
+}
+/* Botão "Registrar show" do cabeçalho no modelo do "Comece agora" (canhoto mais curto) */
+.lv-app .lv-reg-top.lv-btn--stub { --stub: 38px; gap: 22px; padding: 10px 16px 10px 12px !important; }
+
+/* Os 4 botões da Minha História numa linha só, sem quebrar o texto (largura toda do Passaporte).
+   O tamanho acompanha a largura da linha; no celular a linha rola de lado em vez de quebrar. */
+.lv-acoes-4 { container-type: inline-size; display: flex; flex-wrap: nowrap; gap: 10px; }
+.lv-acoes-4 > .lv-btn--stub {
+  flex: 1 1 auto;
+  min-width: 0;
+  --stub: clamp(30px, 4.4cqw, 44px);
+  gap: clamp(14px, 2.6cqw, 26px);
+  padding: 13px clamp(10px, 1.8cqw, 22px) 13px clamp(8px, 1.4cqw, 15px) !important;
+  font-size: clamp(11.5px, 1.75cqw, 13.5px);
+  white-space: nowrap;
+  justify-content: flex-start;
+}
+@media (max-width: 719px) {
+  .lv-acoes-4 { overflow-x: auto; scrollbar-width: none; margin-right: -20px; padding-right: 20px; scroll-snap-type: x proximity; }
+  .lv-acoes-4::-webkit-scrollbar { display: none; }
+  .lv-acoes-4 > .lv-btn--stub { flex: 0 0 auto; --stub: 40px; gap: 22px; padding: 13px 16px 13px 13px !important; font-size: 13px; scroll-snap-align: start; }
+}

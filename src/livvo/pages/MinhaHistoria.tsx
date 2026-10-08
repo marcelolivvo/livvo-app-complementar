@@ -232,7 +232,7 @@ export const MinhaHistoria: React.FC = () => {
         }
       >
         <div className="lv-pad grid gap-8 lg:grid-cols-[minmax(0,1fr)_260px] lg:gap-10">
-          <div className="min-w-0">
+          <div className="min-w-0 order-1">
             <div className="flex items-start gap-3">
               <PassportIcon size={34} className="text-[#2FB8BA] shrink-0 mt-1 hidden sm:block" />
               <div className="min-w-0">
@@ -260,44 +260,45 @@ export const MinhaHistoria: React.FC = () => {
               </>
             )}
 
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Stub icone={Plus} to="/registrar">
-                Registrar show
-              </Stub>
-              {/* Do Livvo Virtual Poster: gráficos da Minha história e o Wrapped (07/10/2026) */}
-              <button
-                type="button"
-                className="lv-btn lv-btn--stub lv-btn--teal"
-                aria-expanded={historico}
-                aria-controls="meu-historico"
-                onClick={abrirHistorico}
-                disabled={!catalogo}
-              >
-                <BarChart3 className="w-4 h-4 shrink-0" strokeWidth={2.2} />
-                <span>Meu histórico</span>
-              </button>
-              <button type="button" className="lv-btn lv-btn--stub lv-btn--cream" onClick={() => setWrapped(true)} disabled={!catalogo || pass.shows === 0}>
-                <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.2} />
-                <span>Gerar meu Wrapped</span>
-              </button>
-              <button
-                type="button"
-                className="lv-btn lv-btn--stub lv-btn--cyan"
-                aria-expanded={conquistas}
-                aria-controls="minhas-conquistas"
-                onClick={() => {
-                  setConquistas((aberto) => !aberto);
-                  if (!conquistas) window.setTimeout(() => document.getElementById('minhas-conquistas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
-                }}
-                disabled={!catalogo}
-              >
-                <Award className="w-4 h-4 shrink-0" strokeWidth={2.2} />
-                <span>Minhas Conquistas</span>
-              </button>
-            </div>
           </div>
 
-          <div className="lv-badge-slot">
+          {/* 4 botões numa linha (07/10, 21h51): Registrar show, Minhas Conquistas, Meu histórico e Gerar meu Wrapped */}
+          <div className="lv-acoes-4 order-2 lg:order-3 lg:col-span-2 -mt-1 lg:-mt-3">
+            <Stub icone={Plus} to="/registrar">
+              Registrar show
+            </Stub>
+            <button
+              type="button"
+              className="lv-btn lv-btn--stub lv-btn--cream"
+              aria-expanded={conquistas}
+              aria-controls="minhas-conquistas"
+              onClick={() => {
+                setConquistas((aberto) => !aberto);
+                if (!conquistas) window.setTimeout(() => document.getElementById('minhas-conquistas')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+              }}
+              disabled={!catalogo}
+            >
+              <Award className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+              <span>Minhas Conquistas</span>
+            </button>
+            {/* Do Livvo Virtual Poster: gráficos da Minha história e o Wrapped (07/10/2026) */}
+            <button
+              type="button"
+              className="lv-btn lv-btn--stub lv-btn--teal"
+              aria-expanded={historico}
+              aria-controls="meu-historico"
+              onClick={abrirHistorico}
+              disabled={!catalogo}
+            >
+              <BarChart3 className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+              <span>Meu histórico</span>
+            </button>
+            <button type="button" className="lv-btn lv-btn--stub lv-btn--cream" onClick={() => setWrapped(true)} disabled={!catalogo || pass.shows === 0}>
+              <Sparkles className="w-4 h-4 shrink-0" strokeWidth={2.2} />
+              <span>Gerar meu Wrapped</span>
+            </button>
+          </div>
+          <div className="lv-badge-slot order-3 lg:order-2">
             <div className="lv-cred-wrap">
               <LivvoCredencialCard className="lv-badge-img lv-credencial" {...dadosCredencial()} />
               {!foto && (
