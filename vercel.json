@@ -8,6 +8,14 @@
       "destination": "/api"
     },
     {
+      "source": "/bem-vindo",
+      "destination": "/bem-vindo/index.html"
+    },
+    {
+      "source": "/bem-vindo/",
+      "destination": "/bem-vindo/index.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

@@ -182,11 +182,11 @@ const ler = (): Estado | null => {
 
 let estado: Estado = ler() ?? estadoDemo();
 
-// Primeira visita: entra na conta de demonstração para a prévia já abrir com a história do Marcelo.
+// Primeira visita: prepara a conta de demonstração (história do Marcelo), mas não entra sozinho.
+// Desde a revisão 8, quem chega pela primeira vez vê a página de entrada do Livvo; o "Entrar" abre essa conta.
 try {
   if (!localStorage.getItem(CHAVE)) {
     localStorage.setItem(CHAVE, JSON.stringify(estado));
-    if (!guestService.isLoggedIn()) guestService.login('demonstracao@livvomusic.com.br');
   }
 } catch {
   /* sem armazenamento: vale só nesta sessão */

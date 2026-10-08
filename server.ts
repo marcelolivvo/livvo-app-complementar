@@ -386,6 +386,14 @@ app.get('/api/catalog/search', (req, res) => {
   export async function startServer() {
     const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
+    // Página de entrada do Livvo (cópia ligada ao app, revisão 8): /bem-vindo serve public/bem-vindo/index.html
+    if (!process.env.VERCEL) {
+      const pastaEntrada = process.env.NODE_ENV !== 'production' ? 'public' : 'dist';
+      app.get(['/bem-vindo', '/bem-vindo/'], (_req, res) => {
+        res.sendFile(path.join(process.cwd(), pastaEntrada, 'bem-vindo', 'index.html'));
+      });
+    }
+
     // Vite middleware in development or static serve in production
     if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
       // Vite é carregado só em desenvolvimento (no Vercel ele quebra a função serverless)

@@ -10,6 +10,8 @@ import { Registrar } from './pages/Registrar';
 import { MinhaHistoria } from './pages/MinhaHistoria';
 import { EmBreve } from './pages/EmBreve';
 import { Comunidade } from './pages/Comunidade';
+import { Entrar } from './pages/Entrar';
+import { useLivvo } from './store';
 import './livvo.css';
 
 // O laboratório (Estúdio, Wallet, área interna) só carrega quando alguém abre /estudio
@@ -21,6 +23,7 @@ const TITULOS: Record<string, string> = {
   registrar: 'Registrar show · Livvo',
   comunidade: 'Comunidade · Livvo',
   'minha-historia': 'Minha História · Livvo',
+  entrar: 'Entrar · Livvo',
   alertas: 'Alertas · Livvo',
   estudio: 'Estúdio (laboratório) · Livvo',
 };
@@ -28,6 +31,13 @@ const TITULOS: Record<string, string> = {
 export const LivvoApp: React.FC = () => {
   const { segments } = useRoute();
   const raiz = segments[0] || '';
+  const lv = useLivvo();
+
+  // Página de entrada (revisão 8): quem chega sem ter entrado vê a homepage do Livvo (cópia ligada ao app em
+  // public/bem-vindo/index.html). Quem já entrou segue para o Início.
+  useEffect(() => {
+    if (raiz === '' && !lv.logado) window.location.replace('/bem-vindo');
+  }, [raiz, lv.logado]);
 
   useEffect(() => {
     if (raiz !== 'show') document.title = TITULOS[raiz] || TITULOS['']!;
@@ -62,7 +72,11 @@ export const LivvoApp: React.FC = () => {
   let pagina: React.ReactNode;
   switch (raiz) {
     case '':
+      if (!lv.logado) return <div className="min-h-screen bg-[#100C1F]" aria-busy="true" />;
       pagina = <Inicio />;
+      break;
+    case 'entrar':
+      pagina = <Entrar />;
       break;
     case 'explorar':
       pagina = <Explorar />;

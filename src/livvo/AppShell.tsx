@@ -184,9 +184,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       </div>
       <header className="lv-topbar">
         <div className="lv-topbar-inner">
-          <Link to="/" className="lv-brand" aria-label="Livvo, Início">
+          {/* O ícone leva à página de entrada do Livvo (homepage), sem sair da conta (revisão 8) */}
+          <a href="/bem-vindo" className="lv-brand" aria-label="Livvo, página de entrada">
             <img src="/livvo/livvo-icon-128.png" alt="" width={34} height={34} />
-          </Link>
+          </a>
           <nav className="lv-nav" aria-label="Principal">
             {ABAS.map((a) => (
               <Link key={a.to} to={a.to} aria-current={a.ativo(path) ? 'page' : undefined}>
