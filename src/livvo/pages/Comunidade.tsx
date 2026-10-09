@@ -9,7 +9,7 @@ import { Link, setQuery, useRoute } from '../router';
 import { calcularPassaporte } from '../stats';
 import { livvo, useLivvo, type QuemPodeMarcar } from '../store';
 import { BotaoJuntos, CaixasBuddies } from '../ConcertBuddies';
-import { Bilhete, CaixaFoto, Discos, FotoArtista, FotoPessoa, Grupo, Linha, Stub, TagExemplo, avisar } from '../ui';
+import { Bilhete, CaixaFoto, FotoArtista, FotoPessoa, Grupo, Linha, NotaIngresso, Stub, TagExemplo, avisar } from '../ui';
 
 /**
  * Comunidade (adiantada da parte 4 em 07/10/2026): Seguindo, Concert Buddies, Convites "Fomos juntos",
@@ -162,7 +162,7 @@ export const Comunidade: React.FC = () => {
                     </>
                   }
                   sub={`${show.casa} · ${show.cidade} · ${haQuanto(em)}`}
-                  nota={<Discos valor={notaShow} tamanho={13} rotulo="Nota do show" />}
+                  nota={<NotaIngresso valor={notaShow} tamanho={13} rotulo="Nota do show" />}
                 />
               ))}
             </section>

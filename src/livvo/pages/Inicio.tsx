@@ -6,7 +6,7 @@ import { Link } from '../router';
 import { calcularPassaporte, type Passaporte } from '../stats';
 import { livvo, useLivvo, type Livvo } from '../store';
 import { haQuanto, lerVistaAgora, marcarAtividadeVista, useAtividade } from '../Novidades';
-import { Avatar, Bilhete, CaixaData, CardShow, Discos, FotoArtista, Grupo, IngressoContorno, Linha, Picotes, Poster, Stub, TagExemplo, avisar } from '../ui';
+import { Avatar, Bilhete, CaixaData, CardShow, Discos, FotoArtista, Grupo, IngressoContorno, Linha, NotaIngresso, Picotes, Poster, Stub, TagExemplo, avisar } from '../ui';
 
 /* Cartão de momento: um só pedido por vez ---------------------------------------------
  * Prioridade (plano de fusão, 6.4): amanhã tem show → como foi? → neste dia → faltam poucos dias
@@ -460,7 +460,7 @@ export const Inicio: React.FC = () => {
                       </>
                     }
                     sub={`${show.casa} · ${haQuanto(em)}`}
-                    nota={novo ? <span className="lv-tag lv-tag--cyan">Novo</span> : <Discos valor={notaShow} tamanho={13} rotulo="Nota do show" />}
+                    nota={novo ? <span className="lv-tag lv-tag--cyan">Novo</span> : <NotaIngresso valor={notaShow} tamanho={13} rotulo="Nota do show" />}
                   />
                 </div>
               );

@@ -325,22 +325,17 @@ const desenharIngresso = (c: CanvasRenderingContext2D, x: number, y: number, esc
   c.restore();
 };
 
-const desenharNota = (c: CanvasRenderingContext2D, rotulo: string, valor: number | undefined, x: number, y: number) => {
+/** Nota na imagem de compartilhar (09/10/2026): um ingresso e o número ao lado. Só é chamada quando há nota. */
+const desenharNota = (c: CanvasRenderingContext2D, rotulo: string, valor: number, x: number, y: number) => {
   c.textAlign = 'left';
   c.textBaseline = 'top';
   c.fillStyle = '#B3AE9F';
   c.font = '600 30px Barlow, sans-serif';
   c.fillText(rotulo.toUpperCase().split('').join(' '), x, y);
-  for (let i = 1; i <= 5; i++) {
-    const v = valor || 0;
-    const fill: 0 | 0.5 | 1 = v >= i ? 1 : v >= i - 0.5 ? 0.5 : 0;
-    desenharIngresso(c, x + (i - 1) * 64, y + 40, 2.6, fill);
-  }
-  if (valor !== undefined) {
-    c.fillStyle = AMARELO;
-    c.font = '700 64px RAYDIS, "Alfa Slab One", sans-serif';
-    c.fillText(nota(valor), x + 5 * 64 + 14, y + 52);
-  }
+  desenharIngresso(c, x, y + 40, 2.6, 1);
+  c.fillStyle = AMARELO;
+  c.font = '700 64px RAYDIS, "Alfa Slab One", sans-serif';
+  c.fillText(nota(valor), x + 64 + 14, y + 52);
 };
 
 const garantirFontes = async () => {
@@ -530,17 +525,15 @@ const desenharIngressoMemoria = async (
   c.lineTo(bx + bw, ry);
   c.stroke();
   c.setLineDash([]);
-  c.font = '700 10.5px Barlow, sans-serif';
-  c.fillStyle = '#8A8577';
-  c.fillText('N O T A', bx, ry + 13);
-  for (let i = 1; i <= 5; i++) {
-    const v = memoria.notaShow || 0;
-    desenharIngresso(c, bx + 52 + (i - 1) * 21, ry + 8, 0.8, v >= i ? 1 : v >= i - 0.5 ? 0.5 : 0);
-  }
-  if (memoria.notaShow !== undefined) {
+  // 09/10/2026: um ingresso e o número; sem nota (ou com "Mostrar a nota" desligado) fica só o site
+  if (perso.mostrarNota && memoria.notaShow) {
+    c.font = '700 10.5px Barlow, sans-serif';
+    c.fillStyle = '#8A8577';
+    c.fillText('N O T A', bx, ry + 13);
+    desenharIngresso(c, bx + 52, ry + 8, 0.8, 1);
     c.fillStyle = AMARELO;
     c.font = '700 18px RAYDIS, "Alfa Slab One", sans-serif';
-    c.fillText(nota(memoria.notaShow), bx + 52 + 5 * 21 + 6, ry + 9);
+    c.fillText(nota(memoria.notaShow), bx + 52 + 21 + 6, ry + 9);
   }
   c.textAlign = 'right';
   c.fillStyle = OFF;
@@ -598,12 +591,17 @@ export const gerarImagem = async (opcoes: {
   const py = 0;
   const ph = fimArte;
 
-  // notas
+  // notas (09/10/2026): só as que existem, e só com "Mostrar a nota" ligado; a data sobe quando não há notas
   const ny = py + ph + (stories ? 90 : 56);
   const nx = stories ? 130 : 110;
-  desenharNota(c, 'Nota do show', memoria.notaShow, nx, ny);
-  if (stories) desenharNota(c, 'Organização', memoria.notaOrganizacao, nx, ny + 170);
-  else desenharNota(c, 'Organização', memoria.notaOrganizacao, W / 2 + 30, ny);
+  const notas: Array<[string, number]> = [];
+  if (perso.mostrarNota && memoria.notaShow) notas.push(['Nota do show', memoria.notaShow]);
+  if (perso.mostrarNota && memoria.notaOrganizacao) notas.push(['Organização', memoria.notaOrganizacao]);
+  notas.forEach(([rotulo, valor], i) => {
+    if (stories) desenharNota(c, rotulo, valor, nx, ny + i * 170);
+    else desenharNota(c, rotulo, valor, i === 0 ? nx : W / 2 + 30, ny);
+  });
+  const yData = notas.length === 0 ? ny : stories ? ny + notas.length * 170 + 20 : ny + 150;
 
   // data por extenso
   c.textAlign = 'left';
@@ -611,7 +609,7 @@ export const gerarImagem = async (opcoes: {
   c.fillStyle = OFF;
   c.font = `500 ${stories ? 34 : 28}px Barlow, sans-serif`;
   const linhaData = `${dataLonga(show.ts)} · ${show.cidade}`;
-  c.fillText(linhaData.charAt(0).toUpperCase() + linhaData.slice(1), nx, stories ? ny + 360 : ny + 150);
+  c.fillText(linhaData.charAt(0).toUpperCase() + linhaData.slice(1), nx, yData);
 
   // rodapé com o site (#12: o endereço em todo card)
   c.textAlign = 'center';

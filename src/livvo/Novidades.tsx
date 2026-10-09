@@ -8,7 +8,7 @@ import type { PessoaExemplo } from './data/demo';
 import { Link, navigate } from './router';
 import { calcularPassaporte } from './stats';
 import { useLivvo } from './store';
-import { Avatar, Discos, TagExemplo } from './ui';
+import { Avatar, NotaIngresso, TagExemplo } from './ui';
 
 /**
  * Novidades (revisão 11, 07/10/2026):
@@ -157,7 +157,7 @@ export const SinoAtividade: React.FC<{ alertasAtivo: boolean }> = ({ alertasAtiv
                           {x.show.casa} · {haQuanto(x.em)}
                         </span>
                       </span>
-                      {novo ? <span className="lv-tag lv-tag--cyan shrink-0">Novo</span> : <Discos valor={x.notaShow} tamanho={11} rotulo="Nota do show" />}
+                      {novo ? <span className="lv-tag lv-tag--cyan shrink-0">Novo</span> : <NotaIngresso valor={x.notaShow} tamanho={12} rotulo="Nota do show" />}
                     </Link>
                   </li>
                 );

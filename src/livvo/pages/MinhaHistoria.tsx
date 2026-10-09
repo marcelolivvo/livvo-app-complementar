@@ -5,7 +5,7 @@ import { dataCartao, nota } from '../format';
 import { Link, useRoute } from '../router';
 import { calcularPassaporte } from '../stats';
 import { livvo, personalizacaoDe, useLivvo } from '../store';
-import { Bilhete, Discos, Grupo, IngressoContorno, Poster, Stub, TagExemplo, TagProxima, avisar } from '../ui';
+import { Bilhete, Grupo, IngressoContorno, NotaIngresso, Poster, Stub, TagExemplo, TagProxima, avisar } from '../ui';
 import { concertBuddies } from '../data/social';
 import { CaixasBuddies } from '../ConcertBuddies';
 import { ArtistasFavoritos } from '../Favoritos';
@@ -431,8 +431,7 @@ export const MinhaHistoria: React.FC = () => {
                     <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                       {memoria.notaShow !== undefined ? (
                         <>
-                          <Discos valor={memoria.notaShow} tamanho={15} rotulo="Nota do show" />
-                          <span className="lv-nota-num text-[15px]">{nota(memoria.notaShow)}</span>
+                          <NotaIngresso valor={memoria.notaShow} tamanho={14} rotulo="Nota do show" />
                         </>
                       ) : (
                         <span className="lv-tag lv-tag--next">Sem nota</span>

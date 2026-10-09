@@ -57,6 +57,8 @@ export interface Personalizacao {
   mostrarComQuem: boolean;
   mostrarCasa: boolean;
   mostrarUsuario: boolean;
+  /** Nota do show e da organização no pôster, no ingresso e nas imagens de compartilhar (09/10/2026). */
+  mostrarNota: boolean;
 }
 export const PERSONALIZACAO_PADRAO: Personalizacao = {
   formato: 'poster',
@@ -71,8 +73,20 @@ export const PERSONALIZACAO_PADRAO: Personalizacao = {
   mostrarComQuem: true,
   mostrarCasa: true,
   mostrarUsuario: true,
+  mostrarNota: true,
 };
-export const personalizacaoDe = (m?: Pick<Memoria, 'personalizacao'> | null): Personalizacao => ({ ...PERSONALIZACAO_PADRAO, ...(m?.personalizacao || {}) });
+/**
+ * Decisão do Edmir de 09/10/2026, depois do teste de usabilidade com a Gabriela: no app ficam só faixa, setor,
+ * com quem, @, casa de show e a nota. Carimbo de presença, cor de destaque, fonte, tamanho e posição do nome
+ * e a frase no alto ficam só no Estúdio (/estudio). Valores já salvos desses campos voltam ao padrão no app,
+ * para a tela e a imagem exportada saírem iguais.
+ */
+export const CAMPOS_SO_NO_ESTUDIO = ['carimbo', 'cor', 'fonte', 'tamanho', 'posicao', 'frase'] as const;
+export const personalizacaoDe = (m?: Pick<Memoria, 'personalizacao'> | null): Personalizacao => {
+  const p: Personalizacao = { ...PERSONALIZACAO_PADRAO, ...(m?.personalizacao || {}) };
+  for (const campo of CAMPOS_SO_NO_ESTUDIO) (p as unknown as Record<string, unknown>)[campo] = PERSONALIZACAO_PADRAO[campo];
+  return p;
+};
 
 /** Quem pode marcar você como Concert Buddy. */
 export type QuemPodeMarcar = 'todos' | 'seguindo' | 'ninguem';

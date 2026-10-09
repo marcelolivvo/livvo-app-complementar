@@ -329,6 +329,9 @@
   color: var(--lv-nota);
   font-size: 46px;
 }
+.lv-app .lv-fields dd.lv-media-nota {
+  margin-top: 4px;
+}
 .lv-app .lv-fields > div > .lv-discs {
   margin-top: 2px;
   color: var(--lv-nota);
@@ -996,6 +999,12 @@
 }
 .lv-disc button:last-of-type {
   right: 0;
+}
+.lv-nota-ingresso {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .lv-nota-num {
   font-family: 'RAYDIS', 'Alfa Slab One', sans-serif;

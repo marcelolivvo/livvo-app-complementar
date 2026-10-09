@@ -7,7 +7,7 @@ import { buddiesExemplo, pessoaAceitaMarcacao, pessoaPorUsuario, type Buddy } fr
 import { dataCartao, nota as fmtNota, normalizar } from './format';
 import { Link, navigate } from './router';
 import { livvo, personalizacaoDe, useLivvo, type Marcacao, type Memoria } from './store';
-import { Avatar, Bilhete, CaixaFoto, Discos, FotoPessoa, IngressoContorno, Linha, Poster, TagExemplo, avisar, fotoDoUsuario } from './ui';
+import { Avatar, Bilhete, CaixaFoto, FotoPessoa, NotaIngresso, IngressoContorno, Linha, Poster, TagExemplo, avisar, fotoDoUsuario } from './ui';
 import { BotaoCompartilharJuntos } from './Compartilhar';
 
 /**
@@ -287,8 +287,7 @@ export const JanelaShowsJuntos: React.FC<{ buddy: Buddy; fechar: () => void; mod
                       </>
                     ) : (
                       <>
-                        <Discos valor={m!.notaShow} tamanho={15} rotulo="Nota do show" />
-                        <span className="lv-nota-num text-[15px]">{fmtNota(m!.notaShow!)}</span>
+                        <NotaIngresso valor={m!.notaShow} tamanho={14} rotulo="Nota do show" />
                         {m!.notaOrganizacao === undefined && (
                           <button type="button" className="lv-link !text-[12.5px]" onClick={() => ir(`/show/${show.id}?avaliar=org`)}>
                             Falta a organização

@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { Music } from 'lucide-react';
 import type { Show } from './data/catalog';
-import { dataCartao, nota } from './format';
+import { dataCartao } from './format';
 import type { Memoria, Personalizacao } from './store';
 import {
   COR_DESTAQUE,
   Carimbo,
-  Discos,
   ESCALA_TAMANHO,
   FAMILIA_FONTE,
   LARGURA_LETRA,
+  NotaIngresso,
   linhaDetalhes,
   nomeAceitaRaydis,
   useImagemDoPoster,
@@ -163,12 +163,16 @@ export const IngressoMemoria: React.FC<{
           </div>
         </div>
 
-        <div className="flex items-center justify-between" style={{ borderTop: '1.5px dashed #3A3159', paddingTop: 10, gap: 12 }}>
-          <span className="flex items-center" style={{ gap: 10 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.16em', color: DIM }}>NOTA</span>
-            <Discos valor={memoria?.notaShow} tamanho={16} rotulo="Nota do show" />
-            {memoria?.notaShow !== undefined && <span className="lv-nota-num" style={{ fontSize: 18 }}>{nota(memoria.notaShow)}</span>}
-          </span>
+        <div className="flex items-center justify-between" style={{ borderTop: '1.5px dashed #3A3159', paddingTop: 10, gap: 12, minHeight: 32 }}>
+          {/* 09/10/2026: sem nota (ou com "Mostrar a nota" desligado) o rodapé fica só com o site */}
+          {perso.mostrarNota && memoria?.notaShow ? (
+            <span className="flex items-center" style={{ gap: 10 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.16em', color: DIM }}>NOTA</span>
+              <NotaIngresso valor={memoria.notaShow} tamanho={16} rotulo="Nota do show" />
+            </span>
+          ) : (
+            <span />
+          )}
           <span className="flex items-center" style={{ gap: 7, fontSize: 12, fontWeight: 700, letterSpacing: '0.1em', color: OFF }}>
             <span style={{ width: 6, height: 6, borderRadius: 999, background: CIANO, display: 'inline-block' }} />
             livvomusic.com.br

@@ -16,7 +16,7 @@ import { PainelPersonalizar, type RascunhoPersonalizacao } from '../Personalizar
 import { RetroTicketStage } from '../../components/RetroTicket';
 import { calcularPassaporte } from '../stats';
 import { useCelular, useImagemDoPoster } from '../ui';
-import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
+import { Avatar, Bilhete, CaixaData, CarimboFui, Discos, Grupo, Linha, NotaIngresso, Poster, Stub, TagExemplo, TagProxima, avisar, compartilharLink } from '../ui';
 
 const ROTULO_VISIBILIDADE = { privado: 'Só você vê', seguidores: 'Visível para quem te segue', publico: 'Visível para todos' };
 
@@ -170,13 +170,11 @@ const CardResenha: React.FC<{ r: ResenhaExemplo; exemplo: boolean }> = ({ r, exe
     <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
       <span className="inline-flex items-center gap-2">
         <span className="lv-label">Show</span>
-        <Discos valor={r.notaShow} tamanho={15} rotulo="Nota do show" />
-        <span className="lv-nota-num text-[14px]">{nota(r.notaShow)}</span>
+        <NotaIngresso valor={r.notaShow} tamanho={14} rotulo="Nota do show" />
       </span>
       <span className="inline-flex items-center gap-2">
         <span className="lv-label">Organização</span>
-        <Discos valor={r.notaOrganizacao} tamanho={15} rotulo="Nota da organização" />
-        <span className="lv-nota-num text-[14px]">{nota(r.notaOrganizacao)}</span>
+        <NotaIngresso valor={r.notaOrganizacao} tamanho={14} rotulo="Nota da organização" />
       </span>
     </div>
     <p className="mt-3 text-[14px] leading-relaxed text-[#ECE5D1] lv-clamp-3">{r.texto}</p>
@@ -454,13 +452,13 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
           <div className="p-4 sm:p-6 lg:p-8 min-w-0" id="painel-personalizar">
             {rascunho && minha ? (
               <PainelPersonalizar
-                show={show}
                 rascunho={rascunho}
                 mudar={setRascunho}
                 salvar={salvarPersonalizacao}
                 fechar={() => setRascunho(null)}
                 alterado={alterado}
                 comQuem={comQuem}
+                notas={{ show: minha.notaShow, organizacao: minha.notaOrganizacao }}
               />
             ) : (
             <>
@@ -570,13 +568,15 @@ export const ShowDetalhe: React.FC<{ id: string }> = ({ id }) => {
           <dl className="lv-fields lv-fields--notas mt-4" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', maxWidth: 640 }}>
             <div>
               <dt>Show</dt>
-              <dd className="lv-nota-num">{nota(soc.media.show)}</dd>
-              <Discos valor={Math.round(soc.media.show * 2) / 2} tamanho={16} rotulo="Média do show" />
+              <dd className="lv-media-nota">
+                <NotaIngresso valor={soc.media.show} tamanho={40} rotulo="Média do show" />
+              </dd>
             </div>
             <div>
               <dt>Organização</dt>
-              <dd className="lv-nota-num">{nota(soc.media.organizacao)}</dd>
-              <Discos valor={Math.round(soc.media.organizacao * 2) / 2} tamanho={16} rotulo="Média da organização" />
+              <dd className="lv-media-nota">
+                <NotaIngresso valor={soc.media.organizacao} tamanho={40} rotulo="Média da organização" />
+              </dd>
             </div>
           </dl>
           {soc.dimensoesMaisCitadas.length > 0 && (

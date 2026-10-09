@@ -262,6 +262,13 @@ const DesenhoIngresso: React.FC<{ cor: string }> = ({ cor }) => (
   </g>
 );
 
+/** Ícone do ingresso da nota, no traço da cor atual (linha "Nota no card" do Personalizar). */
+export const IconeIngressoNota: React.FC = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <DesenhoIngresso cor="currentColor" />
+  </svg>
+);
+
 const Disco: React.FC<{ fill: 0 | 0.5 | 1; id: string; interativo?: boolean }> = ({ fill, id, interativo }) => {
   const vazio = interativo ? 'rgba(47,184,186,0.38)' : APAGADO;
   return (
@@ -378,6 +385,38 @@ export const Discos: React.FC<{
       }}
     >
       {discos}
+    </span>
+  );
+};
+
+/**
+ * Nota fora da hora de dar a nota (decisão do Edmir de 09/10/2026, depois do teste de usabilidade):
+ * um único ingresso e o número ao lado (ex.: 4,5). Os 5 ingressos (`Discos` com onChange) ficam só
+ * onde a pessoa escolhe a nota. Sem nota, não mostra nada.
+ */
+export const NotaIngresso: React.FC<{
+  valor?: number | null;
+  /** altura de referência do ingresso; o número acompanha */
+  tamanho?: number;
+  rotulo: string;
+  className?: string;
+}> = ({ valor, tamanho = 16, rotulo, className = '' }) => {
+  const [uid] = useState(() => `lvn${++discosSeq}`);
+  if (!valor) return null;
+  const lado = Math.round(tamanho * 1.1);
+  return (
+    <span
+      className={`lv-nota-ingresso ${className}`}
+      style={{ '--d-w': `${lado}px`, '--d-h': `${lado}px`, gap: Math.max(4, Math.round(tamanho / 3)) } as React.CSSProperties}
+      role="img"
+      aria-label={`${rotulo}: ${fmtNota(valor)} de 5`}
+    >
+      <span className="lv-disc">
+        <Disco fill={1} id={uid} />
+      </span>
+      <span className="lv-nota-num" style={{ fontSize: Math.round(tamanho * 1.12) }}>
+        {fmtNota(valor)}
+      </span>
     </span>
   );
 };

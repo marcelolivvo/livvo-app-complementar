@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { AtSign, Award, ChevronDown, MapPin, Music, Palette, Quote, Ruler, Rows3, Type, X } from 'lucide-react';
-import type { Show } from './data/catalog';
+import { AtSign, ChevronDown, MapPin, Music, X } from 'lucide-react';
 import { PERSONALIZACAO_PADRAO, type Personalizacao } from './store';
-import { COR_DESTAQUE, ROTULO_CARIMBO, nomeAceitaRaydis } from './ui';
+import { IconeIngressoNota as IconeNota, NotaIngresso } from './ui';
 
 /**
  * Painel "Personalizar" da memória (revisão 5, 07/10/2026). Abre na coluna da direita da página do show,
  * no lugar das informações, com as opções em linhas que abrem e fecham (drop box), como no Livvo Virtual Poster (A).
  * A prévia é ao vivo no pôster/ingresso da esquerda; nada é gravado até "Salvar".
+ *
+ * 09/10/2026 (decisão do Edmir depois do teste de usabilidade com a Gabriela): no app ficam só faixa, setor,
+ * com quem, a nota, o @ e a casa de show. Carimbo de presença, cor, fonte, tamanho e posição do nome e a frase
+ * ficam só no Estúdio (ver CAMPOS_SO_NO_ESTUDIO em store.ts).
  */
 
 export interface RascunhoPersonalizacao {
@@ -50,36 +53,6 @@ const Linha: React.FC<{
   );
 };
 
-const Opcoes = <T extends string>({
-  opcoes,
-  valor,
-  mudar,
-  colunas = 3,
-}: {
-  opcoes: { id: T; rotulo: string; desc?: string; desligada?: boolean; titulo?: string }[];
-  valor: T;
-  mudar: (v: T) => void;
-  colunas?: 2 | 3;
-}) => (
-  <div className={`grid gap-2 ${colunas === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
-    {opcoes.map((o) => (
-      <button
-        key={o.id}
-        type="button"
-        className="lv-opt p-2.5 text-left disabled:opacity-40 disabled:cursor-not-allowed"
-        data-on={valor === o.id}
-        aria-pressed={valor === o.id}
-        disabled={o.desligada}
-        title={o.titulo}
-        onClick={() => mudar(o.id)}
-      >
-        <span className="text-[12.5px] font-bold text-[#ECE5D1] block">{o.rotulo}</span>
-        {o.desc && <span className="text-[11px] text-[#8A8577] block mt-0.5 leading-snug">{o.desc}</span>}
-      </button>
-    ))}
-  </div>
-);
-
 const Interruptor: React.FC<{ rotulo: string; ligado: boolean; mudar: (v: boolean) => void; desc?: string }> = ({ rotulo, ligado, mudar, desc }) => (
   <label className="flex items-center justify-between gap-3 py-2 cursor-pointer select-none">
     <span>
@@ -91,23 +64,20 @@ const Interruptor: React.FC<{ rotulo: string; ligado: boolean; mudar: (v: boolea
 );
 
 export const PainelPersonalizar: React.FC<{
-  show: Pick<Show, 'artista'>;
   rascunho: RascunhoPersonalizacao;
   mudar: (r: RascunhoPersonalizacao) => void;
   salvar: () => void;
   fechar: () => void;
   alterado: boolean;
   comQuem: string[];
-}> = ({ show, rascunho, mudar, salvar, fechar, alterado, comQuem }) => {
-  const [aberta, setAberta] = useState<string | null>('carimbo');
+  /** Notas já dadas a este show; sem nenhuma, a linha "Nota no card" não aparece. */
+  notas: { show?: number; organizacao?: number };
+}> = ({ rascunho, mudar, salvar, fechar, alterado, comQuem, notas }) => {
+  const [aberta, setAberta] = useState<string | null>('faixa');
   const alternar = (id: string) => setAberta((a) => (a === id ? null : id));
   const p = rascunho.perso;
   const set = (patch: Partial<Personalizacao>) => mudar({ ...rascunho, perso: { ...p, ...patch } });
-  const raydisOk = nomeAceitaRaydis(show.artista);
-  const tamanhos = { p: 'Pequeno', m: 'Médio', g: 'Grande' } as const;
-  const posicoes = { cima: 'Em cima', meio: 'No meio', baixo: 'Embaixo' } as const;
-  const fontes = { alfa: 'Alfa Slab One', barlow: 'Barlow', raydis: 'RAYDIS' } as const;
-  const cores = { ciano: 'Ciano', teal: 'Teal', offwhite: 'Off-white' } as const;
+  const temNota = Boolean(notas.show || notas.organizacao);
 
   return (
     <section aria-label="Personalizar" className="lv-perso">
@@ -121,20 +91,7 @@ export const PainelPersonalizar: React.FC<{
         </button>
       </div>
 
-      <div className="lv-group mt-5">Carimbo</div>
-      <Linha id="carimbo" aberta={aberta} alternar={alternar} icone={<Award />} titulo="Carimbo de presença" valor={ROTULO_CARIMBO[p.carimbo]}>
-        <Opcoes
-          valor={p.carimbo}
-          mudar={(carimbo) => set({ carimbo })}
-          opcoes={[
-            { id: 'nenhum', rotulo: 'Sem carimbo', desc: 'Padrão' },
-            { id: 'eu_fui', rotulo: 'Eu fui', desc: 'Presença registrada' },
-            { id: 'show_da_minha_vida', rotulo: 'Show da minha vida', desc: 'Memória inesquecível' },
-          ]}
-        />
-      </Linha>
-
-      <div className="lv-group mt-6">Memória do show</div>
+      <div className="lv-group mt-5">Memória do show</div>
       <Linha
         id="faixa"
         aberta={aberta}
@@ -172,70 +129,32 @@ export const PainelPersonalizar: React.FC<{
           />
         </div>
       </Linha>
+      {temNota && (
+        <Linha id="nota" aberta={aberta} alternar={alternar} icone={<IconeNota />} titulo="Nota no card" valor={p.mostrarNota ? 'Mostrar' : 'Esconder'}>
+          <Interruptor
+            rotulo="Mostrar a nota"
+            desc="No ingresso e nas imagens de compartilhar."
+            ligado={p.mostrarNota}
+            mudar={(mostrarNota) => set({ mostrarNota })}
+          />
+          <div className="mt-1 flex flex-wrap gap-x-5 gap-y-1.5">
+            {notas.show ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="lv-label">Show</span>
+                <NotaIngresso valor={notas.show} tamanho={13} rotulo="Nota do show" />
+              </span>
+            ) : null}
+            {notas.organizacao ? (
+              <span className="inline-flex items-center gap-2">
+                <span className="lv-label">Organização</span>
+                <NotaIngresso valor={notas.organizacao} tamanho={13} rotulo="Nota da organização" />
+              </span>
+            ) : null}
+          </div>
+        </Linha>
+      )}
 
-      <div className="lv-group mt-6">Texto e tipografia</div>
-      <Linha id="fonte" aberta={aberta} alternar={alternar} icone={<Type />} titulo="Fonte do nome" valor={fontes[p.fonte]}>
-        <Opcoes
-          valor={p.fonte}
-          mudar={(fonte) => set({ fonte })}
-          opcoes={[
-            { id: 'alfa', rotulo: 'Alfa Slab One', desc: 'Títulos da marca' },
-            { id: 'barlow', rotulo: 'Barlow', desc: 'Caixa alta, mais compacta' },
-            {
-              id: 'raydis',
-              rotulo: 'RAYDIS',
-              desc: raydisOk ? 'Display da marca' : 'Só para nomes sem acento',
-              desligada: !raydisOk,
-              titulo: raydisOk ? undefined : 'A RAYDIS não tem acentos',
-            },
-          ]}
-        />
-      </Linha>
-      <Linha id="tamanho" aberta={aberta} alternar={alternar} icone={<Ruler />} titulo="Tamanho do nome" valor={tamanhos[p.tamanho]}>
-        <Opcoes
-          valor={p.tamanho}
-          mudar={(tamanho) => set({ tamanho })}
-          opcoes={[
-            { id: 'p', rotulo: 'Pequeno', desc: '80%' },
-            { id: 'm', rotulo: 'Médio', desc: '90%' },
-            { id: 'g', rotulo: 'Grande', desc: '100% (padrão)' },
-          ]}
-        />
-        <p className="lv-meta mt-2">O nome nunca é cortado no meio: se não cabe, a palavra seguinte vai para a linha de baixo.</p>
-      </Linha>
-      <Linha id="posicao" aberta={aberta} alternar={alternar} icone={<Rows3 />} titulo="Posição do nome" valor={posicoes[p.posicao]}>
-        <Opcoes
-          valor={p.posicao}
-          mudar={(posicao) => set({ posicao })}
-          opcoes={[
-            { id: 'cima', rotulo: 'Em cima', desc: 'Abaixo do logo' },
-            { id: 'meio', rotulo: 'No meio', desc: 'Centro do card' },
-            { id: 'baixo', rotulo: 'Embaixo', desc: 'Padrão' },
-          ]}
-        />
-      </Linha>
-      <Linha id="frase" aberta={aberta} alternar={alternar} icone={<Quote />} titulo="Frase no alto" valor={p.frase.trim() || 'Sem frase'}>
-        <label className="lv-campo">
-          <span className="lv-label">
-            <span>Frase curta</span>
-            <span>{p.frase.length}/28</span>
-          </span>
-          <input className="lv-input" type="text" maxLength={28} value={p.frase} placeholder="Ex.: Primeira fila" onChange={(e) => set({ frase: e.target.value })} />
-        </label>
-      </Linha>
-
-      <div className="lv-group mt-6">Cor e identificação</div>
-      <Linha id="cor" aberta={aberta} alternar={alternar} icone={<Palette />} titulo="Cor de destaque" valor={cores[p.cor]}>
-        <div className="grid grid-cols-3 gap-2">
-          {(Object.keys(cores) as (keyof typeof cores)[]).map((c) => (
-            <button key={c} type="button" className="lv-opt p-2.5 flex items-center gap-2" data-on={p.cor === c} aria-pressed={p.cor === c} onClick={() => set({ cor: c })}>
-              <span className="w-4 h-4 rounded-full shrink-0 border border-[#3A3159]" style={{ background: COR_DESTAQUE[c] }} />
-              <span className="text-[12.5px] font-bold text-[#ECE5D1]">{cores[c]}</span>
-            </button>
-          ))}
-        </div>
-        <p className="lv-meta mt-2">Casa de show, frase, faixa e o traço sob o nome.</p>
-      </Linha>
+      <div className="lv-group mt-6">Identificação</div>
       <Linha id="usuario" aberta={aberta} alternar={alternar} icone={<AtSign />} titulo="Seu @ no card" valor={p.mostrarUsuario ? 'Mostrar' : 'Esconder'}>
         <Interruptor rotulo="Mostrar o @ sob o logo" ligado={p.mostrarUsuario} mudar={(mostrarUsuario) => set({ mostrarUsuario })} />
       </Linha>
