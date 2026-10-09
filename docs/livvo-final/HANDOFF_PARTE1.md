@@ -496,6 +496,12 @@ Decisões do Edmir em 09/10/2026, depois do teste de usabilidade de 08/10 com a 
 92. **Interruptor "Mostrar a nota"** na linha "Nota no card", ligado por padrão, que só aparece quando o show tem nota.
 93. **Um ingresso + número fora da hora de dar a nota:** os 5 ingressos (`Discos` com `onChange`) ficam só onde se escolhe a nota (página do show e "completar" do Início); nos demais lugares, `NotaIngresso` (`ui.tsx`): um ingresso Teal e o número em amarelo (ex.: 4,5). Médias da comunidade com uma casa decimal (ex.: 4,3), sem arredondar para meio ponto.
 
+Decisões do Edmir em 09/10/2026, 10h41 (revisão 13, commit `d910d5d`):
+
+94. **Nome dos arquivos das imagens de compartilhar:** `Livvo_Artista_DDMMAA.png` (`nomeArquivoShow` em `format.ts`): artista sem acentos e sem apóstrofos, `_` no lugar de espaços e símbolos. Ex.: `Livvo_Dave_Matthews_Band_111213.png`, `Livvo_Racionais_MCs_010225.png`. Pôster, ingresso, Feed e Stories do mesmo show saem com o mesmo nome (o navegador acrescenta "(1)" se baixar mais de um).
+95. **Data centralizada nas imagens de Stories e Feed;** as notas (um ingresso + número) também ficam centralizadas, lado a lado no Feed e uma embaixo da outra no Stories.
+96. **Selos de conquista ainda não conquistados:** ficam como estão até mais pesquisas.
+
 Também aprovadas em 08/10 (decisão 6 da análise), deixam de ser DRAFT: visibilidade padrão **"Seguidores"**; primeira visita na **página de entrada**; **"Show da minha vida" em amarelo**; quem pode marcar você = **"Quem eu sigo"**; IDs das dimensões novas **`visao_palco`**, **`clima_publico`** e **`bares_banheiros`** (não podem mudar depois de publicados). Fonte do corpo: **Plus Jakarta Sans no app e no site, Barlow nos impressos** (decisão 4 da análise); ícones Lucide. O registro na identidade oficial (`LIVVO_IDENTIDADE_VISUAL_OFICIAL.md`) aguarda o Edmir aprovar o texto.
 
 Escolha de execução da revisão 8 (aprovada em 08/10): a primeira visita não entra mais sozinha na conta de demonstração, para quem chega ver a página de entrada; o Entrar abre essa conta.
