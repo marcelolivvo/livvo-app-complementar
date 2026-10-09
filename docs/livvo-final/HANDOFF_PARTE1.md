@@ -502,6 +502,11 @@ Decisões do Edmir em 09/10/2026, 10h41 (revisão 13, commit `d910d5d`):
 95. **Data centralizada nas imagens de Stories e Feed;** as notas (um ingresso + número) também ficam centralizadas, lado a lado no Feed e uma embaixo da outra no Stories.
 96. **Selos de conquista ainda não conquistados:** ficam como estão até mais pesquisas.
 
+Decisões do Edmir em 09/10/2026, 10h58 a 11h30 (revisão 14, commit `6e5ca3e`):
+
+97. **Fotos das pessoas em duotone ciano** (Preto Profundo → Ciano #4FDCDE, sem o creme dos artistas), no formato atual (4:5 nas caixas, círculo só onde já havia o `Avatar` de iniciais). Filtro `#lv-duotone-pessoa` (`AppShell.tsx`), mapa `MAPA_DUOTONE_PESSOA` (`fotos.ts`); vale para as pessoas de exemplo, a sua foto (avatar do cabeçalho e "Você e …") e a imagem "Compartilhar juntos". A Credencial Backstage não mudou.
+98. **Retratos de IA das pessoas de exemplo**, sem etiqueta: `public/livvo/pessoas/<usuario>.jpg` (`fotoDaPessoa` em `ui.tsx`); quem não tem retrato continua com as iniciais. Hoje 6 de 14 (Ana Ribeiro, Bruno Tavares, Juliana Freitas, Lucas Amaral, Fernanda Lopes, Rafael Moraes). Formato dos retratos que faltam: em aberto.
+
 Também aprovadas em 08/10 (decisão 6 da análise), deixam de ser DRAFT: visibilidade padrão **"Seguidores"**; primeira visita na **página de entrada**; **"Show da minha vida" em amarelo**; quem pode marcar você = **"Quem eu sigo"**; IDs das dimensões novas **`visao_palco`**, **`clima_publico`** e **`bares_banheiros`** (não podem mudar depois de publicados). Fonte do corpo: **Plus Jakarta Sans no app e no site, Barlow nos impressos** (decisão 4 da análise); ícones Lucide. O registro na identidade oficial (`LIVVO_IDENTIDADE_VISUAL_OFICIAL.md`) aguarda o Edmir aprovar o texto.
 
 Escolha de execução da revisão 8 (aprovada em 08/10): a primeira visita não entra mais sozinha na conta de demonstração, para quem chega ver a página de entrada; o Entrar abre essa conta.
