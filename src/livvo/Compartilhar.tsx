@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Copy, MessageCircle, Share2 } from 'lucide-react';
 import type { Show } from './data/catalog';
 import { aplicarDuotone, carregarParaCanvas, recorte45 } from './fotos';
-import { dataCartao, dataLonga, nota } from './format';
+import { dataCartao, dataLonga, nomeArquivoShow, nota } from './format';
 import { PERSONALIZACAO_PADRAO, personalizacaoDe, type Memoria, type Personalizacao } from './store';
 import {
   CARIMBOS,
@@ -338,6 +338,14 @@ const desenharNota = (c: CanvasRenderingContext2D, rotulo: string, valor: number
   c.fillText(nota(valor), x + 64 + 14, y + 52);
 };
 
+/** Largura ocupada por `desenharNota` (rótulo ou ingresso + número, o que for maior). */
+const larguraNota = (c: CanvasRenderingContext2D, rotulo: string, valor: number) => {
+  c.font = '600 30px Barlow, sans-serif';
+  const wRotulo = c.measureText(rotulo.toUpperCase().split('').join(' ')).width;
+  c.font = '700 64px RAYDIS, "Alfa Slab One", sans-serif';
+  return Math.max(wRotulo, 64 + 14 + c.measureText(nota(valor)).width);
+};
+
 const garantirFontes = async () => {
   try {
     await Promise.all([
@@ -591,25 +599,35 @@ export const gerarImagem = async (opcoes: {
   const py = 0;
   const ph = fimArte;
 
-  // notas (09/10/2026): só as que existem, e só com "Mostrar a nota" ligado; a data sobe quando não há notas
+  // notas (09/10/2026): só as que existem, e só com "Mostrar a nota" ligado; a data sobe quando não há notas.
+  // Notas e data centralizadas na largura da imagem (decisão do Edmir de 09/10/2026).
   const ny = py + ph + (stories ? 90 : 56);
-  const nx = stories ? 130 : 110;
   const notas: Array<[string, number]> = [];
   if (perso.mostrarNota && memoria.notaShow) notas.push(['Nota do show', memoria.notaShow]);
   if (perso.mostrarNota && memoria.notaOrganizacao) notas.push(['Organização', memoria.notaOrganizacao]);
-  notas.forEach(([rotulo, valor], i) => {
-    if (stories) desenharNota(c, rotulo, valor, nx, ny + i * 170);
-    else desenharNota(c, rotulo, valor, i === 0 ? nx : W / 2 + 30, ny);
-  });
+  const larguras = notas.map(([rotulo, valor]) => larguraNota(c, rotulo, valor));
+  if (stories) {
+    // uma embaixo da outra, numa coluna centralizada
+    const x0 = (W - Math.max(0, ...larguras)) / 2;
+    notas.forEach(([rotulo, valor], i) => desenharNota(c, rotulo, valor, x0, ny + i * 170));
+  } else {
+    // lado a lado, o grupo centralizado
+    const vao = 120;
+    let x = (W - (larguras.reduce((a, b) => a + b, 0) + vao * Math.max(0, notas.length - 1))) / 2;
+    notas.forEach(([rotulo, valor], i) => {
+      desenharNota(c, rotulo, valor, x, ny);
+      x += larguras[i] + vao;
+    });
+  }
   const yData = notas.length === 0 ? ny : stories ? ny + notas.length * 170 + 20 : ny + 150;
 
-  // data por extenso
-  c.textAlign = 'left';
+  // data por extenso, centralizada
+  c.textAlign = 'center';
   c.textBaseline = 'top';
   c.fillStyle = OFF;
   c.font = `500 ${stories ? 34 : 28}px Barlow, sans-serif`;
   const linhaData = `${dataLonga(show.ts)} · ${show.cidade}`;
-  c.fillText(linhaData.charAt(0).toUpperCase() + linhaData.slice(1), nx, yData);
+  c.fillText(linhaData.charAt(0).toUpperCase() + linhaData.slice(1), W / 2, yData);
 
   // rodapé com o site (#12: o endereço em todo card)
   c.textAlign = 'center';
@@ -691,7 +709,7 @@ export const BotaoCompartilhar: React.FC<{
         perso: perso || personalizacaoDe(memoria),
         detalhes,
       });
-      const nome = `Livvo_${show.artista.replace(/[^\w]+/g, '_')}_${formato === 'stories' ? 'Stories' : 'Feed'}.png`;
+      const nome = nomeArquivoShow(show.artista, show.data);
       await baixarOuCompartilhar(blob, nome, formato === 'stories' ? 'Stories' : 'Feed');
       setAberto(false);
     } catch {

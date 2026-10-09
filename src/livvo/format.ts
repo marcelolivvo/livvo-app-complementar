@@ -109,3 +109,20 @@ export const iniciais = (nome: string): string =>
     .slice(0, 2)
     .map((p) => p[0]!.toUpperCase())
     .join('');
+
+/**
+ * Nome do arquivo das imagens de compartilhar (decisão do Edmir de 09/10/2026, depois do teste de usabilidade):
+ * `Livvo_Artista_DDMMAA.png`, com o nome do artista sem acentos e com `_` no lugar de espaços e símbolos.
+ * Ex.: Dave Matthews Band em 11/12/2013 → `Livvo_Dave_Matthews_Band_111213.png`; Racionais MC’s → `Livvo_Racionais_MCs_010225.png`.
+ */
+export const nomeArquivoShow = (artista: string, data: string, extensao = 'png'): string => {
+  const nome =
+    artista
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/['\u2019`]/g, '')
+      .replace(/[^A-Za-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'Show';
+  const [dd = '00', mm = '00', aaaa = '0000'] = data.split('/');
+  return `Livvo_${nome}_${dd.padStart(2, '0')}${mm.padStart(2, '0')}${aaaa.slice(-2)}.${extensao}`;
+};
