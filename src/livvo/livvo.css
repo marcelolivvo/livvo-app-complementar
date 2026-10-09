@@ -1705,3 +1705,18 @@
 @media (prefers-reduced-motion: reduce) {
   .lv-conq-aviso-fundo, .lv-conq-aviso, .lv-conq-aviso-palco img, .lv-conq-aviso-raios, .lv-sino-ponto { animation: none !important; }
 }
+
+/* Pessoas (09/10/2026): duotone ciano, para não confundir com os artistas (duotone creme) */
+.lv-foto-pessoa--duo,
+.lv-av-foto {
+  filter: url(#lv-duotone-pessoa);
+}
+.lv-av {
+  overflow: hidden;
+}
+.lv-av-foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 30%;
+}

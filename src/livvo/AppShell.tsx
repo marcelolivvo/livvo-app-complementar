@@ -25,7 +25,7 @@ import { adminCatalog } from '../services/adminCatalogService';
 import { LoginModal } from '../components/LoginModal';
 import { AdminFotos } from './AtualizarFoto';
 import { useCatalogo } from './data/catalog';
-import { tabelaDuotone } from './fotos';
+import { MAPA_DUOTONE_PESSOA, tabelaDuotone } from './fotos';
 
 /** Modo admin da prévia: ?admin=1 liga, ?admin=0 desliga (igual ao Estúdio). No site final, vem do login. */
 export const useAdmin = (): boolean => {
@@ -60,7 +60,7 @@ const MenuConta: React.FC<{ fechar: () => void; admin: boolean; abrirFotos: () =
     <div className="lv-menu" role="menu" aria-label="Menu da conta">
       {logado ? (
         <div className="flex items-center gap-3 px-2.5 pt-2 pb-3">
-          <Avatar nome={perfil.nome} tamanho={42} />
+          <Avatar nome={perfil.nome} tamanho={42} eu />
           <div className="min-w-0">
             <div className="font-extrabold text-[14.5px] truncate">{perfil.nome}</div>
             <div className="lv-meta">@{perfil.usuario}</div>
@@ -215,7 +215,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               aria-label={logado ? `Conta de ${perfil.nome}` : 'Entrar ou opções da prévia'}
               onClick={() => setMenu((v) => !v)}
             >
-              {logado ? <Avatar nome={perfil.nome} tamanho={32} /> : <LogIn className="w-5 h-5" />}
+              {logado ? <Avatar nome={perfil.nome} tamanho={32} eu /> : <LogIn className="w-5 h-5" />}
             </button>
             {menu && <MenuConta fechar={() => setMenu(false)} admin={admin} abrirFotos={() => setFotosAdmin(true)} />}
           </div>
@@ -255,6 +255,15 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <feFuncR type="table" tableValues={tabelaDuotone(0)} />
             <feFuncG type="table" tableValues={tabelaDuotone(1)} />
             <feFuncB type="table" tableValues={tabelaDuotone(2)} />
+          </feComponentTransfer>
+        </filter>
+        {/* Duotone das pessoas (09/10/2026): Preto Profundo → Ciano, sem o creme dos artistas */}
+        <filter id="lv-duotone-pessoa" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0.2126 0.7152 0.0722 0 0 0 0 0 1 0" />
+          <feComponentTransfer>
+            <feFuncR type="table" tableValues={tabelaDuotone(0, MAPA_DUOTONE_PESSOA)} />
+            <feFuncG type="table" tableValues={tabelaDuotone(1, MAPA_DUOTONE_PESSOA)} />
+            <feFuncB type="table" tableValues={tabelaDuotone(2, MAPA_DUOTONE_PESSOA)} />
           </feComponentTransfer>
         </filter>
       </svg>

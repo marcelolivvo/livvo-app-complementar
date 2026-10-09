@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Copy, MessageCircle, Share2 } from 'lucide-react';
 import type { Show } from './data/catalog';
-import { aplicarDuotone, carregarParaCanvas, recorte45 } from './fotos';
+import { MAPA_DUOTONE_PESSOA, aplicarDuotone, carregarParaCanvas, recorte45 } from './fotos';
 import { dataCartao, dataLonga, nomeArquivoShow, nota } from './format';
 import { PERSONALIZACAO_PADRAO, personalizacaoDe, type Memoria, type Personalizacao } from './store';
 import {
@@ -13,6 +13,7 @@ import {
   INGRESSO_ESTRELA,
   INGRESSO_PICOTE,
   avisar,
+  fotoDaPessoa,
   linhaDetalhes,
   nomeAceitaRaydis,
   paletaDoArtista,
@@ -796,7 +797,7 @@ const desenharFotoPessoa = async (c: CanvasRenderingContext2D, nome: string, fot
       const img = await carregar(foto);
       const { sx, sy, sw, sh } = recorte45(img.naturalWidth, img.naturalHeight);
       c.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-      aplicarDuotone(c, x, y, w, h);
+      aplicarDuotone(c, x, y, w, h, MAPA_DUOTONE_PESSOA); // pessoas em ciano (09/10/2026)
       ok = true;
     } catch {
       ok = false;
@@ -873,7 +874,7 @@ export const gerarImagemJuntos = async (opcoes: {
   const gap = 40;
   const fx = (W - (2 * fw + gap)) / 2;
   await desenharFotoPessoa(c, voce.nome, voce.foto, fx, fy, fw, fh);
-  await desenharFotoPessoa(c, outra.nome, null, fx + fw + gap, fy, fw, fh);
+  await desenharFotoPessoa(c, outra.nome, fotoDaPessoa(outra.nome), fx + fw + gap, fy, fw, fh);
   c.textAlign = 'center';
   c.textBaseline = 'top';
   c.fillStyle = CIANO;

@@ -179,20 +179,35 @@ export const MAPA_DUOTONE: Array<[number, number, number]> = [
   [236, 229, 209], // Off-white
 ];
 
-/** Valores `tableValues` do filtro SVG para um canal (0 = R, 1 = G, 2 = B). */
-export const tabelaDuotone = (canal: 0 | 1 | 2) => MAPA_DUOTONE.map((c) => (c[canal] / 255).toFixed(3)).join(' ');
+/**
+ * Duotone das PESSOAS (fãs, usuários e a sua foto), decisão do Edmir de 09/10/2026: o mesmo tratamento dos
+ * artistas, mas do Preto Profundo direto ao Ciano #4FDCDE, sem o creme. Artista = pôster (creme); fã = plateia
+ * na luz do palco (ciano). Igual ao filtro SVG `#lv-duotone-pessoa`.
+ */
+export const MAPA_DUOTONE_PESSOA: Array<[number, number, number]> = [
+  [16, 12, 31], // Preto Profundo
+  [18, 38, 60],
+  [28, 104, 122],
+  [79, 220, 222], // Ciano
+  [196, 246, 244],
+];
 
-const corDuotone = (l: number): [number, number, number] => {
-  const x = Math.min(1, Math.max(0, l)) * (MAPA_DUOTONE.length - 1);
-  const i = Math.min(MAPA_DUOTONE.length - 2, Math.floor(x));
+type Mapa = Array<[number, number, number]>;
+
+/** Valores `tableValues` do filtro SVG para um canal (0 = R, 1 = G, 2 = B). */
+export const tabelaDuotone = (canal: 0 | 1 | 2, mapa: Mapa = MAPA_DUOTONE) => mapa.map((c) => (c[canal] / 255).toFixed(3)).join(' ');
+
+const corDuotone = (l: number, mapa: Mapa = MAPA_DUOTONE): [number, number, number] => {
+  const x = Math.min(1, Math.max(0, l)) * (mapa.length - 1);
+  const i = Math.min(mapa.length - 2, Math.floor(x));
   const t = x - i;
-  const a = MAPA_DUOTONE[i]!;
-  const b = MAPA_DUOTONE[i + 1]!;
+  const a = mapa[i]!;
+  const b = mapa[i + 1]!;
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 };
 
 /** Aplica o duotone suave numa área do canvas (com contraste automático leve, sem esmagar detalhes). */
-export const aplicarDuotone = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) => {
+export const aplicarDuotone = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, mapa: Mapa = MAPA_DUOTONE) => {
   const img = ctx.getImageData(x, y, w, h); // lança erro se a imagem não for liberada (CORS)
   const d = img.data;
   const n = w * h;
@@ -204,7 +219,7 @@ export const aplicarDuotone = (ctx: CanvasRenderingContext2D, x: number, y: numb
   const alto = amostra[Math.floor(amostra.length * 0.99)] ?? 1;
   const faixa = Math.max(0.35, alto - baixo);
   for (let i = 0; i < n; i++) {
-    const c = corDuotone((lum[i]! - baixo) / faixa);
+    const c = corDuotone((lum[i]! - baixo) / faixa, mapa);
     d[i * 4] = c[0];
     d[i * 4 + 1] = c[1];
     d[i * 4 + 2] = c[2];

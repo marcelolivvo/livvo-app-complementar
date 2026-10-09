@@ -4,6 +4,7 @@ import type { Show } from './data/catalog';
 import { Link } from './router';
 import { dataCartao, hash, iniciais, nota as fmtNota } from './format';
 import { useFoto, useFotoAutomatica } from './fotos';
+import { PESSOAS_EXEMPLO } from './data/demo';
 import type { CarimboPresenca as TipoCarimbo, CorDestaque, FonteNome, Personalizacao } from './store';
 
 /* Pôster do show ---------------------------------------------------------------------
@@ -425,15 +426,27 @@ export const NotaIngresso: React.FC<{
 
 const CORES_AVATAR = ['#4FDCDE', '#2FB8BA', '#ECE5D1', '#B3AE9F'];
 
-export const Avatar: React.FC<{ nome: string; tamanho?: number; className?: string }> = ({ nome, tamanho = 36, className = '' }) => (
-  <span
-    className={`lv-av ${className}`}
-    style={{ '--av': `${tamanho}px`, background: CORES_AVATAR[hash(nome) % CORES_AVATAR.length] } as React.CSSProperties}
-    aria-hidden="true"
-  >
-    {iniciais(nome)}
-  </span>
-);
+/**
+ * Retratos das pessoas de exemplo (09/10/2026): gerados por IA no Higgsfield (pessoas que não existem),
+ * em `public/livvo/pessoas/<usuario>.jpg`, com cor natural; o duotone ciano das pessoas é aplicado na tela
+ * pelo filtro `#lv-duotone-pessoa` (artistas seguem no duotone creme).
+ */
+const FOTO_PESSOA_EXEMPLO = new Map(PESSOAS_EXEMPLO.map((p) => [p.nome, `/livvo/pessoas/${p.usuario.replace(/[^a-z0-9]+/gi, '-')}.jpg`]));
+export const fotoDaPessoa = (nome: string): string | null => FOTO_PESSOA_EXEMPLO.get(nome) ?? null;
+
+export const Avatar: React.FC<{ nome: string; tamanho?: number; className?: string; eu?: boolean }> = ({ nome, tamanho = 36, className = '', eu }) => {
+  const foto = eu ? fotoDoUsuario() : fotoDaPessoa(nome);
+  const [falhou, setFalhou] = useState(false);
+  return (
+    <span
+      className={`lv-av ${className}`}
+      style={{ '--av': `${tamanho}px`, background: foto && !falhou ? '#100C1F' : CORES_AVATAR[hash(nome) % CORES_AVATAR.length] } as React.CSSProperties}
+      aria-hidden="true"
+    >
+      {foto && !falhou ? <img className="lv-av-foto" src={foto} alt="" loading="lazy" onError={() => setFalhou(true)} /> : iniciais(nome)}
+    </span>
+  );
+};
 
 /* Foto padrão 4:5 (revisão 7, 07/10/2026) --------------------------------------------
  * A foto do canhoto dos ingressos, sem textos: recorte 4:5, duotone suave com retícula (foto automática ou
@@ -495,13 +508,14 @@ export const FotoPessoa: React.FC<{ nome: string; eu?: boolean; tamanho?: 'lista
   tamanho = 'lista',
   className = '',
 }) => {
-  const foto = eu ? fotoDoUsuario() : null;
+  const [falhou, setFalhou] = useState(false);
+  const foto = falhou ? null : eu ? fotoDoUsuario() : fotoDaPessoa(nome);
   const estilo = typeof tamanho === 'number' ? ({ '--foto-w': `${tamanho}px` } as React.CSSProperties) : undefined;
   return (
     <span className={`lv-foto lv-foto--pessoa ${typeof tamanho === 'string' ? `lv-foto--${tamanho}` : ''} ${className}`} style={estilo} aria-hidden="true">
       {foto ? (
         <>
-          <img src={foto} alt="" className="lv-poster-photo--duo" />
+          <img src={foto} alt="" loading="lazy" className="lv-foto-pessoa--duo" onError={() => setFalhou(true)} />
           <span className="lv-foto-ret" />
         </>
       ) : (
